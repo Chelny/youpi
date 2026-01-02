@@ -1,6 +1,6 @@
 "use client";
 
-import { PropsWithChildren, ReactNode } from "react";
+import { KeyboardEventHandler, MouseEventHandler, PropsWithChildren, ReactNode } from "react";
 import Link from "next/link";
 import clsx from "clsx/lite";
 
@@ -9,6 +9,8 @@ type AnchorProps = PropsWithChildren<{
   target?: string
   className?: string
   dataTestId?: string
+  onClick?: MouseEventHandler<HTMLAnchorElement>
+  onKeyDown?: KeyboardEventHandler<HTMLAnchorElement>
 }>;
 
 export default function Anchor({
@@ -17,6 +19,8 @@ export default function Anchor({
   target = "_self",
   className = "",
   dataTestId = undefined,
+  onClick,
+  onKeyDown,
 }: AnchorProps): ReactNode {
   return (
     <Link
@@ -25,6 +29,8 @@ export default function Anchor({
       target={target}
       rel="noopener noreferrer"
       data-testid={dataTestId}
+      onClick={onClick}
+      onKeyDown={onKeyDown}
     >
       {children}
     </Link>

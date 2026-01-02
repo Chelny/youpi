@@ -96,6 +96,7 @@ export class TableManager {
 
     let tablePlayer: TablePlayer = TablePlayerManager.create({ table, player });
     table.addPlayer(tablePlayer);
+    table.room.setPlayerTableNumber(tablePlayer.playerId, table.tableNumber);
 
     await user.socket?.join(table.id);
 
@@ -155,6 +156,7 @@ export class TableManager {
     await user.socket?.leave(table.id);
 
     table.removePlayer(tablePlayer.playerId);
+    table.room.setPlayerTableNumber(tablePlayer.playerId, null);
 
     // Announce when user leaves table
     const tableChatMessage: TableChatMessage = await TableChatMessageManager.create({
@@ -409,6 +411,7 @@ export class TableManager {
     });
 
     table.removePlayer(playerToBoot.playerId);
+    table.room.setPlayerTableNumber(playerToBoot.playerId, null);
 
     const tableChatMessage: TableChatMessage = await TableChatMessageManager.create({
       tableId: tableBoot.tableId,

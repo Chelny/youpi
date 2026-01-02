@@ -223,7 +223,7 @@ export function SignInForm(): ReactNode {
       <div className="flex justify-between items-center mt-4 mb-6" role="separator">
         <hr className={clsx("flex-1 me-4 border border-neutral-200", "dark:border-slate-600")} />
         <span className={clsx("mx-auto text-gray-600 text-sm uppercase", "dark:text-gray-400")}>
-          {t({ message: "or sign in with" })}
+          <Trans>or sign in with</Trans>
         </span>
         <hr className={clsx("flex-1 h-0 ms-4 border border-neutral-200", "dark:border-slate-600")} />
       </div>
@@ -265,15 +265,8 @@ export function SignInForm(): ReactNode {
       </div>
       <div className="mt-4 text-center">
         <Trans>
-          By signing in, you agree to our{" "}
-          <Anchor href={ROUTE_TERMS_OF_SERVICE.PATH} target="_blank">
-            Terms of Service
-          </Anchor>{" "}
-          and{" "}
-          <Anchor href={ROUTE_PRIVACY_POLICY.PATH} target="_blank">
-            Privacy Policy
-          </Anchor>
-          .
+          By signing in, you agree to our <Anchor href={ROUTE_TERMS_OF_SERVICE.PATH}>Terms of Service</Anchor> and{" "}
+          <Anchor href={ROUTE_PRIVACY_POLICY.PATH}>Privacy Policy</Anchor>.
         </Trans>
       </div>
     </form>

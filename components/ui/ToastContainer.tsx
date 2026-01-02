@@ -35,7 +35,7 @@ export const ToastContainer = ({ toasts }: ToastContainerProps) => {
 };
 
 const getContainerStyle = (position: ToastPosition) => {
-  const base: string = "fixed z-50 p-4";
+  const base: string = "fixed z-toast p-4";
 
   switch (position) {
     case "top-start":

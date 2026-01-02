@@ -56,7 +56,7 @@ export default function RoomTable({ roomId, table, roomPlayer }: RoomTableProps)
     };
 
     if (socket.connected) {
-      emitInitialData();
+      onConnect();
     } else {
       socket.once("connect", onConnect);
     }

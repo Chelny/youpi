@@ -1,52 +1,49 @@
 import { ReactNode } from "react";
-import Image from "next/image";
+import { I18n } from "@lingui/core";
 import clsx from "clsx/lite";
+import { getI18nInstance } from "@/app/app-router-i18n";
 import LocaleSwitcher from "@/components/LanguageSwitcher";
-import { APP_CONFIG } from "@/constants/app";
+import { Footer } from "@/components/layout/Footer";
+import { Header } from "@/components/layout/Header";
+import Anchor from "@/components/ui/Anchor";
+import { ROUTE_SIGN_IN, ROUTE_SIGN_UP } from "@/constants/routes";
 
 type AuthLayoutProps = LayoutProps<"/[locale]"> & {
   breadcrumb: ReactNode
 };
 
-export default function AuthLayout({ children, breadcrumb }: AuthLayoutProps): ReactNode {
+export default async function AuthLayout({ params, children }: AuthLayoutProps): Promise<ReactNode> {
+  const { locale } = await params;
+  const i18n: I18n = getI18nInstance(locale);
+
   return (
-    <div className={clsx("flex flex-col h-full bg-white", "md:flex-row md:gap-4", "dark:bg-dark-background")}>
-      <div
-        className={clsx(
-          "p-4 bg-youpi-primary",
-          "md:relative md:overflow-hidden md:flex-1 md:flex md:justify-center md:items-center md:h-full",
-        )}
-      >
-        <div className="youpi-bg before:animate-move-background"></div>
-        <div className="flex gap-2 md:absolute md:z-10">
-          <Image src="/favicon.svg" className="md:hidden" width={36} height={24} alt={APP_CONFIG.NAME} />
-          <h1
+    <div className="grid grid-rows-[max-content_auto_max-content] h-dvh">
+      <Header>
+        <nav className="flex-1 flex flex-row justify-end items-center gap-2">
+          <LocaleSwitcher className="place-self-end" />
+          <ul
             className={clsx(
-              "[text-shadow:2px_2px_0_#000000,4px_4px_0_#000000] font-black text-white text-4xl uppercase",
-              "md:px-[3vw] md:py-[2vw] md:rounded-sm md:backdrop-blur-xs md:text-[5vw]",
+              "flex flex-row justify-end divide-x divide-white/50",
+              "[&_li]:not-last:pe-2 [&_li]:not-first:not-last:px-2 [&_li]:last:ps-2",
             )}
-            dir="ltr"
           >
-            {APP_CONFIG.NAME}
-          </h1>
-        </div>
-      </div>
-      <div
-        className={clsx(
-          "flex flex-col h-full p-4 pb-8 overflow-y-auto",
-          "md:flex-1 md:flex md:justify-center md:items-center md:pb-4",
-        )}
-      >
-        <div className={clsx("sm:w-96 sm:mx-auto", "md:w-full md:max-w-md")}>
-          <div className="flex justify-center items-center gap-2 w-full mt-4 mb-6">
-            <div className="flex-1">{breadcrumb}</div>
-            <div>
-              <LocaleSwitcher />
-            </div>
-          </div>
-          {children}
-        </div>
-      </div>
+            <li>
+              <Anchor href={ROUTE_SIGN_IN.PATH} className={clsx("px-1 text-white", "hover:text-white/50")}>
+                {i18n._(ROUTE_SIGN_IN.TITLE)}
+              </Anchor>
+            </li>
+            <li>
+              <Anchor href={ROUTE_SIGN_UP.PATH} className={clsx("px-1 text-white", "hover:text-white/50")}>
+                {i18n._(ROUTE_SIGN_UP.TITLE)}
+              </Anchor>
+            </li>
+          </ul>
+        </nav>
+      </Header>
+      <main className={clsx("flex-1 flex flex-col gap-6 px-4 py-8 overflow-auto", "sm:w-md sm:mx-auto")}>
+        {children}
+      </main>
+      <Footer />
     </div>
   );
 }

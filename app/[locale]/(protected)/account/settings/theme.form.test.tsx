@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { WebsiteTheme } from "db/enums";
 import { Mock, vi } from "vitest";
-import { ThemeForm } from "@/app/[locale]/(protected)/account/(settings)/settings/theme.form";
+import { ThemeForm } from "@/app/[locale]/(protected)/account/settings/theme.form";
 import { ModalProvider } from "@/context/ModalContext";
 import { mockFetch, mockFetchResponse } from "@/test/mocks/fetch";
 import { mockUseRouter } from "@/test/mocks/router";

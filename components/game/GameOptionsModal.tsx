@@ -62,7 +62,7 @@ export default function GameOptionsModal({
     };
 
     if (socket.connected) {
-      emitInitialData();
+      onConnect();
     } else {
       socket.once("connect", onConnect);
     }

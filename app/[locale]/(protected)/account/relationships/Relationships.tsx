@@ -257,7 +257,7 @@ export function Relationships({ session }: RelationshipsProps): ReactNode {
       {/* Table */}
       <div className={clsx("rounded-lg border border-gray-200", "dark:border-dark-card-border")}>
         <table className="w-full text-sm">
-          <thead className={clsx("sticky top-0 z-10 bg-gray-100", "dark:bg-dark-card-background")}>
+          <thead className={clsx("sticky top-0 z-sticky bg-gray-100", "dark:bg-dark-card-background")}>
             <tr className="text-left">
               <th className="p-3">
                 <div

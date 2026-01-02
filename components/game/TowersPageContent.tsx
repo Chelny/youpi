@@ -50,7 +50,7 @@ export default function TowersPageContent(): ReactNode {
     };
 
     const detachListeners = (): void => {
-      socket.on(ServerToClientEvents.TABLE_BOOTED_NOTIFICATION, handleUpdateNotification);
+      socket.off(ServerToClientEvents.TABLE_BOOTED_NOTIFICATION, handleUpdateNotification);
     };
 
     const onConnect = (): void => {
@@ -58,7 +58,7 @@ export default function TowersPageContent(): ReactNode {
     };
 
     if (socket.connected) {
-      attachListeners();
+      onConnect();
     } else {
       socket.once("connect", onConnect);
     }
@@ -69,5 +69,5 @@ export default function TowersPageContent(): ReactNode {
     };
   }, [isConnected, activeTableId]);
 
-  return <>{tableId ? <Table key={tableId} /> : <Room key={roomId} />}</>;
+  return <div className="relative h-full">{tableId ? <Table key={tableId} /> : <Room key={roomId} />}</div>;
 }

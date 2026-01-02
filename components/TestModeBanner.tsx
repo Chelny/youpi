@@ -9,7 +9,7 @@ export default function TestModeBanner(): ReactNode {
 
   return (
     <div
-      className="fixed top-0 left-0 z-50 w-full bg-red-500 text-white font-medium overflow-hidden select-none cursor-default"
+      className="fixed top-0 left-0 z-dev w-full bg-red-500 text-white font-medium overflow-hidden select-none cursor-default"
       role="status"
       tabIndex={0}
       aria-live="polite"

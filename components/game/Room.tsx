@@ -185,51 +185,40 @@ export default function Room(): ReactNode {
     const handlePlayerJoinTable = ({ tablePlayer }: { tablePlayer: TablePlayerPlainObject }): void => {
       setTables((prev: TablePlainObject[]) =>
         prev.map((table: TablePlainObject) => {
-          if (table.id === tablePlayer.tableId) {
-            const isSeated: boolean = table.players.some(
-              (tp: TablePlayerPlainObject) => tp.playerId === tablePlayer.playerId,
-            );
-            if (!isSeated) {
-              return {
-                ...table,
-                players: [...table.players, { ...tablePlayer, tableNumber: tablePlayer.table.tableNumber }],
-              };
-            }
-          }
-          return table;
+          if (table.id !== tablePlayer.tableId) return table;
+
+          const isAlreadyInTable: boolean = table.players.some(
+            (tp: TablePlayerPlainObject) => tp.playerId === tablePlayer.playerId,
+          );
+          if (isAlreadyInTable) return table;
+
+          return { ...table, players: [...table.players, tablePlayer] };
         }),
       );
 
       setPlayers((prev: RoomPlayerPlainObject[]) =>
-        prev.map((roomPlayer: RoomPlayerPlainObject) => {
-          if (roomPlayer.playerId === tablePlayer.playerId) {
-            return { ...roomPlayer, tableNumber: tablePlayer.table.tableNumber };
-          }
-          return roomPlayer;
-        }),
+        prev.map((rp: RoomPlayerPlainObject) =>
+          rp.playerId === tablePlayer.playerId ? { ...rp, tableNumber: tablePlayer.table.tableNumber } : rp,
+        ),
       );
     };
 
     const handlePlayerLeaveTable = ({ tablePlayer }: { tablePlayer: TablePlayerPlainObject }): void => {
       setTables((prev: TablePlainObject[]) =>
-        prev.map((table: TablePlainObject) => {
-          if (table.id === tablePlayer.tableId) {
-            return {
-              ...table,
-              players: table.players.filter((tp: TablePlayerPlainObject) => tp.playerId !== tablePlayer.playerId),
-            };
-          }
-          return table;
-        }),
+        prev.map((table: TablePlainObject) =>
+          table.id === tablePlayer.tableId
+            ? {
+                ...table,
+                players: table.players.filter((tp: TablePlayerPlainObject) => tp.playerId !== tablePlayer.playerId),
+              }
+            : table,
+        ),
       );
 
       setPlayers((prev: RoomPlayerPlainObject[]) =>
-        prev.map((rp: RoomPlayerPlainObject) => {
-          if (rp.playerId === tablePlayer.playerId) {
-            return { ...rp, tableNumber: null };
-          }
-          return rp;
-        }),
+        prev.map((rp: RoomPlayerPlainObject) =>
+          rp.playerId === tablePlayer.playerId ? { ...rp, tableNumber: null } : rp,
+        ),
       );
     };
 
@@ -288,7 +277,7 @@ export default function Room(): ReactNode {
     };
 
     if (socket.connected) {
-      attachListeners();
+      onConnect();
     } else {
       socket.once("connect", onConnect);
     }
@@ -362,7 +351,7 @@ export default function Room(): ReactNode {
     <>
       <div
         className={clsx(
-          "grid [grid-template-areas:'banner_banner_banner''sidebar_content_content''sidebar_content_content'] grid-rows-(--grid-rows-game) grid-cols-(--grid-cols-game) h-screen -m-4 -mb-8 bg-gray-100",
+          "grid [grid-template-areas:'banner_banner_banner''sidebar_content_content''sidebar_content_content'] grid-rows-(--grid-rows-game) grid-cols-(--grid-cols-game) w-full h-full bg-gray-100",
           "dark:bg-dark-game-background",
         )}
       >

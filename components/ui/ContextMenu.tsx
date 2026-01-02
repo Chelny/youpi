@@ -31,7 +31,7 @@ export function ContextMenu<T>({
   return (
     <Portal container={container}>
       <div
-        className={clsx("fixed z-60 py-1 border border-slate-700 rounded shadow-lg bg-white", "dark:bg-slate-800")}
+        className={clsx("fixed z-toast py-1 border border-slate-700 rounded shadow-lg bg-white", "dark:bg-slate-800")}
         style={{ top: menu.y, left: menu.x, minWidth: "180px" }}
         onContextMenu={(event: MouseEvent) => event.preventDefault()}
       >

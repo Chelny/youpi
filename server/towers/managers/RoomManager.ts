@@ -6,7 +6,7 @@ import { publishRedisEvent } from "@/server/redis/publish";
 import { Player } from "@/server/towers/classes/Player";
 import { Room, RoomPlainObject, RoomProps } from "@/server/towers/classes/Room";
 import { RoomChatMessage } from "@/server/towers/classes/RoomChatMessage";
-import { RoomPlayer } from "@/server/towers/classes/RoomPlayer";
+import { RoomPlayer, RoomPlayerPlainObject } from "@/server/towers/classes/RoomPlayer";
 import { Table } from "@/server/towers/classes/Table";
 import { TablePlayer } from "@/server/towers/classes/TablePlayer";
 import { TableSeat } from "@/server/towers/classes/TableSeat";
@@ -88,7 +88,7 @@ export class RoomManager {
     const player: Player | undefined = PlayerManager.get(user.id);
     if (!player) throw new Error("Player not found");
 
-    const roomPlayer: RoomPlayer = RoomPlayerManager.create({ roomId: room.id, player });
+    const roomPlayer: RoomPlayer = RoomPlayerManager.create({ room, player });
     room.addPlayer(roomPlayer);
 
     await user.socket?.join(room.id);
@@ -148,7 +148,7 @@ export class RoomManager {
 
     for (let i = 1; i <= takenTableNumbers.length + 1; i++) {
       if (!takenTableNumbers.includes(i)) {
-        tableNumber = 1;
+        tableNumber = i;
       }
     }
 
@@ -256,10 +256,22 @@ export class RoomManager {
     room.removeTable(table);
     TableManager.delete(table.id);
   }
-
   public static roomViewForPlayer(room: Room, playerId: string): RoomPlainObject {
+    const base: RoomPlainObject = room.toPlainObject();
+
+    const playerIdToTableNumber: Map<string, number> = new Map<string, number>();
+    for (const table of room.tables) {
+      for (const tp of table.players) {
+        playerIdToTableNumber.set(tp.playerId, table.tableNumber);
+      }
+    }
+
     return {
-      ...room.toPlainObject(),
+      ...base,
+      players: base.players.map((rp: RoomPlayerPlainObject) => ({
+        ...rp,
+        tableNumber: playerIdToTableNumber.get(rp.playerId) ?? rp.tableNumber ?? null,
+      })),
       chatMessages: room.messagesFor(playerId).map((rcm: RoomChatMessage) => rcm.toPlainObject()),
     };
   }

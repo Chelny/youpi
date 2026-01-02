@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Metadata } from "next";
 import { I18n } from "@lingui/core";
-import { DeleteAccountForm } from "@/app/[locale]/(protected)/account/(settings)/delete/delete.form";
+import { DeleteAccountForm } from "@/app/[locale]/(protected)/account/delete/delete.form";
 import { initLingui } from "@/app/init-lingui";
 import { ROUTE_DELETE_ACCOUNT } from "@/constants/routes";
 
@@ -22,7 +22,7 @@ export default async function DeleteAccount({ params }: DeleteAccountProps): Pro
 
   return (
     <>
-      <h1 className="text-2xl">{i18n._(ROUTE_DELETE_ACCOUNT.TITLE)}</h1>
+      <h1 className="mb-4 text-3xl">{i18n._(ROUTE_DELETE_ACCOUNT.TITLE)}</h1>
       <DeleteAccountForm />
     </>
   );

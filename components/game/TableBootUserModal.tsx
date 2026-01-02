@@ -72,8 +72,7 @@ export default function TableBootUserModal({
     };
 
     if (socket.connected) {
-      attachListeners();
-      emitInitialData();
+      onConnect();
     } else {
       socket.once("connect", onConnect);
     }

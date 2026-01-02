@@ -123,8 +123,7 @@ export default function PlayerInformationModal({
     };
 
     if (socket.connected) {
-      attachListeners();
-      emitInitialData();
+      onConnect();
     } else {
       socket.once("connect", onConnect);
     }

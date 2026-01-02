@@ -1,8 +1,9 @@
+import type { Room } from "@/server/towers/classes/Room";
 import { Player, PlayerPlainObject } from "@/server/towers/classes/Player";
 
 export interface RoomPlayerProps {
   id: string
-  roomId: string
+  room: Room
   player: Player
 }
 
@@ -20,7 +21,8 @@ export interface RoomPlayerPlainObject {
 
 export class RoomPlayer {
   public readonly id: string;
-  public readonly roomId: string;
+  public roomId: string;
+  private _room: Room;
   public playerId: string;
   private _player: Player;
   public createdAt: Date;
@@ -31,11 +33,21 @@ export class RoomPlayer {
 
   constructor(props: RoomPlayerProps) {
     this.id = props.id;
-    this.roomId = props.roomId;
+    this.roomId = props.room.id;
+    this._room = props.room;
     this.playerId = props.player.id;
     this._player = props.player;
     this.createdAt = new Date();
     this.updatedAt = this.createdAt;
+  }
+
+  public get room(): Room {
+    return this._room;
+  }
+
+  public set room(room: Room) {
+    this._room = room;
+    this.roomId = room.id;
   }
 
   public get player(): Player {

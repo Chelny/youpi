@@ -58,7 +58,7 @@ export default function RoomsList(): ReactNode {
     };
 
     if (socket.connected) {
-      attachListeners();
+      onConnect();
     } else {
       socket.once("connect", onConnect);
     }

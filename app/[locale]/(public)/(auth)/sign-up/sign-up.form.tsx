@@ -210,15 +210,8 @@ export function SignUpForm({ locale }: SignUpFormProps): ReactNode {
         label={
           <span>
             <Trans>
-              I agree to the{" "}
-              <Anchor href={ROUTE_TERMS_OF_SERVICE.PATH} target="_blank">
-                Terms of Service
-              </Anchor>{" "}
-              and{" "}
-              <Anchor href={ROUTE_PRIVACY_POLICY.PATH} target="_blank">
-                Privacy Policy
-              </Anchor>
-              .
+              I agree to the <Anchor href={ROUTE_TERMS_OF_SERVICE.PATH}>Terms of Service</Anchor> and{" "}
+              <Anchor href={ROUTE_PRIVACY_POLICY.PATH}>Privacy Policy</Anchor>.
             </Trans>
           </span>
         }

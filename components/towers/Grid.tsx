@@ -12,7 +12,7 @@ type GridProps = {
 
 export default function Grid({ board, isOpponentBoard = false, currentPiece, blocksToRemove }: GridProps): ReactNode {
   return (
-    <div className="static z-10" role="grid" tabIndex={0}>
+    <div className="static z-sticky" role="grid" tabIndex={0}>
       {board?.grid?.map((row: BoardGridRowPlainObject, rowIndex: number) => (
         <GridRow
           key={rowIndex}

@@ -4,10 +4,15 @@ import { ReactNode } from "react";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useLingui } from "@lingui/react/macro";
+import clsx from "clsx/lite";
 import Select from "@/components/ui/Select";
 import { Language, languages, SupportedLocales } from "@/translations/languages";
 
-export default function LanguageSwitcher(): ReactNode {
+type LanguageSwitcherProps = {
+  className?: string
+};
+
+export default function LanguageSwitcher({ className }: LanguageSwitcherProps): ReactNode {
   const router = useRouter();
   const pathname: string = usePathname();
   const { i18n } = useLingui();
@@ -24,8 +29,8 @@ export default function LanguageSwitcher(): ReactNode {
 
   return (
     <Select
-      className="-mb-4"
       id="language-switcher"
+      className={clsx("-mb-4", className)}
       defaultValue={locale}
       // @ts-ignore
       value={locale}

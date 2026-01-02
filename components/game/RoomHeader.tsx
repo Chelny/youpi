@@ -13,9 +13,7 @@ export default function RoomHeader({ room }: RoomHeaderProps): ReactNode {
   return (
     <div className="[grid-area:banner]">
       <div className="flex justify-between items-center gap-6">
-        <div>
-          <h1 className="p-4 text-4xl">{room?.name}</h1>
-        </div>
+        <h1 className="p-4 text-4xl">{room?.name}</h1>
         <Banner />
       </div>
 

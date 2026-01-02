@@ -23,5 +23,5 @@ export default defineConfig({
     },
   ],
   format: "po",
-  orderBy: "origin",
+  orderBy: "message",
 });

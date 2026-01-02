@@ -9,7 +9,7 @@ import {
   DeleteAccountFormValidationErrors,
   DeleteAccountPayload,
   deleteAccountSchema,
-} from "@/app/[locale]/(protected)/account/(settings)/delete/delete.schema";
+} from "@/app/[locale]/(protected)/account/delete/delete.schema";
 import AlertMessage from "@/components/ui/AlertMessage";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";

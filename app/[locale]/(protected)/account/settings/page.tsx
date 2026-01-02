@@ -3,8 +3,8 @@ import { Metadata } from "next";
 import { headers } from "next/headers";
 import { I18n } from "@lingui/core";
 import clsx from "clsx/lite";
-import { LanguageForm } from "@/app/[locale]/(protected)/account/(settings)/settings/language.form";
-import { ThemeForm } from "@/app/[locale]/(protected)/account/(settings)/settings/theme.form";
+import { LanguageForm } from "@/app/[locale]/(protected)/account/settings/language.form";
+import { ThemeForm } from "@/app/[locale]/(protected)/account/settings/theme.form";
 import { initLingui } from "@/app/init-lingui";
 import LanguageFormSkeleton from "@/components/skeleton/LanguageFormSkeleton";
 import ThemeFormSkeleton from "@/components/skeleton/ThemeFormSkeleton";
@@ -30,7 +30,7 @@ export default async function Settings({ params }: SettingsProps): Promise<React
 
   return (
     <>
-      <h1 className="text-2xl">{i18n._("Preferences")}</h1>
+      <h1 className="mb-4 text-3xl">{i18n._(ROUTE_SETTINGS.TITLE)}</h1>
       <div className="flex flex-col gap-6">
         {/* Language */}
         <section

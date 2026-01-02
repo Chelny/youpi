@@ -12,7 +12,7 @@ export default function SmallScreenWarning(): ReactNode {
     <div
       className={clsx(
         "small-screen-warning",
-        "fixed z-50 flex flex-col justify-center w-[calc(100%-96px)] h-full -m-4 -mb-8 bg-white text-center",
+        "absolute inset-0 z-sticky flex flex-col justify-center items-center bg-white text-center",
         "dark:bg-dark-background",
       )}
     >

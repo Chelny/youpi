@@ -61,6 +61,24 @@ export class Room {
     }
   }
 
+  public setPlayerTableNumber(playerId: string, tableNumber: number | null): void {
+    const roomPlayer: RoomPlayer | undefined = this.players.find((rp: RoomPlayer) => rp.playerId === playerId);
+
+    if (roomPlayer) {
+      roomPlayer.tableNumber = tableNumber;
+    }
+  }
+
+  public updatePlayer(roomPlayer: RoomPlayer): void {
+    const index: number = this.players.findIndex((rp: RoomPlayer) => rp.playerId === roomPlayer.playerId);
+
+    if (index === -1) {
+      this.addPlayer(roomPlayer);
+    } else {
+      this.players[index] = roomPlayer;
+    }
+  }
+
   public removePlayer(roomPlayer: RoomPlayer): void {
     this.players = this.players.filter((rp: RoomPlayer) => rp.playerId !== roomPlayer.playerId);
   }

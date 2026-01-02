@@ -22,7 +22,7 @@ export class RoomPlayerManager {
   }
 
   public static create(props: Omit<RoomPlayerProps, "id">): RoomPlayer {
-    const key: string = this.getKey(props.roomId, props.player.id);
+    const key: string = this.getKey(props.room.id, props.player.id);
     let roomPlayer: RoomPlayer | undefined = this.roomPlayers.get(key);
     if (roomPlayer) return roomPlayer;
 
@@ -34,12 +34,13 @@ export class RoomPlayerManager {
   }
 
   public static upsert(props: RoomPlayerProps, update: { tableNumber: number | null }): RoomPlayer {
-    const key: string = this.getKey(props.roomId, props.player.id);
+    const key: string = this.getKey(props.room.id, props.player.id);
     const roomPlayer: RoomPlayer | undefined = this.roomPlayers.get(key);
 
     if (roomPlayer) {
       roomPlayer.player = props.player;
       roomPlayer.tableNumber = update.tableNumber;
+      roomPlayer.room.updatePlayer(roomPlayer);
       PlayerManager.updateLastActiveAt(props.player.id);
       return roomPlayer;
     }

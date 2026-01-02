@@ -69,10 +69,10 @@ export default async function Towers({ params, searchParams }: TowersProps): Pro
 
   if (!roomId && !tableId) {
     return (
-      <>
-        <h1 className="mb-8 text-3xl">{i18n._(ROUTE_TOWERS.TITLE)}</h1>
+      <div className="relative h-full px-4 py-8">
+        <h1 className="mb-4 text-3xl">{i18n._(ROUTE_TOWERS.TITLE)}</h1>
         <RoomsList />
-      </>
+      </div>
     );
   }
 

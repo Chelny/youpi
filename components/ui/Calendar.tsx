@@ -321,7 +321,7 @@ export default function Calendar({
         <div
           ref={calendarRef}
           className={clsx(
-            "absolute start-1/2 z-10 min-w-96 max-w-max p-4 border border-gray-300 rounded-sm shadow-md bg-white -translate-x-1/2",
+            "absolute start-1/2 z-sticky min-w-96 max-w-max p-4 border border-gray-300 rounded-sm shadow-md bg-white -translate-x-1/2",
             "rtl:translate-x-1/2",
             "dark:border-dark-card-border dark:bg-dark-card-background",
           )}

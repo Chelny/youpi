@@ -11,7 +11,7 @@ import {
   ThemeFormValidationErrors,
   ThemePayload,
   themeSchema,
-} from "@/app/[locale]/(protected)/account/(settings)/settings/theme.schema";
+} from "@/app/[locale]/(protected)/account/settings/theme.schema";
 import AccountSectionHeader from "@/components/AccountSectionHeader";
 import AlertMessage from "@/components/ui/AlertMessage";
 import Button from "@/components/ui/Button";

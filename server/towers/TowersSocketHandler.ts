@@ -122,8 +122,8 @@ export class TowersSocketHandler {
       if (!RoomManager.canUserAccess(room, this.user.id)) {
         callback({ success: false, message: "Room cannot be accessed." });
       } else {
-        const data: RoomPlainObject = RoomManager.roomViewForPlayer(room, this.user.id);
         if (room.players.some((rp: RoomPlayer) => rp.playerId === this.user.id)) {
+          const data: RoomPlainObject = RoomManager.roomViewForPlayer(room, this.user.id);
           callback({
             success: true,
             message: "You are already in the table.",
@@ -131,6 +131,7 @@ export class TowersSocketHandler {
           });
         } else {
           await RoomManager.joinRoom(room, this.user);
+          const data: RoomPlainObject = RoomManager.roomViewForPlayer(room, this.user.id);
           callback({
             success: true,
             message: "You joined the room.",
@@ -184,8 +185,8 @@ export class TowersSocketHandler {
       if (!TableManager.canUserAccess(table, this.user.id)) {
         callback({ success: false, message: "Table cannot be accessed." });
       } else {
-        const data: TablePlainObject = TableManager.tableViewForPlayer(table, this.user.id);
         if (table.players.some((tp: TablePlayer) => tp.playerId === this.user.id)) {
+          const data: TablePlainObject = TableManager.tableViewForPlayer(table, this.user.id);
           callback({
             success: true,
             message: "You are already in the table.",
@@ -193,6 +194,7 @@ export class TowersSocketHandler {
           });
         } else {
           await TableManager.joinTable(table, this.user, seatNumber);
+          const data: TablePlainObject = TableManager.tableViewForPlayer(table, this.user.id);
           callback({
             success: true,
             message: "You joined the table.",

@@ -17,6 +17,16 @@
   /* Misc */
   --border-radius: 0.25rem;
 
+  /* Positioning */
+  --z-index-base: 0;
+  --z-index-sticky: 10; /* header/footer, sticky sections */
+  --z-index-dropdown: 20; /* simple menus */
+  --z-index-overlay: 30; /* screen dimmers, blockers */
+  --z-index-modal: 40; /* dialogs */
+  --z-index-toast: 50; /* toasts */
+  --z-index-popover: 60; /* context menus, popovers that must beat modals */
+  --z-index-dev: 9999; /* debug/test banners */
+
   /* Grid Template Rows */
   --grid-rows-game: max-content 1fr max-content;
   --grid-rows-game-content: auto minmax(25%, 35%);
@@ -53,7 +63,9 @@
 
   /* Colors */
   --color-youpi-primary: theme("colors.teal.800");
-  --color-dark-background: #1e2a35;
+  --color-user-menu-background: #1d1918;
+  --color-sidebar-background: #1d1918;
+  --color-dark-background: #1e2939;
   --color-dark-text: #e1e8ed;
   --color-dark-text-muted: #aab8c2;
   --color-dark-card-background: #2b3a48;
@@ -203,10 +215,6 @@
 }
 
 @layer base {
-  html {
-    font-family: Verdana, Arial, Helvetica, sans-serif;
-  }
-
   .youpi-link {
     color: theme("color.blue.600");
     text-decoration: underline;
@@ -216,20 +224,38 @@
     color: theme("color.blue.800");
   }
 
+  .youpi-link:active {
+    color: theme("color.purple.600");
+    font-weight: 600;
+    text-decoration: none;
+  }
+
   .youpi-link:visited {
     color: theme("color.purple.600");
   }
 
   .dark .youpi-link {
-    color: theme("color.blue.500");
+    color: theme("color.blue.400");
+  }
+
+  .youpi-link:visited:hover {
+    color: theme("colors.purple.800");
   }
 
   .dark .youpi-link:hover {
-    color: theme("color.blue.600");
+    color: theme("color.blue.300");
+  }
+
+  .dark .youpi-link:active {
+    color: theme("color.purple.200");
   }
 
   .dark .youpi-link:visited {
     color: theme("color.purple.400");
+  }
+
+  .dark .youpi-link:visited:hover {
+    color: theme("colors.purple.300");
   }
 }
 

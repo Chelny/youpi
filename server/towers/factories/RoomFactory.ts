@@ -33,7 +33,7 @@ export class RoomFactory {
     room.players = dbRoom.players.map((rp: TowersRoomPlayerWithRelations) => {
       const dbPlayer: TowersPlayerLite = rp.player;
       const player: Player = PlayerFactory.createPlayer(dbPlayer);
-      const roomPlayer: RoomPlayer = new RoomPlayer({ ...rp, player });
+      const roomPlayer: RoomPlayer = new RoomPlayer({ id: rp.id, room, player });
 
       roomPlayer.createdAt = rp.createdAt;
       roomPlayer.updatedAt = rp.updatedAt;

@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { KeyboardEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useLingui } from "@lingui/react/macro";
 import clsx from "clsx/lite";
@@ -53,7 +53,7 @@ export function AvatarCycler({
     const onConnect = (): void => attachListeners();
 
     if (socket.connected) {
-      attachListeners();
+      onConnect();
     } else {
       socket.once("connect", onConnect);
     }
@@ -64,7 +64,7 @@ export function AvatarCycler({
     };
   }, [isConnected, userId]);
 
-  const handleDoubleClick = (): void => {
+  const handleChangeAvatar = (): void => {
     const nextId: string = getNextId(avatarId);
     setAvatarId(nextId);
     onAvatarChange?.(nextId);
@@ -73,15 +73,26 @@ export function AvatarCycler({
 
   return (
     <div className="inline-grid justify-items-center gap-1.5">
-      <button
-        type="button"
-        className={clsx("grid place-items-center p-0 overflow-hidden", isCurrentUser && "cursor-default")}
+      <div
+        className={clsx(
+          "grid place-items-center p-0 overflow-hidden",
+          isCurrentUser ? "cursor-pointer" : "cursor-default",
+        )}
         style={{ width: size, height: size }}
         title={t({ message: "Double-click to change avatar" })}
-        onDoubleClick={isCurrentUser ? handleDoubleClick : undefined}
+        role="button"
+        tabIndex={isCurrentUser ? 0 : -1}
+        onDoubleClick={isCurrentUser ? handleChangeAvatar : undefined}
+        onKeyDown={(event: KeyboardEvent) => {
+          if (!isCurrentUser) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleChangeAvatar();
+          }
+        }}
       >
         <Image src={selected.src} className="rtl:-scale-x-100" width={size} height={size} alt={selected.description} />
-      </button>
+      </div>
     </div>
   );
 }

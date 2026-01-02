@@ -299,7 +299,7 @@ export default function PlayerBoard({
     };
 
     if (socket.connected) {
-      attachListeners();
+      onConnect();
     } else {
       socket.once("connect", onConnect);
     }
@@ -415,9 +415,6 @@ export default function PlayerBoard({
             : "border-s-8 border-s-gray-300 border-e-2 border-e-gray-300",
           "dark:border-s-slate-600 dark:border-e-slate-600 dark:border-y-slate-600 dark:bg-slate-600",
         )}
-        // className={clsx(
-        //   "grid gap-1 [grid-template-areas:'board-grid-container_preview-piece''board-grid-container_power-bar'] grid-rows-[max-content_auto] grid-cols-[max-content_auto] select-none",
-        // )}
       >
         <div
           ref={(element: HTMLDivElement | null) => {
@@ -434,11 +431,6 @@ export default function PlayerBoard({
             "before:content-[attr(data-seat-number)] before:absolute before:start-1/2 before:-translate-x-1/2 before:text-[7rem] before:font-bold before:text-center",
             "dark:before:text-slate-700",
           )}
-          // className={clsx(
-          //   "[grid-area:board-grid-container] relative grid grid-rows-(--grid-rows-grid-container) w-grid-container-width border border-gray-200 text-neutral-200",
-          //   board?.isGameOver ? "bg-neutral-700" : "bg-gray-50",
-          //   "before:content-[attr(data-demo)] before:absolute before:top-1/4 before:start-1/2 before:-translate-x-1/2 before:text-4xl before:font-bold before:text-center before:text-neutral-300",
-          // )}
           tabIndex={0}
           data-seat-number={seat.targetNumber}
           // data-demo="Demo"
@@ -446,7 +438,7 @@ export default function PlayerBoard({
         >
           <div
             className={clsx(
-              "absolute start-1/2 -translate-x-1/2 z-20 flex flex-col gap-2 text-center",
+              "absolute start-1/2 -translate-x-1/2 z-overlay flex flex-col gap-2 text-center",
               isOpponentBoard
                 ? "top-[90%] -translate-y-[90%] w-full px-1 py-2"
                 : "top-1/2 -translate-y-1/2 w-11/12 p-2",
@@ -521,10 +513,6 @@ export default function PlayerBoard({
                 isOpponentBoard ? "" : "w-preview-piece-width",
                 "dark:bg-slate-800",
               )}
-              // className={clsx(
-              //   "[grid-area:preview-piece] flex flex-col items-center justify-center h-preview-piece-height px-2 py-2 border border-gray-200 bg-gray-50",
-              //   "w-preview-piece-width",
-              // )}
             >
               {isCurrentUserSeat && isPlaying ? <NextPiece nextPiece={nextPieces?.nextPiece} /> : null}
             </div>
@@ -534,9 +522,6 @@ export default function PlayerBoard({
                 isOpponentBoard ? "" : "w-power-bar-width",
                 "dark:bg-slate-800",
               )}
-              // className={clsx(
-              //   "[grid-area:power-bar] flex flex-col items-center justify-end w-power-bar-width h-power-bar-height px-2 py-2 border border-gray-200 bg-gray-50",
-              // )}
               data-testid="player-board_container_power-bar"
             >
               <PowerBar powerBar={powerBar} />

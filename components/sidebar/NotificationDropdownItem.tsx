@@ -117,7 +117,7 @@ export const NotificationDropdownItem = ({ notification }: NotificationDropdownI
   };
 
   return (
-    <li className={clsx("flex justify-between items-center gap-2 w-full", "hover:bg-slate-700")}>
+    <li className="flex justify-between items-center gap-2 w-full cursor-pointer hover:bg-slate-700">
       <button
         type="button"
         className={clsx("flex-1 px-2 py-1 text-start", notification.readAt ? "font-normal" : "font-semibold")}

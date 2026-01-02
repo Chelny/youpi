@@ -335,8 +335,7 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
     };
 
     if (socket.connected) {
-      attachListeners();
-      emitInitialData();
+      onConnect();
     } else {
       socket.once("connect", onConnect);
     }

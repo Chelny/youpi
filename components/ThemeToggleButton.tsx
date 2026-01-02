@@ -1,19 +1,21 @@
+"use client";
+
 import { ReactNode, useEffect, useState } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import clsx from "clsx/lite";
 import { WebsiteTheme } from "db/enums";
 import { useTheme } from "next-themes";
 import { IconType } from "react-icons/lib";
 import { TbBrightnessFilled, TbMoon, TbSunHigh } from "react-icons/tb";
-import SidebarMenuItem from "@/components/SidebarMenuItem";
 import { useSocket } from "@/context/SocketContext";
 import { useUserSettings } from "@/hooks/useUserSettings";
 
-export default function ThemeToggleButton({ isExpanded }: { isExpanded: boolean }): ReactNode {
+export default function ThemeToggleButton(): ReactNode {
   const { setTheme } = useTheme();
   const { t } = useLingui();
   const { session } = useSocket();
   const [isMounted, setIsMounted] = useState<boolean>(false);
-  const { settingsResponse, isLoading, updateSettings, isMutating } = useUserSettings(session?.user.id);
+  const { settingsResponse, isLoading, updateSettings } = useUserSettings(session?.user.id);
   const websiteTheme: WebsiteTheme = settingsResponse?.data?.theme ?? WebsiteTheme.SYSTEM;
 
   const labelMap: Record<WebsiteTheme, string> = {
@@ -53,15 +55,20 @@ export default function ThemeToggleButton({ isExpanded }: { isExpanded: boolean 
   if (!isMounted) return null;
 
   return (
-    <SidebarMenuItem
-      id="website-theme"
-      Icon={Icon}
-      ariaLabel={t({ message: "Theme" })}
-      isExpanded={isExpanded}
-      disabled={isLoading || isMutating}
+    <button
+      type="button"
+      className={clsx(
+        "flex items-center gap-3 w-full p-2 rounded-md",
+        "disabled:opacity-50 disabled:cursor-not-allowed",
+        isLoading && "hidden",
+      )}
+      title={t({ message: "Theme" })}
+      aria-label={t({ message: "Theme" })}
+      data-testid="website-theme"
       onClick={handleSetTheme}
     >
+      <Icon className="w-6 h-6 rtl:-scale-y-100 rtl:-rotate-180" aria-hidden="true" />
       <Trans>Theme: {themeLabel}</Trans>
-    </SidebarMenuItem>
+    </button>
   );
 }

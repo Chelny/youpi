@@ -473,7 +473,7 @@ export default function Table(): ReactNode {
     };
 
     if (socket.connected) {
-      attachListeners();
+      onConnect();
     } else {
       socket.once("connect", onConnect);
     }
@@ -836,10 +836,10 @@ export default function Table(): ReactNode {
   if (tableError) return <div>Error: {tableError.message}</div>;
 
   return (
-    <form ref={formRef} noValidate onSubmit={handleFormValidation}>
+    <form ref={formRef} className="flex h-full" noValidate onSubmit={handleFormValidation}>
       <div
         className={clsx(
-          "grid [grid-template-areas:'banner_banner_banner''sidebar_content_content''sidebar_content_content'] grid-rows-(--grid-rows-game) grid-cols-(--grid-cols-game) h-screen -m-4 -mb-8",
+          "grid [grid-template-areas:'banner_banner_banner''sidebar_content_content''sidebar_content_content'] grid-rows-(--grid-rows-game) grid-cols-(--grid-cols-game) w-full h-full",
           "dark:bg-dark-game-background",
         )}
       >
@@ -979,7 +979,7 @@ export default function Table(): ReactNode {
                   {gameState === GameState.COUNTDOWN && countdown !== null && (
                     <div
                       className={clsx(
-                        "absolute start-1/2 -translate-x-1/2 bottom-[8px] z-30 flex flex-col items-center w-[450px] h-48 p-1 border-2 border-gray-400 bg-gray-200 shadow-lg",
+                        "absolute start-1/2 -translate-x-1/2 bottom-[8px] z-overlay flex flex-col items-center w-[450px] h-48 p-1 border-2 border-gray-400 bg-gray-200 shadow-lg",
                         "dark:bg-slate-700",
                         "rtl:translate-x-1/2",
                       )}
@@ -1000,7 +1000,7 @@ export default function Table(): ReactNode {
                   {gameState === GameState.GAME_OVER && (
                     <div
                       className={clsx(
-                        "absolute start-0 top-0 gap-8 z-30 flex flex-col justify-start items-center w-full h-max p-1 mt-16 font-medium [text-shadow:_4px_4px_0_rgb(0_0_0)]",
+                        "absolute start-0 top-0 gap-8 z-overlay flex flex-col justify-start items-center w-full h-max p-1 mt-16 font-medium [text-shadow:_4px_4px_0_rgb(0_0_0)]",
                         gameOverAnimationClass,
                       )}
                     >

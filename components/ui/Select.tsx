@@ -189,7 +189,7 @@ export default function Select({
   };
 
   return (
-    <div className={clsx("flex flex-col w-full", isNoBottomSpace ? "mb-0" : "mb-4")}>
+    <div className={clsx("flex flex-col", isNoBottomSpace ? "mb-0" : "mb-4")}>
       {label && (
         <label id={`${id}Label`} htmlFor={id} className="mb-1 font-medium">
           {label}{" "}
@@ -204,7 +204,7 @@ export default function Select({
         ref={selectBoxRef}
         id={id}
         className={clsx(
-          "flex justify-between items-center w-full h-8 px-1 py-4 overflow-hidden border-2 border-t-gray-200 border-e-gray-400 border-b-gray-400 border-s-gray-200 rounded-xs ring-1 ring-black bg-gray-300 text-black line-clamp-1",
+          "flex justify-between items-center h-8 px-1 py-4 overflow-hidden border-2 border-t-gray-200 border-e-gray-400 border-b-gray-400 border-s-gray-200 rounded-xs ring-1 ring-black bg-gray-300 text-black line-clamp-1",
           "hover:cursor-pointer",
           disabled && "bg-gray-200 opacity-50 cursor-not-allowed",
           "dark:border-t-dark-button-border-top dark:border-e-dark-button-border-end dark:border-b-dark-button-border-bottom dark:border-s-dark-button-border-start dark:bg-dark-button-background dark:text-dark-button-text",

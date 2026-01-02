@@ -4,9 +4,10 @@ import { ReactNode, Suspense } from "react";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { Trans } from "@lingui/react/macro";
 import GoToHomepageLink from "@/components/GoToHomepageLink";
+import Anchor from "@/components/ui/Anchor";
 import { APP_CONFIG } from "@/constants/app";
 
-const generateErrorMessage = (errorCode: string, message: ReactNode) => (
+const generateErrorMessage = (errorCode: string, message: ReactNode): ReactNode => (
   <div className="flex flex-col gap-4">
     <p>
       <Trans>
@@ -61,10 +62,8 @@ function ErrorMessage(): ReactNode {
         <div>
           <Trans>
             An unexpected error occurred. Please try again later or{" "}
-            <a href={`mailto:${APP_CONFIG.EMAIL.SUPPORT}`} className="youpi-link">
-              contact our support team
-            </a>{" "}
-            if this issue continues.
+            <Anchor href={`mailto:${APP_CONFIG.EMAIL.SUPPORT}`}>contact our support team</Anchor> if this issue
+            continues.
           </Trans>
         </div>
       )}

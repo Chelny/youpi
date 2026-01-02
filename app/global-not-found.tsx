@@ -1,8 +1,8 @@
 import { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Link from "next/link";
 import { clsx } from "clsx/lite";
+import Anchor from "@/components/ui/Anchor";
 import { ROUTE_HOME } from "@/constants/routes";
 import "./globals.css";
 
@@ -31,7 +31,7 @@ export default async function GlobalNotFound(): Promise<ReactNode> {
                 <p>It looks like the page you’re looking for doesn’t exist or has been moved.</p>
               </div>
               <div className="self-end">
-                <Link href={ROUTE_HOME.PATH}>Go to homepage</Link>
+                <Anchor href={ROUTE_HOME.PATH}>Go to homepage</Anchor>
               </div>
             </div>
           </div>

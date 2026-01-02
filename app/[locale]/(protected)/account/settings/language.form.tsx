@@ -8,7 +8,7 @@ import {
   LanguageFormValidationErrors,
   LanguagePayload,
   languageSchema,
-} from "@/app/[locale]/(protected)/account/(settings)/settings/language.schema";
+} from "@/app/[locale]/(protected)/account/settings/language.schema";
 import AccountSectionHeader from "@/components/AccountSectionHeader";
 import AlertMessage from "@/components/ui/AlertMessage";
 import Button from "@/components/ui/Button";

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
-import { LanguageForm } from "@/app/[locale]/(protected)/account/(settings)/settings/language.form";
+import { LanguageForm } from "@/app/[locale]/(protected)/account/settings/language.form";
 import { ModalProvider } from "@/context/ModalContext";
 import { mockFetch, mockFetchResponse } from "@/test/mocks/fetch";
 import { mockUseRouter } from "@/test/mocks/router";

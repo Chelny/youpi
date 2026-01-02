@@ -3,47 +3,28 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useLingui } from "@lingui/react/macro";
 import clsx from "clsx/lite";
-import { BsChatLeftDots } from "react-icons/bs";
+import { BsArrowsCollapseVertical, BsArrowsExpandVertical } from "react-icons/bs";
 import { LuGamepad2 } from "react-icons/lu";
-import { PiSignOut } from "react-icons/pi";
-import { RiUserLine } from "react-icons/ri";
-import { RiSidebarFoldFill, RiSidebarUnfoldFill } from "react-icons/ri";
 import { TbTower } from "react-icons/tb";
 import { Socket } from "socket.io-client";
-import { AvatarCycler } from "@/components/AvatarCycler";
-import ConversationsModal from "@/components/ConversationsModal";
-import SidebarMenuItem from "@/components/SidebarMenuItem";
-import ThemeToggleButton from "@/components/ThemeToggleButton";
-import { ROUTE_PROFILE, ROUTE_RELATIONSHIPS, ROUTE_SETTINGS, ROUTE_TOWERS } from "@/constants/routes";
+import SidebarMenuItem from "@/components/sidebar/SidebarMenuItem";
+import { ROUTE_TOWERS } from "@/constants/routes";
 import { ClientToServerEvents } from "@/constants/socket/client-to-server";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
-import { useConversations } from "@/context/ConversationsContext";
 import { GameRoomSummary, GameTableSummary, useGame } from "@/context/GameContext";
-import { useModal } from "@/context/ModalContext";
 import { useSocket } from "@/context/SocketContext";
 import { SidebarMenuActionItem, SidebarMenuLinkItem } from "@/interfaces/sidebar-menu";
 import { SocketCallback } from "@/interfaces/socket";
-import { authClient } from "@/lib/auth-client";
 import { NotificationPlainObject } from "@/server/towers/classes/Notification";
 
 export default function Sidebar(): ReactNode {
   const { i18n, t } = useLingui();
-  const { openModal } = useModal();
-  const { socketRef, isConnected, session } = useSocket();
+  const { socketRef, isConnected } = useSocket();
   const { joinedRooms, joinedTables } = useGame();
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [gameMenuItems, setGameMenuItems] = useState<SidebarMenuLinkItem[]>([]);
   const [notifications, setNotifications] = useState<NotificationPlainObject[]>([]);
-  const [isShowUnreadConversationsBadge, setIsShowUnreadConversationsBadge] = useState<boolean>(false);
-  const { isOpen: isConversationsModalOpen } = useConversations();
-
-  const getAccountAccordionLinks = (): SidebarMenuLinkItem[] => {
-    return [
-      { id: ROUTE_PROFILE.ID, label: i18n._(ROUTE_PROFILE.TITLE), href: ROUTE_PROFILE.PATH },
-      { id: ROUTE_RELATIONSHIPS.ID, label: i18n._(ROUTE_RELATIONSHIPS.TITLE), href: ROUTE_RELATIONSHIPS.PATH },
-      { id: ROUTE_SETTINGS.ID, label: i18n._(ROUTE_SETTINGS.TITLE), href: ROUTE_SETTINGS.PATH },
-    ];
-  };
+  const sidebarId: string = "app-sidebar";
 
   useEffect(() => {
     const items: SidebarMenuLinkItem[] = joinedRooms.map((room: GameRoomSummary) => {
@@ -92,20 +73,6 @@ export default function Sidebar(): ReactNode {
           setNotifications(response.data);
         }
       });
-
-      socket.emit(ClientToServerEvents.CONVERSATIONS_UNREAD, {}, (response: SocketCallback<number>) => {
-        if (response.success && response.data) {
-          setIsShowUnreadConversationsBadge(response.data > 0);
-        }
-      });
-    };
-
-    const handleUpdateUnreadConversations = ({
-      unreadConversationsCount,
-    }: {
-      unreadConversationsCount: number
-    }): void => {
-      setIsShowUnreadConversationsBadge(unreadConversationsCount > 0);
     };
 
     const handleUpdateNotification = ({ notification }: { notification: NotificationPlainObject }): void => {
@@ -123,7 +90,6 @@ export default function Sidebar(): ReactNode {
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.CONVERSATIONS_UNREAD, handleUpdateUnreadConversations);
       socket.on(ServerToClientEvents.TABLE_INVITATION_INVITED_NOTIFICATION, handleUpdateNotification);
       socket.on(ServerToClientEvents.TABLE_INVITATION_DECLINED_NOTIFICATION, handleUpdateNotification);
       socket.on(ServerToClientEvents.TABLE_BOOTED_NOTIFICATION, handleUpdateNotification);
@@ -132,7 +98,6 @@ export default function Sidebar(): ReactNode {
     };
 
     const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.CONVERSATIONS_UNREAD, handleUpdateUnreadConversations);
       socket.off(ServerToClientEvents.TABLE_INVITATION_INVITED_NOTIFICATION, handleUpdateNotification);
       socket.off(ServerToClientEvents.TABLE_INVITATION_DECLINED_NOTIFICATION, handleUpdateNotification);
       socket.off(ServerToClientEvents.TABLE_BOOTED_NOTIFICATION, handleUpdateNotification);
@@ -146,8 +111,7 @@ export default function Sidebar(): ReactNode {
     };
 
     if (socket.connected) {
-      attachListeners();
-      emitInitialData();
+      onConnect();
     } else {
       socket.once("connect", onConnect);
     }
@@ -158,84 +122,45 @@ export default function Sidebar(): ReactNode {
     };
   }, [isConnected]);
 
-  const handleOpenConversationsModal = (): void => {
-    setIsExpanded(true);
-    openModal(ConversationsModal);
-  };
-
-  const handleSignOut = async (): Promise<void> => {
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          socketRef.current?.emit(ClientToServerEvents.SIGN_OUT);
-        },
-      },
-    });
-  };
-
   return (
     <aside
+      id={sidebarId}
       className={clsx(
-        "shrink-0 flex flex-col gap-4 min-w-24 h-full px-2 py-4 border-e border-e-gray-700 shadow-xl bg-gray-800 text-white/90 transition duration-500 ease-in-out",
+        "relative shrink-0 flex flex-col gap-2 min-w-24 h-full px-2 py-2 bg-sidebar-background text-white/90 transition duration-500 ease-in-out",
         isExpanded ? "w-72 items-start" : "w-24 items-center",
       )}
     >
-      <div className={clsx("flex flex-col gap-2", isExpanded ? "w-full" : "w-auto")}>
-        {/* User avatar and collapse icon */}
-        <div className={clsx("flex items-center gap-2", isExpanded ? "w-full" : "w-auto")}>
-          <div className={clsx("flex-1 flex items-center gap-4", isExpanded && "ps-2")}>
-            <AvatarCycler userId={session?.user.id} initialAvatarId={session?.user.userSettings?.avatarId} />
-            {isExpanded && <span className="font-medium">{session?.user.name}</span>}
-          </div>
-          <div className={isExpanded ? "flex" : "hidden"}>
-            <button
-              type="button"
-              title={t({ message: "Collapse sidebar" })}
-              aria-label={t({ message: "Collapse sidebar" })}
-              onClick={() => setIsExpanded(false)}
-            >
-              <RiSidebarFoldFill className={clsx("w-8 h-8 text-white/70", "rtl:-scale-x-100")} aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-
-        {/* Expand icon */}
-        <div className={isExpanded ? "hidden" : "flex justify-center items-center w-full h-8"}>
-          <button
-            type="button"
-            title={t({ message: "Expand sidebar" })}
-            aria-label={t({ message: "Expand sidebar" })}
-            onClick={() => setIsExpanded(true)}
-          >
-            <RiSidebarUnfoldFill className={clsx("w-8 h-8 text-white/70", "rtl:-scale-x-100")} aria-hidden="true" />
-          </button>
-        </div>
+      {/* Screen reader announcement area */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {notifications.some((notification: NotificationPlainObject) => !notification.readAt)
+          ? t({ message: "You have new notifications." })
+          : ""}
       </div>
 
-      <hr className="w-full border-t border-t-slate-600" />
+      <nav className="flex flex-col items-center w-full" aria-label={t({ message: "Primary navigation" })}>
+        <div className="absolute z-dropdown top-4.5 -end-4">
+          <button
+            type="button"
+            title={isExpanded ? t({ message: "Collapse sidebar" }) : t({ message: "Expand sidebar" })}
+            aria-label={isExpanded ? t({ message: "Collapse sidebar" }) : t({ message: "Expand sidebar" })}
+            aria-expanded={isExpanded}
+            aria-controls={sidebarId}
+            onClick={() => setIsExpanded((v) => !v)}
+          >
+            {isExpanded ? (
+              <BsArrowsCollapseVertical
+                className={clsx("w-8 h-8 p-1 rounded shadow-lg bg-youpi-primary text-white", "rtl:-scale-x-100")}
+                aria-hidden="true"
+              />
+            ) : (
+              <BsArrowsExpandVertical
+                className={clsx("w-8 h-8 p-1 rounded shadow-lg bg-youpi-primary text-white", "rtl:-scale-x-100")}
+                aria-hidden="true"
+              />
+            )}
+          </button>
+        </div>
 
-      <nav className="flex flex-col items-center w-full" aria-label={t({ message: "User" })}>
-        <SidebarMenuItem
-          id="account"
-          Icon={RiUserLine}
-          ariaLabel={t({ message: "Account" })}
-          isExpanded={isExpanded}
-          menuItems={getAccountAccordionLinks()}
-          onClick={() => setIsExpanded(true)}
-        >
-          {t({ message: "Account" })}
-        </SidebarMenuItem>
-        <SidebarMenuItem
-          id="instantMessages"
-          Icon={BsChatLeftDots}
-          ariaLabel={t({ message: "Conversations" })}
-          isExpanded={isExpanded}
-          isBadgeVisible={isShowUnreadConversationsBadge}
-          isModalOpen={isConversationsModalOpen}
-          onClick={handleOpenConversationsModal}
-        >
-          {t({ message: "Conversations" })}
-        </SidebarMenuItem>
         <SidebarMenuItem
           id="rooms"
           Icon={LuGamepad2}
@@ -249,8 +174,7 @@ export default function Sidebar(): ReactNode {
 
       <hr className="w-full border-t border-t-slate-600" />
 
-      {/* Games */}
-      <nav className="flex-1 flex flex-col items-center w-full" aria-label={t({ message: "Games" })}>
+      <nav className="flex-1 flex flex-col items-center w-full" aria-label={t({ message: "Joined games" })}>
         {gameMenuItems?.length > 0 && (
           <SidebarMenuItem
             id="towers"
@@ -263,22 +187,6 @@ export default function Sidebar(): ReactNode {
             Towers
           </SidebarMenuItem>
         )}
-      </nav>
-
-      <hr className="w-full border-t border-t-slate-600" />
-
-      {/* Settings and Sign out */}
-      <nav className="self-end flex flex-col items-center w-full" aria-label={t({ message: "Settings" })}>
-        <ThemeToggleButton isExpanded={isExpanded}></ThemeToggleButton>
-        <SidebarMenuItem
-          id="sign-out"
-          Icon={PiSignOut}
-          ariaLabel={t({ message: "Sign out" })}
-          isExpanded={isExpanded}
-          onClick={handleSignOut}
-        >
-          {t({ message: "Sign out" })}
-        </SidebarMenuItem>
       </nav>
     </aside>
   );

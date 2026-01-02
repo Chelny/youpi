@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Mock } from "vitest";
-import { DeleteAccountForm } from "@/app/[locale]/(protected)/account/(settings)/delete/delete.form";
+import { DeleteAccountForm } from "@/app/[locale]/(protected)/account/delete/delete.form";
 import { mockUseRouter } from "@/test/mocks/router";
 
 vi.mock("next/navigation", () => ({

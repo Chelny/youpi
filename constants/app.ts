@@ -1,10 +1,11 @@
 export const APP_CONFIG = {
   NAME: "Youpi!",
-  NAME_SHORT: "Y!",
+  NAME_SHORT: "¥!",
   ADDRESS: "22 Unknown Street, Montreal, QC, H0H 0H0 - Canada",
   EMAIL: {
     SUPPORT: "support@youpi.dev",
   },
+  GITHUB_REPO: "https://github.com/Chelny/youpi",
 };
 
 export const APP_PREFIX = "youpi";
