@@ -19,10 +19,14 @@ import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { Session } from "@/lib/auth-client";
 import { logger } from "@/lib/logger";
 
+type UserAvatarsMap = Record<string, string>;
+
 interface SocketContextType {
   socketRef: RefObject<Socket | null>
   isConnected: boolean
   session: Session | null
+  userAvatars: UserAvatarsMap
+  setUserAvatar: (userId: string, avatarId: string) => void
 }
 
 export const SocketContext: Context<SocketContextType | undefined> = createContext<SocketContextType | undefined>(
@@ -33,6 +37,7 @@ export const SocketProvider = ({ children, session }: PropsWithChildren<{ sessio
   const router = useRouter();
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [userAvatars, setUserAvatars] = useState<UserAvatarsMap>({});
 
   useEffect(() => {
     if (!session) {
@@ -163,32 +168,57 @@ export const SocketProvider = ({ children, session }: PropsWithChildren<{ sessio
   }, [session?.user.id]);
 
   useEffect(() => {
-    if (!socketRef.current) return;
+    const socket: Socket | null = socketRef.current;
+    if (!isConnected || !socket) return;
 
     const handleUserOnline = (): void => {
-      socketRef.current?.emit(ClientToServerEvents.USER_CONNECTED);
+      socket.emit(ClientToServerEvents.USER_CONNECTED);
     };
 
     const handleUserOffline = (): void => {
-      socketRef.current?.emit(ClientToServerEvents.USER_DISCONNECTED);
+      socket.emit(ClientToServerEvents.USER_DISCONNECTED);
     };
 
     const handlePingEcho = (_: unknown, callback: (response: boolean) => void): void => {
       callback(true);
     };
 
-    socketRef.current.on(ServerToClientEvents.USER_ONLINE, handleUserOnline);
-    socketRef.current.on(ServerToClientEvents.USER_OFFLINE, handleUserOffline);
-    socketRef.current?.on(ServerToClientEvents.PING_ECHO, handlePingEcho);
+    const handleAvatarUpdate = ({ userId, avatarId }: { userId: string; avatarId: string }): void => {
+      setUserAvatar(userId, avatarId);
+    };
+
+    socket.on(ServerToClientEvents.USER_ONLINE, handleUserOnline);
+    socket.on(ServerToClientEvents.USER_OFFLINE, handleUserOffline);
+    socket.on(ServerToClientEvents.PING_ECHO, handlePingEcho);
+    socket.on(ServerToClientEvents.USER_SETTINGS_AVATAR, handleAvatarUpdate);
 
     return () => {
-      socketRef.current?.off(ServerToClientEvents.USER_ONLINE, handleUserOnline);
-      socketRef.current?.off(ServerToClientEvents.USER_OFFLINE, handleUserOffline);
-      socketRef.current?.off(ServerToClientEvents.PING_ECHO, handlePingEcho);
+      socket.off(ServerToClientEvents.USER_ONLINE, handleUserOnline);
+      socket.off(ServerToClientEvents.USER_OFFLINE, handleUserOffline);
+      socket.off(ServerToClientEvents.PING_ECHO, handlePingEcho);
+      socket.off(ServerToClientEvents.USER_SETTINGS_AVATAR, handleAvatarUpdate);
     };
-  }, [isConnected]);
+  }, [isConnected, session?.user.id]);
 
-  return <SocketContext.Provider value={{ socketRef, isConnected, session }}>{children}</SocketContext.Provider>;
+  useEffect(() => {
+    const myId: string | undefined = session?.user?.id;
+    const myAvatarId: string | undefined = session?.user?.userSettings?.avatarId;
+    if (!myId || !myAvatarId) return;
+    setUserAvatar(myId, myAvatarId);
+  }, [session?.user?.id, session?.user?.userSettings?.avatarId]);
+
+  const setUserAvatar = (userId: string, avatarId: string): void => {
+    setUserAvatars((prev: UserAvatarsMap) => {
+      if (prev[userId] === avatarId) return prev;
+      return { ...prev, [userId]: avatarId };
+    });
+  };
+
+  return (
+    <SocketContext.Provider value={{ socketRef, isConnected, session, userAvatars, setUserAvatar }}>
+      {children}
+    </SocketContext.Provider>
+  );
 };
 
 export const useSocket = (): SocketContextType => {

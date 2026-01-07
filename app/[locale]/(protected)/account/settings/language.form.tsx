@@ -30,7 +30,7 @@ export function LanguageForm({ session }: LanguageFormProps): ReactNode {
   const router = useRouter();
   const pathname: string = usePathname();
 
-  const handleUpdateUser = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+  const handleUpdateLanguage = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
 
     const formData: FormData = new FormData(event.currentTarget);
@@ -104,7 +104,7 @@ export function LanguageForm({ session }: LanguageFormProps): ReactNode {
       title={<Trans>Language</Trans>}
       description={<Trans>Choose the language used across the site.</Trans>}
     >
-      <form className="grid w-full" noValidate onSubmit={handleUpdateUser}>
+      <form className="grid w-full" noValidate onSubmit={handleUpdateLanguage}>
         {formState?.message && (
           <AlertMessage type={formState.success ? "success" : "error"}>{formState.message}</AlertMessage>
         )}

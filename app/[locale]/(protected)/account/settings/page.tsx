@@ -3,9 +3,11 @@ import { Metadata } from "next";
 import { headers } from "next/headers";
 import { I18n } from "@lingui/core";
 import clsx from "clsx/lite";
+import { AvatarSelection } from "@/app/[locale]/(protected)/account/settings/avatar-selection";
 import { LanguageForm } from "@/app/[locale]/(protected)/account/settings/language.form";
 import { ThemeForm } from "@/app/[locale]/(protected)/account/settings/theme.form";
 import { initLingui } from "@/app/init-lingui";
+import AvatarSelectionSkeleton from "@/components/skeleton/AvatarSelectionSkeleton";
 import LanguageFormSkeleton from "@/components/skeleton/LanguageFormSkeleton";
 import ThemeFormSkeleton from "@/components/skeleton/ThemeFormSkeleton";
 import { ROUTE_SETTINGS } from "@/constants/routes";
@@ -53,6 +55,18 @@ export default async function Settings({ params }: SettingsProps): Promise<React
         >
           <Suspense fallback={<ThemeFormSkeleton />}>
             <ThemeForm session={session} />
+          </Suspense>
+        </section>
+
+        {/* Avatar */}
+        <section
+          className={clsx(
+            "p-4 border border-gray-200 rounded-lg shadow-xs bg-gray-50",
+            "dark:border-dark-card-border dark:bg-dark-card-background",
+          )}
+        >
+          <Suspense fallback={<AvatarSelectionSkeleton />}>
+            <AvatarSelection session={session} />
           </Suspense>
         </section>
       </div>

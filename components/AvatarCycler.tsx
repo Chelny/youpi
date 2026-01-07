@@ -1,12 +1,10 @@
 "use client";
 
-import { KeyboardEvent, ReactNode, useEffect, useMemo, useState } from "react";
+import { KeyboardEvent, ReactNode, useMemo } from "react";
 import Image from "next/image";
 import { useLingui } from "@lingui/react/macro";
 import clsx from "clsx/lite";
-import { Socket } from "socket.io-client";
 import { Avatar, AVATARS } from "@/constants/avatars";
-import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { useSocket } from "@/context/SocketContext";
 import { useAvatarSave } from "@/hooks/useAvatarSave";
 
@@ -23,50 +21,17 @@ export function AvatarCycler({
   size = 40,
   onAvatarChange,
 }: AvatarCyclerProps): ReactNode {
-  const { socketRef, isConnected, session } = useSocket();
+  const { session, userAvatars } = useSocket();
   const { t } = useLingui();
   const { saveAvatarDebounced } = useAvatarSave();
-  const [avatarId, setAvatarId] = useState<string | undefined>(initialAvatarId);
+  const avatarId: string | undefined = (userId ? userAvatars[userId] : undefined) ?? initialAvatarId;
 
   const isCurrentUser: boolean = useMemo(() => userId === session?.user.id, [userId, session?.user.id]);
-
   const selected = useMemo(() => AVATARS.find((avatar: Avatar) => avatar.id === avatarId) ?? AVATARS[0], [avatarId]);
 
-  useEffect(() => {
-    const socket: Socket | null = socketRef.current;
-    if (!isConnected || !socket) return;
-
-    const handleUpdateAvatar = ({ userId: updatedUserId, avatarId }: { userId: string; avatarId: string }): void => {
-      if (updatedUserId === userId) {
-        setAvatarId(avatarId);
-      }
-    };
-
-    const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.USER_SETTINGS_AVATAR, handleUpdateAvatar);
-    };
-
-    const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.USER_SETTINGS_AVATAR, handleUpdateAvatar);
-    };
-
-    const onConnect = (): void => attachListeners();
-
-    if (socket.connected) {
-      onConnect();
-    } else {
-      socket.once("connect", onConnect);
-    }
-
-    return () => {
-      socket.off("connect", onConnect);
-      detachListeners();
-    };
-  }, [isConnected, userId]);
-
   const handleChangeAvatar = (): void => {
+    if (!isCurrentUser) return;
     const nextId: string = getNextId(avatarId);
-    setAvatarId(nextId);
     onAvatarChange?.(nextId);
     saveAvatarDebounced(nextId);
   };

@@ -4,11 +4,12 @@ import useSWRMutation from "swr/mutation";
 import { fetcher } from "@/lib/fetcher";
 
 type SettingsDTO = {
-  theme: WebsiteTheme
+  avatarId?: string
+  theme?: WebsiteTheme
 };
 
 export function useUserSettings(userId?: string) {
-  const key = userId ? `/api/users/${userId}/settings` : null;
+  const key: string | null = userId ? `/api/users/${userId}/settings` : null;
 
   const swr = useSWR<ApiResponse<SettingsDTO>>(key, fetcher, {
     shouldRetryOnError: false,

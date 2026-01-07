@@ -54,14 +54,14 @@ msgid "Instant message with {username} started {time}"
 msgstr "Instant message with {username} started {time}"
 
 #. js-lingui-explicit-id
-#: components/sidebar/SidebarMenuSubItem.tsx:76
-#: components/sidebar/SidebarMenuSubItem.tsx:81
+#: components/sidebar/SidebarMenuSubItem.tsx:74
+#: components/sidebar/SidebarMenuSubItem.tsx:79
 msgid "Collapse {label}"
 msgstr "Collapse {label}"
 
 #. js-lingui-explicit-id
-#: components/sidebar/SidebarMenuSubItem.tsx:77
-#: components/sidebar/SidebarMenuSubItem.tsx:82
+#: components/sidebar/SidebarMenuSubItem.tsx:75
+#: components/sidebar/SidebarMenuSubItem.tsx:80
 msgid "Expand {label}"
 msgstr "Expand {label}"
 
@@ -633,11 +633,15 @@ msgstr "Attacks damage opponents' boards."
 msgid "August"
 msgstr "August"
 
-#: components/AvatarListbox.tsx:50
+#: app/[locale]/(protected)/account/settings/avatar-selection.tsx:51
+msgid "Avatar"
+msgstr "Avatar"
+
+#: components/AvatarListbox.tsx:68
 msgid "Avatars"
 msgstr "Avatars"
 
-#: components/AvatarListbox.tsx:42
+#: components/AvatarListbox.tsx:57
 msgid "Avatars:"
 msgstr "Avatars:"
 
@@ -710,8 +714,8 @@ msgstr "Close"
 msgid "Clump"
 msgstr "Clump"
 
-#: components/sidebar/Sidebar.tsx:142
-#: components/sidebar/Sidebar.tsx:143
+#: components/sidebar/Sidebar.tsx:144
+#: components/sidebar/Sidebar.tsx:145
 msgid "Collapse sidebar"
 msgstr "Collapse sidebar"
 
@@ -754,7 +758,7 @@ msgid "Connected to the game as {username}"
 msgstr "Connected to the game as {username}"
 
 #: components/ConversationsModal.tsx:435
-#: components/layout/UserMenu.tsx:187
+#: components/layout/UserMenu.tsx:189
 msgid "Conversations"
 msgstr "Conversations"
 
@@ -762,7 +766,7 @@ msgstr "Conversations"
 msgid "Create"
 msgstr "Create"
 
-#: components/game/Room.tsx:374
+#: components/game/Room.tsx:372
 #: components/game/CreateTableModal.tsx:98
 msgid "Create Table"
 msgstr "Create Table"
@@ -836,11 +840,11 @@ msgstr "Disconnected from server"
 msgid "Dither"
 msgstr "Dither"
 
-#: components/game/GameOptionsModal.tsx:90
+#: components/game/GameOptionsModal.tsx:92
 msgid "Done"
 msgstr "Done"
 
-#: components/AvatarCycler.tsx:79
+#: components/AvatarCycler.tsx:47
 msgid "Double-click to change avatar"
 msgstr "Double-click to change avatar"
 
@@ -925,18 +929,22 @@ msgstr "Error"
 msgid "Error code: <0>{errorCode}</0>"
 msgstr "Error code: <0>{errorCode}</0>"
 
-#: components/game/Room.tsx:432
+#: components/game/Room.tsx:430
 msgid "Exit Room"
 msgstr "Exit Room"
 
-#: components/sidebar/Sidebar.tsx:142
-#: components/sidebar/Sidebar.tsx:143
+#: components/sidebar/Sidebar.tsx:144
+#: components/sidebar/Sidebar.tsx:145
 msgid "Expand sidebar"
 msgstr "Expand sidebar"
 
 #: app/[locale]/(protected)/account/relationships/Relationships.tsx:255
 msgid "Failed to load relationships."
 msgstr "Failed to load relationships."
+
+#: app/[locale]/(protected)/account/settings/avatar-selection.tsx:43
+msgid "Failed to update avatar."
+msgstr "Failed to update avatar."
 
 #: app/[locale]/(protected)/account/relationships/Relationships.tsx:219
 #: app/[locale]/(protected)/account/relationships/Relationships.tsx:336
@@ -1076,7 +1084,7 @@ msgstr "It looks like the page you’re looking for doesn’t exist or has been 
 msgid "January"
 msgstr "January"
 
-#: components/towers/PlayerBoard.tsx:471
+#: components/towers/PlayerBoard.tsx:463
 #: components/game/RoomsList.tsx:140
 #: components/game/RoomTable.tsx:139
 msgid "Join"
@@ -1086,7 +1094,7 @@ msgstr "Join"
 msgid "Joined"
 msgstr "Joined"
 
-#: components/sidebar/Sidebar.tsx:180
+#: components/sidebar/Sidebar.tsx:177
 msgid "Joined games"
 msgstr "Joined games"
 
@@ -1213,7 +1221,7 @@ msgstr "Name"
 msgid "Need help partner?"
 msgstr "Need help partner?"
 
-#: components/layout/UserMenu.tsx:192
+#: components/layout/UserMenu.tsx:194
 msgid "New"
 msgstr "New"
 
@@ -1241,7 +1249,7 @@ msgstr "Next Year"
 msgid "No conversations"
 msgstr "No conversations"
 
-#: components/sidebar/SidebarMenuSubItem.tsx:188
+#: components/sidebar/SidebarMenuSubItem.tsx:180
 msgid "No notifications"
 msgstr "No notifications"
 
@@ -1251,7 +1259,7 @@ msgstr "No results"
 
 #: app/[locale]/(protected)/account/relationships/Relationships.tsx:221
 #: app/[locale]/(protected)/account/relationships/Relationships.tsx:338
-#: components/game/GameOptionsModal.tsx:113
+#: components/game/GameOptionsModal.tsx:115
 msgid "None"
 msgstr "None"
 
@@ -1263,7 +1271,7 @@ msgstr "Not muted"
 msgid "Not Rated"
 msgstr "Not Rated"
 
-#: components/sidebar/SidebarMenuSubItem.tsx:177
+#: components/sidebar/SidebarMenuSubItem.tsx:172
 #: components/sidebar/Sidebar.tsx:54
 msgid "Notifications"
 msgstr "Notifications"
@@ -1360,8 +1368,8 @@ msgid "optional"
 msgstr "optional"
 
 #: components/game/Table.tsx:922
-#: components/game/Room.tsx:429
-#: components/game/GameOptionsModal.tsx:89
+#: components/game/Room.tsx:427
+#: components/game/GameOptionsModal.tsx:91
 msgid "Options"
 msgstr "Options"
 
@@ -1419,7 +1427,7 @@ msgstr "Personal Information"
 msgid "Ping"
 msgstr "Ping"
 
-#: components/game/Room.tsx:371
+#: components/game/Room.tsx:369
 msgid "Play Now"
 msgstr "Play Now"
 
@@ -1447,7 +1455,7 @@ msgstr "Previous Month"
 msgid "Previous Year"
 msgstr "Previous Year"
 
-#: components/sidebar/Sidebar.tsx:138
+#: components/sidebar/Sidebar.tsx:140
 msgid "Primary navigation"
 msgstr "Primary navigation"
 
@@ -1459,7 +1467,7 @@ msgstr "Privacy Policy"
 msgid "Private"
 msgstr "Private"
 
-#: components/game/GameOptionsModal.tsx:103
+#: components/game/GameOptionsModal.tsx:105
 msgid "Profanity Filter"
 msgstr "Profanity Filter"
 
@@ -1471,7 +1479,7 @@ msgstr "Profile"
 msgid "Protected"
 msgstr "Protected"
 
-#: components/game/Room.tsx:422
+#: components/game/Room.tsx:420
 msgid "provisional"
 msgstr "provisional"
 
@@ -1504,11 +1512,11 @@ msgstr "Rating"
 msgid "Rating: {rating}"
 msgstr "Rating: {rating}"
 
-#: components/game/Room.tsx:382
+#: components/game/Room.tsx:380
 msgid "Ratings"
 msgstr "Ratings"
 
-#: components/towers/PlayerBoard.tsx:503
+#: components/towers/PlayerBoard.tsx:495
 msgid "Ready"
 msgstr "Ready"
 
@@ -1574,8 +1582,8 @@ msgstr "Right Arrow"
 msgid "Right:"
 msgstr "Right:"
 
-#: components/sidebar/Sidebar.tsx:170
-#: components/sidebar/Sidebar.tsx:174
+#: components/sidebar/Sidebar.tsx:167
+#: components/sidebar/Sidebar.tsx:171
 msgid "Rooms"
 msgstr "Rooms"
 
@@ -1614,6 +1622,10 @@ msgstr "Select a date"
 #: components/ui/Calendar.tsx:359
 msgid "Select Year"
 msgstr "Select Year"
+
+#: app/[locale]/(protected)/account/settings/avatar-selection.tsx:52
+msgid "Select your profile avatar."
+msgstr "Select your profile avatar."
 
 #: components/ConversationsModal.tsx:555
 #: components/game/PlayerInformationModal.tsx:212
@@ -1666,11 +1678,11 @@ msgstr "Sign in with email and password"
 msgid "Sign In with Magic Link"
 msgstr "Sign In with Magic Link"
 
-#: components/layout/UserMenu.tsx:202
+#: components/layout/UserMenu.tsx:203
 msgid "Sign out"
 msgstr "Sign out"
 
-#: app/[locale]/(public)/(auth)/sign-up/sign-up.form.tsx:230
+#: app/[locale]/(public)/(auth)/sign-up/sign-up.form.tsx:223
 #: constants/routes.ts:4
 msgid "Sign Up"
 msgstr "Sign Up"
@@ -1708,12 +1720,12 @@ msgstr "Space"
 msgid "Space bar"
 msgstr "Space bar"
 
-#: components/towers/PlayerBoard.tsx:477
+#: components/towers/PlayerBoard.tsx:469
 #: components/game/Table.tsx:880
 msgid "Stand"
 msgstr "Stand"
 
-#: components/towers/PlayerBoard.tsx:487
+#: components/towers/PlayerBoard.tsx:479
 #: components/game/Table.tsx:861
 msgid "Start"
 msgstr "Start"
@@ -1722,7 +1734,7 @@ msgstr "Start"
 msgid "Streak: {streak}"
 msgstr "Streak: {streak}"
 
-#: components/game/GameOptionsModal.tsx:115
+#: components/game/GameOptionsModal.tsx:117
 msgid "Strong"
 msgstr "Strong"
 
@@ -1735,7 +1747,7 @@ msgstr "Sunday"
 msgid "System"
 msgstr "System"
 
-#: components/game/Room.tsx:453
+#: components/game/Room.tsx:451
 #: components/game/PlayersList.tsx:257
 msgid "Table"
 msgstr "Table"
@@ -1753,19 +1765,19 @@ msgstr "Table: {tableNumber} - Host: {tableHostUsername}"
 msgid "Team"
 msgstr "Team"
 
-#: components/game/Room.tsx:457
+#: components/game/Room.tsx:455
 msgid "Team 1-2"
 msgstr "Team 1-2"
 
-#: components/game/Room.tsx:460
+#: components/game/Room.tsx:458
 msgid "Team 3-4"
 msgstr "Team 3-4"
 
-#: components/game/Room.tsx:463
+#: components/game/Room.tsx:461
 msgid "Team 5-6"
 msgstr "Team 5-6"
 
-#: components/game/Room.tsx:466
+#: components/game/Room.tsx:464
 msgid "Team 7-8"
 msgstr "Team 7-8"
 
@@ -1784,6 +1796,10 @@ msgstr "That must have hurt."
 #: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:77
 msgid "The account has been linked!"
 msgstr "The account has been linked!"
+
+#: app/[locale]/(protected)/account/settings/avatar-selection.tsx:39
+msgid "The avatar has been updated!"
+msgstr "The avatar has been updated!"
 
 #: app/[locale]/(public)/(auth)/sign-up/sign-up.form.tsx:58
 #: app/[locale]/(protected)/account/profile/personal-information.form.tsx:55
@@ -1968,7 +1984,7 @@ msgstr "Update your personal details here."
 msgid "Use Item:"
 msgstr "Use Item:"
 
-#: components/layout/UserMenu.tsx:172
+#: components/layout/UserMenu.tsx:174
 msgid "User menu"
 msgstr "User menu"
 
@@ -1998,11 +2014,11 @@ msgstr "Username must be between 4 and 32 characters long and can contain digits
 msgid "Validation errors occurred."
 msgstr "Validation errors occurred."
 
-#: components/towers/PlayerBoard.tsx:504
+#: components/towers/PlayerBoard.tsx:496
 msgid "Waiting for more players"
 msgstr "Waiting for more players"
 
-#: components/towers/PlayerBoard.tsx:505
+#: components/towers/PlayerBoard.tsx:497
 msgid "Waiting for the next game"
 msgstr "Waiting for the next game"
 
@@ -2019,7 +2035,7 @@ msgstr "We were unable to create your account at this time."
 msgid "We’ve sent a magic sign-in link to {email}"
 msgstr "We’ve sent a magic sign-in link to {email}"
 
-#: components/game/GameOptionsModal.tsx:114
+#: components/game/GameOptionsModal.tsx:116
 msgid "Weak"
 msgstr "Weak"
 
@@ -2027,7 +2043,7 @@ msgstr "Weak"
 msgid "Wednesday"
 msgstr "Wednesday"
 
-#: components/game/Room.tsx:469
+#: components/game/Room.tsx:467
 msgid "Who is Watching"
 msgstr "Who is Watching"
 
@@ -2091,7 +2107,7 @@ msgstr "You can use a special cell"
 msgid "You can't touch me."
 msgstr "You can't touch me."
 
-#: components/sidebar/Sidebar.tsx:135
+#: components/sidebar/Sidebar.tsx:136
 msgid "You have new notifications."
 msgstr "You have new notifications."
 

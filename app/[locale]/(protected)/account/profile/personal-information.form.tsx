@@ -32,7 +32,7 @@ export function PersonalInformationForm({ session, isNewUser }: PersonalInformat
   const [formState, setFormState] = useState<ApiResponse>(INITIAL_FORM_STATE);
   const { t } = useLingui();
 
-  const handleUpdateUser = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+  const handleUpdatePersonalInfo = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
 
     const formData: FormData = new FormData(event.currentTarget);
@@ -116,7 +116,7 @@ export function PersonalInformationForm({ session, isNewUser }: PersonalInformat
       description={<Trans>Update your personal details here.</Trans>}
       isNewUser={isNewUser}
     >
-      <form className="grid w-full" noValidate onSubmit={handleUpdateUser}>
+      <form className="grid w-full" noValidate onSubmit={handleUpdatePersonalInfo}>
         {formState?.message && (
           <AlertMessage type={formState.success ? "success" : "error"}>{formState.message}</AlertMessage>
         )}

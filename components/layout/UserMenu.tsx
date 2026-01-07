@@ -22,14 +22,16 @@ import { authClient } from "@/lib/auth-client";
 
 export default function UserMenu(): ReactNode {
   const { openModal } = useModal();
-  const { socketRef, isConnected, session } = useSocket();
+  const { socketRef, isConnected, session, userAvatars } = useSocket();
   const { i18n, t } = useLingui();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const menuId: string = session?.user?.id ? `user-menu-${session.user.id}` : "user-menu";
-  const avatarId: string | undefined = session?.user?.userSettings?.avatarId;
+  const userId: string | undefined = session?.user?.id;
+  const menuId: string = userId ? `user-menu-${userId}` : "user-menu";
   const userName: string | undefined = session?.user?.username ?? "";
+  const avatarId: string | undefined =
+    (userId ? userAvatars[userId] : undefined) ?? session?.user.userSettings?.avatarId;
   const selectedAvatar: Avatar = AVATARS.find((avatar: Avatar) => avatar.id === avatarId) ?? AVATARS[0];
   const [isShowUnreadConversationsBadge, setIsShowUnreadConversationsBadge] = useState<boolean>(false);
   const { isOpen: isConversationsModalOpen } = useConversations();

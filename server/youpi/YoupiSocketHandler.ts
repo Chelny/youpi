@@ -66,8 +66,16 @@ export class YoupiSocketHandler {
     this.socket.off(ClientToServerEvents.CONVERSATION_MESSAGE_SEND, this.handleSendInstantMessage);
   }
 
-  private handleSetUserAvatar = async ({ avatarId }: { avatarId: string }): Promise<void> => {
-    await UserSettingsManager.updateUserAvatar(this.user.id, avatarId);
+  private handleSetUserAvatar = async (
+    { avatarId }: { avatarId: string },
+    callback: <T>({ success, message, data }: SocketCallback<T>) => void,
+  ): Promise<void> => {
+    try {
+      await UserSettingsManager.updateUserAvatar(this.user.id, avatarId);
+      callback({ success: true });
+    } catch (error) {
+      callback({ success: false, message: error instanceof Error ? error.message : "Error updating the avatar" });
+    }
   };
 
   private handleCheckUserMuted = async (

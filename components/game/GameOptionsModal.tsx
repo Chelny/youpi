@@ -22,14 +22,16 @@ interface GameOptionsModalProps {
 }
 
 export default function GameOptionsModal({
-  avatarId,
+  avatarId: initialAvatarId,
   profanityFilter,
   onSetProfanityFilter,
   onCancel,
 }: GameOptionsModalProps): ReactNode {
   const { t } = useLingui();
-  const { socketRef, isConnected, session } = useSocket();
+  const { socketRef, isConnected, session, userAvatars } = useSocket();
   const [isDeclineAll, setIsDeclineAll] = useState<boolean>(false);
+  const userId: string | undefined = session?.user?.id;
+  const avatarId: string = (userId ? userAvatars[userId] : undefined) ?? initialAvatarId;
 
   const { trigger: updateSettings, isMutating } = useSWRMutation(
     `/api/users/${session?.user.id}/settings`,
@@ -115,9 +117,7 @@ export default function GameOptionsModal({
             <RadioButtonGroup.Option id="strong" label={t({ message: "Strong" })} value={ProfanityFilter.STRONG} />
           </RadioButtonGroup>
         </div>
-        <div>
-          <AvatarListbox initialAvatarId={avatarId} />
-        </div>
+        <AvatarListbox initialAvatarId={avatarId} isTitleVisible />
       </div>
     </Modal>
   );

@@ -53,7 +53,7 @@ export function ThemeForm({ session }: ThemeFormProps): ReactNode {
     setThemeValue(currentTheme);
   }, [currentTheme]);
 
-  const handleUpdateUser = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+  const handleUpdateTheme = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
 
     const formData: FormData = new FormData(event.currentTarget);
@@ -98,7 +98,7 @@ export function ThemeForm({ session }: ThemeFormProps): ReactNode {
       title={<Trans>Theme</Trans>}
       description={<Trans>Choose how the site looks and feels.</Trans>}
     >
-      <form className="grid w-full" noValidate onSubmit={handleUpdateUser}>
+      <form className="grid w-full" noValidate onSubmit={handleUpdateTheme}>
         {formState?.message && (
           <AlertMessage type={formState.success ? "success" : "error"}>{formState.message}</AlertMessage>
         )}
