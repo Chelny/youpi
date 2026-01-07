@@ -379,7 +379,7 @@ msgstr ""
 #. placeholder {0}: pagination.totalResults
 #. placeholder {1}: pagination.totalResults
 #. placeholder {2}: pagination.totalResults
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:370
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:394
 msgid "{0, plural, zero {No results} one {{1} result} other {{2} results}}"
 msgstr ""
 
@@ -551,8 +551,8 @@ msgstr ""
 msgid "advertisement"
 msgstr ""
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:217
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:235
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:218
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:246
 msgid "All"
 msgstr ""
 
@@ -584,11 +584,11 @@ msgstr ""
 msgid "August"
 msgstr ""
 
-#: app/[locale]/(protected)/account/settings/avatar-selection.tsx:51
+#: app/[locale]/(protected)/account/settings/avatar-selection.tsx:50
 msgid "Avatar"
 msgstr ""
 
-#: components/AvatarListbox.tsx:68
+#: components/AvatarListbox.tsx:66
 msgid "Avatars"
 msgstr ""
 
@@ -605,8 +605,8 @@ msgstr ""
 msgid "Birthdate"
 msgstr ""
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:220
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:337
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:227
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:358
 msgid "Blocked"
 msgstr ""
 
@@ -709,7 +709,7 @@ msgid "Connected to the game as {username}"
 msgstr ""
 
 #: components/ConversationsModal.tsx:435
-#: components/layout/UserMenu.tsx:189
+#: components/layout/UserMenu.tsx:190
 msgid "Conversations"
 msgstr ""
 
@@ -735,7 +735,7 @@ msgstr ""
 msgid "Dark"
 msgstr ""
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:294
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:310
 msgid "Date"
 msgstr ""
 
@@ -889,7 +889,7 @@ msgstr ""
 msgid "Expand sidebar"
 msgstr ""
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:255
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:271
 msgid "Failed to load relationships."
 msgstr ""
 
@@ -897,8 +897,8 @@ msgstr ""
 msgid "Failed to update avatar."
 msgstr ""
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:219
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:336
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:224
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:355
 msgid "Favorite"
 msgstr ""
 
@@ -906,8 +906,8 @@ msgstr ""
 msgid "February"
 msgstr ""
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:218
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:335
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:221
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:352
 msgid "Following"
 msgstr ""
 
@@ -1087,11 +1087,11 @@ msgstr ""
 msgid "Linked Social Accounts"
 msgstr ""
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:382
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:406
 msgid "Load more"
 msgstr ""
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:305
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:321
 msgid "Loading..."
 msgstr ""
 
@@ -1131,7 +1131,7 @@ msgstr ""
 msgid "Monday"
 msgstr ""
 
-#: components/ui/Breadcrumb.tsx:75
+#: components/ui/Breadcrumb.tsx:73
 msgid "More"
 msgstr ""
 
@@ -1155,9 +1155,9 @@ msgstr ""
 msgid "Mute this conversation"
 msgstr ""
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:228
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:236
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:280
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:238
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:249
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:296
 msgid "Muted"
 msgstr ""
 
@@ -1172,7 +1172,7 @@ msgstr ""
 msgid "Need help partner?"
 msgstr ""
 
-#: components/layout/UserMenu.tsx:194
+#: components/layout/UserMenu.tsx:195
 msgid "New"
 msgstr ""
 
@@ -1204,17 +1204,17 @@ msgstr ""
 msgid "No notifications"
 msgstr ""
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:311
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:327
 msgid "No results"
 msgstr ""
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:221
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:338
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:230
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:361
 #: components/game/GameOptionsModal.tsx:115
 msgid "None"
 msgstr ""
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:237
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:252
 msgid "Not muted"
 msgstr ""
 
@@ -1300,7 +1300,7 @@ msgid "October"
 msgstr ""
 
 #: components/game/TableGameDemoPanel.tsx:736
-msgid "OK, I'm ready to play"
+msgid "OK, I’m ready to play"
 msgstr ""
 
 #: components/game/TableGameDemoPanel.tsx:694
@@ -1328,7 +1328,7 @@ msgstr ""
 msgid "or sign in with"
 msgstr ""
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:369
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:393
 msgid "Page"
 msgstr ""
 
@@ -1476,7 +1476,7 @@ msgid "Reason"
 msgstr ""
 
 #: app/[locale]/(protected)/account/relationships/Relationships.tsx:210
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:279
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:295
 msgid "Relation Type"
 msgstr ""
 
@@ -1504,7 +1504,7 @@ msgstr ""
 msgid "Remove this conversation"
 msgstr ""
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:249
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:265
 msgid "Reset"
 msgstr ""
 
@@ -1574,7 +1574,7 @@ msgstr ""
 msgid "Select Year"
 msgstr ""
 
-#: app/[locale]/(protected)/account/settings/avatar-selection.tsx:52
+#: app/[locale]/(protected)/account/settings/avatar-selection.tsx:50
 msgid "Select your profile avatar."
 msgstr ""
 
@@ -1629,7 +1629,7 @@ msgstr ""
 msgid "Sign In with Magic Link"
 msgstr ""
 
-#: components/layout/UserMenu.tsx:203
+#: components/layout/UserMenu.tsx:204
 msgid "Sign out"
 msgstr ""
 
@@ -1935,12 +1935,12 @@ msgstr ""
 msgid "Use Item:"
 msgstr ""
 
-#: components/layout/UserMenu.tsx:174
+#: components/layout/UserMenu.tsx:175
 msgid "User menu"
 msgstr ""
 
 #: app/[locale]/(public)/(auth)/sign-up/sign-up.form.tsx:173
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:275
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:291
 #: app/[locale]/(protected)/account/profile/personal-information.form.tsx:143
 msgid "Username"
 msgstr ""
@@ -2108,7 +2108,7 @@ msgid "Your key bindings have been saved successfully!"
 msgstr ""
 
 #: components/game/TableGameDemoPanel.tsx:506
-msgid "Your mission: Remove blocks from your and your partner's boards!"
+msgid "Your mission: Remove blocks from your and your partner’s boards!"
 msgstr ""
 
 #: app/[locale]/(protected)/account/profile/personal-information.form.tsx:99

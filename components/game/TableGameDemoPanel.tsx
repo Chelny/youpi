@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import clsx from "clsx";
 import { FaLeftLong } from "react-icons/fa6";
 import DefenseBlock from "@/components/towers/DefenseBlock";
@@ -487,7 +487,7 @@ export default function TableGameDemoPanel({ nextGameCountdown, onChangeView }: 
         <div className="col-span-3 flex flex-col gap-2 items-center justify-end mb-2">
           <video ref={videoRef} muted autoPlay onEnded={handleVideoEnded}>
             <source src="/videos/towers-demo.webm" type="video/webm" />
-            {t({ message: "Your browser does not support the video tag." })}
+            <Trans>Your browser does not support the video tag.</Trans>
           </video>
 
           <Button type="button" onClick={handleDemoVideo}>
@@ -503,7 +503,7 @@ export default function TableGameDemoPanel({ nextGameCountdown, onChangeView }: 
         >
           {/* Banner */}
           <div className={clsx("w-full bg-gray-200 text-center font-semibold", "dark:bg-slate-800")}>
-            {t({ message: "Your mission: Remove blocks from your and your partner's boards!" })}
+            <Trans>Your mission: Remove blocks from your and your partner’s boards!</Trans>
           </div>
 
           <div className="grid grid-cols-[200px_auto] gap-2 h-full">
@@ -675,7 +675,7 @@ export default function TableGameDemoPanel({ nextGameCountdown, onChangeView }: 
                             "justify-center items-center w-32 h-10 ms-4 text-sm uppercase",
                           )}
                         >
-                          {t({ message: "Space bar" })}
+                          <Trans>Space bar</Trans>
                         </div>
                       </div>
                     </div>
@@ -733,14 +733,16 @@ export default function TableGameDemoPanel({ nextGameCountdown, onChangeView }: 
         <div className="col-span-12 flex gap-2 justify-center items-center py-1">
           <div className="relative">
             <Button type="button" onClick={() => onChangeView(TablePanelView.GAME)}>
-              {t({ message: "OK, I'm ready to play" })}
+              <Trans>OK, I’m ready to play</Trans>
             </Button>
 
             {nextGameCountdown && (
               <div className="absolute top-1/2 start-full flex justify-start items-center gap-2 w-auto ms-4 transform -translate-y-1/2">
                 <FaLeftLong className="rtl:rotate-180" />
                 <div className="flex items-center gap-3 whitespace-nowrap">
-                  <span>{t({ message: "Next game starting..." })}</span>
+                  <span>
+                    <Trans>Next game starting...</Trans>
+                  </span>
                   <span className="text-orange-400 text-xl font-bold">{nextGameCountdown}</span>
                 </div>
               </div>

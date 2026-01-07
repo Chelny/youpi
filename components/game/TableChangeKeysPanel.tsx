@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import clsx from "clsx/lite";
 import AlertMessage from "@/components/ui/AlertMessage";
 import Button from "@/components/ui/Button";
@@ -23,7 +23,7 @@ export default function TableChangeKeysPanel({
   controlKeys: initialControlKeys,
   onChangeView,
 }: TableChangeKeysPanelProps): ReactNode {
-  const { i18n, t } = useLingui();
+  const { i18n } = useLingui();
   const { socketRef, isConnected } = useSocket();
   const [controlKeys, setControlKeys] = useState<PlayerControlKeysPlainObject | null>(initialControlKeys);
   const [selectedKey, setSelectedKey] = useState<keyof PlayerControlKeysPlainObject | null>(null);
@@ -101,13 +101,13 @@ export default function TableChangeKeysPanel({
       <div className="w-full max-w-3xl">
         {showErrorMessage && (
           <AlertMessage type="error">
-            {t({ message: "Duplicate keys detected. Each key must be unique." })}
+            <Trans>Duplicate keys detected. Each key must be unique.</Trans>
           </AlertMessage>
         )}
 
         {showSuccessMessage && (
           <AlertMessage type="success">
-            {t({ message: "Your key bindings have been saved successfully!" })}
+            <Trans>Your key bindings have been saved successfully!</Trans>
           </AlertMessage>
         )}
       </div>
@@ -141,7 +141,7 @@ export default function TableChangeKeysPanel({
           <div className="flex flex-col">
             <div className="flex items-evenly gap-2 py-0.5">
               <Button type="button" className="w-full" disabled={!isConnected} onClick={handleSave}>
-                {t({ message: "Save" })}
+                <Trans>Save</Trans>
               </Button>
               <Button
                 type="button"
@@ -152,7 +152,7 @@ export default function TableChangeKeysPanel({
                   onChangeView(TablePanelView.GAME);
                 }}
               >
-                {t({ message: "Cancel" })}
+                <Trans>Cancel</Trans>
               </Button>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import { ChangeEvent, InputEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Plural, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import clsx from "clsx/lite";
 import { Prisma } from "db/browser";
 import { RelationshipType } from "db/enums";
@@ -214,11 +214,21 @@ export function Relationships({ session }: RelationshipsProps): ReactNode {
             dataTestId="relationships-filter_select_type"
             onChange={(value: string) => setType(value)}
           >
-            <Select.Option value="">{t({ message: "All" })}</Select.Option>
-            <Select.Option value={RelationshipType.FOLLOWING}>{t({ message: "Following" })}</Select.Option>
-            <Select.Option value={RelationshipType.FAVORITE}>{t({ message: "Favorite" })}</Select.Option>
-            <Select.Option value={RelationshipType.BLOCKED}>{t({ message: "Blocked" })}</Select.Option>
-            <Select.Option value={RelationshipType.NONE}>{t({ message: "None" })}</Select.Option>
+            <Select.Option value="">
+              <Trans>All</Trans>
+            </Select.Option>
+            <Select.Option value={RelationshipType.FOLLOWING}>
+              <Trans>Following</Trans>
+            </Select.Option>
+            <Select.Option value={RelationshipType.FAVORITE}>
+              <Trans>Favorite</Trans>
+            </Select.Option>
+            <Select.Option value={RelationshipType.BLOCKED}>
+              <Trans>Blocked</Trans>
+            </Select.Option>
+            <Select.Option value={RelationshipType.NONE}>
+              <Trans>None</Trans>
+            </Select.Option>
           </Select>
         </div>
 
@@ -232,9 +242,15 @@ export function Relationships({ session }: RelationshipsProps): ReactNode {
             dataTestId="relationships-filter_select_muted"
             onChange={(value: string) => setMuted(value)}
           >
-            <Select.Option value="">{t({ message: "All" })}</Select.Option>
-            <Select.Option value="true">{t({ message: "Muted" })}</Select.Option>
-            <Select.Option value="false">{t({ message: "Not muted" })}</Select.Option>
+            <Select.Option value="">
+              <Trans>All</Trans>
+            </Select.Option>
+            <Select.Option value="true">
+              <Trans>Muted</Trans>
+            </Select.Option>
+            <Select.Option value="false">
+              <Trans>Not muted</Trans>
+            </Select.Option>
           </Select>
         </div>
 
@@ -246,13 +262,17 @@ export function Relationships({ session }: RelationshipsProps): ReactNode {
             dataTestId="relationships-filter_button_reset"
             onClick={handleReset}
           >
-            {t({ message: "Reset" })}
+            <Trans>Reset</Trans>
           </Button>
         </div>
       </div>
 
       {/* Errors */}
-      {error && <AlertMessage type="error">{t({ message: "Failed to load relationships." })}</AlertMessage>}
+      {error && (
+        <AlertMessage type="error">
+          <Trans>Failed to load relationships.</Trans>
+        </AlertMessage>
+      )}
 
       {/* Table */}
       <div className={clsx("rounded-lg border border-gray-200", "dark:border-dark-card-border")}>
@@ -272,12 +292,18 @@ export function Relationships({ session }: RelationshipsProps): ReactNode {
                     }
                   }}
                 >
-                  <span>{t({ message: "Username" })}</span>
+                  <span>
+                    <Trans>Username</Trans>
+                  </span>
                   <SortIcon isActive={orderBy === "username"} direction={sortOrder} variant="alpha" />
                 </div>
               </th>
-              <th className="p-3">{t({ message: "Relation Type" })}</th>
-              <th className="p-3">{t({ message: "Muted" })}</th>
+              <th className="p-3">
+                <Trans>Relation Type</Trans>
+              </th>
+              <th className="p-3">
+                <Trans>Muted</Trans>
+              </th>
               <th className="p-3">
                 <div
                   className="inline-flex items-center gap-2 cursor-pointer select-none"
@@ -291,7 +317,9 @@ export function Relationships({ session }: RelationshipsProps): ReactNode {
                     }
                   }}
                 >
-                  <span>{t({ message: "Date" })}</span>
+                  <span>
+                    <Trans>Date</Trans>
+                  </span>
                   <SortIcon isActive={orderBy === "createdAt"} direction={sortOrder} variant="generic" />
                 </div>
               </th>
@@ -302,13 +330,13 @@ export function Relationships({ session }: RelationshipsProps): ReactNode {
             {isLoading && rows.length === 0 ? (
               <tr>
                 <td className="p-3" colSpan={4}>
-                  {t({ message: "Loading..." })}
+                  <Trans>Loading...</Trans>
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
                 <td className="p-3" colSpan={4}>
-                  {t({ message: "No results" })}
+                  <Trans>No results</Trans>
                 </td>
               </tr>
             ) : (
@@ -332,10 +360,18 @@ export function Relationships({ session }: RelationshipsProps): ReactNode {
                         dataTestId={`relationships-table_[${index}]_select_type`}
                         onChange={(value: string) => patchRelationship(row.id, { type: value as RelationshipType })}
                       >
-                        <Select.Option value={RelationshipType.FOLLOWING}>{t({ message: "Following" })}</Select.Option>
-                        <Select.Option value={RelationshipType.FAVORITE}>{t({ message: "Favorite" })}</Select.Option>
-                        <Select.Option value={RelationshipType.BLOCKED}>{t({ message: "Blocked" })}</Select.Option>
-                        <Select.Option value={RelationshipType.NONE}>{t({ message: "None" })}</Select.Option>
+                        <Select.Option value={RelationshipType.FOLLOWING}>
+                          <Trans>Following</Trans>
+                        </Select.Option>
+                        <Select.Option value={RelationshipType.FAVORITE}>
+                          <Trans>Favorite</Trans>
+                        </Select.Option>
+                        <Select.Option value={RelationshipType.BLOCKED}>
+                          <Trans>Blocked</Trans>
+                        </Select.Option>
+                        <Select.Option value={RelationshipType.NONE}>
+                          <Trans>None</Trans>
+                        </Select.Option>
                       </Select>
                     </td>
 
@@ -366,7 +402,7 @@ export function Relationships({ session }: RelationshipsProps): ReactNode {
         <div className="text-muted-foreground text-sm">
           {pagination ? (
             <>
-              {t({ message: "Page" })} {pagination.currentPage} / {pagination.totalPages} ·{" "}
+              <Trans>Page</Trans> {pagination.currentPage} / {pagination.totalPages} ·{" "}
               <Plural
                 value={pagination.totalResults}
                 zero={"No results"}
@@ -379,7 +415,7 @@ export function Relationships({ session }: RelationshipsProps): ReactNode {
 
         <div className="flex gap-2">
           <Button type="button" disabled={!hasNextPage || isLoading || isValidating} onClick={handleLoadMore}>
-            {t({ message: "Load more" })}
+            <Trans>Load more</Trans>
           </Button>
         </div>
       </div>

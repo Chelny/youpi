@@ -197,11 +197,11 @@ export default function PlayerInformationModal({
       <div className="flex flex-col gap-2">
         {isRatingsVisible && (
           <div>
-            {t({ message: `Rating: ${rating}` })} <br />
-            {t({ message: `Games Completed: ${gamesCompleted}` })} <br />
-            {t({ message: `Wins: ${wins}` })} <br />
-            {t({ message: `Losses: ${losses}` })} <br />
-            {t({ message: `Streak: ${streak}` })} <br />
+            <Trans>Rating: {rating}</Trans> <br />
+            <Trans>Games Completed: {gamesCompleted}</Trans> <br />
+            <Trans>Wins: {wins}</Trans> <br />
+            <Trans>Losses: {losses}</Trans> <br />
+            <Trans>Streak: {streak}</Trans> <br />
           </div>
         )}
         {!isCurrentUser && (
@@ -232,7 +232,7 @@ export default function PlayerInformationModal({
                   dataTestId="player-information_button_ping"
                   onClick={handlePing}
                 >
-                  {t({ message: "Ping" })}
+                  <Trans>Ping</Trans>
                 </Button>
               </div>
               {targetNetDelay !== null && myNetDelay !== null && (
@@ -268,7 +268,7 @@ export default function PlayerInformationModal({
           )}
           {watchUserAtTable && (
             <Button className="w-fit" dataTestId="player-information_button_watch" onClick={handleWatch}>
-              {t({ message: "Watch" })}
+              <Trans>Watch</Trans>
             </Button>
           )}
         </div>

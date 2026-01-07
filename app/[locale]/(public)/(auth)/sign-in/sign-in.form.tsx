@@ -199,7 +199,7 @@ export function SignInForm(): ReactNode {
         </div>
         <div className="flex-1 mb-3 text-end">
           <Anchor href={ROUTE_FORGOT_PASSWORD.PATH} dataTestId="sign-in_link_forgot-password">
-            {t({ message: "Forgot Password" })}
+            <Trans>Forgot Password</Trans>
           </Anchor>
         </div>
       </div>
@@ -210,7 +210,7 @@ export function SignInForm(): ReactNode {
         aria-label={t({ message: "Sign in with email and password" })}
         disabled={isLoading}
       >
-        {t({ message: "Sign In" })}
+        <Trans>Sign In</Trans>
       </Button>
       <div className="flex justify-center gap-1 my-4 text-center">
         <Trans>
@@ -235,7 +235,9 @@ export function SignInForm(): ReactNode {
           onClick={handleSignInWithMagicLink}
         >
           <PiMagicWandFill className="w-5 h-5" aria-hidden="true" />
-          <span>{t({ message: "Magic Link" })}</span>
+          <span>
+            <Trans>Magic Link</Trans>
+          </span>
         </Button>
         <div className="flex gap-2">
           {AUTH_PROVIDERS.map(({ name, label: provider, icon }: AuthProviderDetails) => (
@@ -260,7 +262,9 @@ export function SignInForm(): ReactNode {
           onClick={() => handleSignInWithPasskey()}
         >
           <PiKeyFill className="w-5 h-5" aria-hidden="true" />
-          <span>{t({ message: "Passkey" })}</span>
+          <span>
+            <Trans>Passkey</Trans>
+          </span>
         </Button>
       </div>
       <div className="mt-4 text-center">

@@ -2,7 +2,7 @@
 
 import { KeyboardEvent, ReactNode, useEffect, useState } from "react";
 import Image from "next/image";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import clsx from "clsx/lite";
 import { Avatar, AVATARS } from "@/constants/avatars";
 import { useAvatarSave } from "@/hooks/useAvatarSave";
@@ -54,7 +54,11 @@ export function AvatarListbox({
 
   return (
     <div>
-      {isTitleVisible && <h5>{t({ message: "Avatars:" })}</h5>}
+      {isTitleVisible && (
+        <h5>
+          <Trans>Avatars:</Trans>
+        </h5>
+      )}
       <div
         className={clsx(
           "py-1.5 border border-gray-400 rounded bg-gray-100",

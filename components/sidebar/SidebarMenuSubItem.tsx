@@ -2,7 +2,7 @@
 
 import { FocusEvent, KeyboardEvent, ReactNode, useState } from "react";
 import Link from "next/link";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import clsx from "clsx/lite";
 import { GoTriangleDown, GoTriangleLeft } from "react-icons/go";
 import { NotificationDropdownItem } from "@/components/sidebar/NotificationDropdownItem";
@@ -177,7 +177,7 @@ export function SidebarMenuSubItem({ item, isActiveHref, isLast, level }: Sideba
                 ))
               ) : (
                 <li role="presentation" className="px-3 py-1 text-white/60 text-center">
-                  {t({ message: "No notifications" })}
+                  <Trans>No notifications</Trans>
                 </li>
               )}
             </ul>

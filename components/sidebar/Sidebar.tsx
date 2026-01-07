@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import clsx from "clsx/lite";
 import { BsArrowsCollapseVertical, BsArrowsExpandVertical } from "react-icons/bs";
 import { LuGamepad2 } from "react-icons/lu";
@@ -168,7 +168,7 @@ export default function Sidebar(): ReactNode {
           isExpanded={isExpanded}
           href={ROUTE_TOWERS.PATH}
         >
-          {t({ message: "Rooms" })}
+          <Trans>Rooms</Trans>
         </SidebarMenuItem>
       </nav>
 

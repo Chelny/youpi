@@ -16,7 +16,7 @@ no_color='\033[0m'
 # style: Changes that do not affect code meaning (example: code formatting, whitespace, semicolons)
 # test: Adding or updating tests only (example: add unit test for SignupForm)
 commit_types="(build|chore|ci|docs|feat|fix|merge|perf|refactor|revert|style|test)"
-conventional_commit_regex="^${commit_types}(\([a-z .\-]+\))?!?: .+$"
+conventional_commit_regex="^${commit_types}(\([a-z0-9 .\-]+\))?!?: .+$"
 
 # Get the commit message (the parameter we're given is just the path to the
 # temporary file which holds the message).

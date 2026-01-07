@@ -1,5 +1,5 @@
 import { ComponentProps, ComponentPropsWithoutRef, forwardRef, ReactNode } from "react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { clsx } from "clsx/lite";
 import Anchor from "@/components/ui/Anchor";
 
@@ -62,8 +62,6 @@ const BreadcrumbSeparator = ({ children, className, ...props }: ComponentProps<"
 BreadcrumbSeparator.displayName = "BreadcrumbSeparator";
 
 const BreadcrumbEllipsis = ({ className, ...props }: ComponentProps<"span">) => {
-  const { t } = useLingui();
-
   return (
     <span
       className={clsx("flex justify-center items-center", className)}
@@ -72,7 +70,9 @@ const BreadcrumbEllipsis = ({ className, ...props }: ComponentProps<"span">) => 
       {...props}
     >
       <span className="text-gray-400">...</span>
-      <span className="sr-only">{t({ message: "More" })}</span>
+      <span className="sr-only">
+        <Trans>More</Trans>
+      </span>
     </span>
   );
 };
