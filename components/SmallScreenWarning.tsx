@@ -3,16 +3,17 @@
 import { ReactNode } from "react";
 import { Trans } from "@lingui/react/macro";
 import clsx from "clsx/lite";
+import { MIN_GAME_VIEWPORT_HEIGHT, MIN_GAME_VIEWPORT_WIDTH } from "@/constants/game";
 
 export default function SmallScreenWarning(): ReactNode {
-  const width: string = "1275px";
-  const height: string = "768px";
+  const width: string = `${MIN_GAME_VIEWPORT_WIDTH}px`;
+  const height: string = `${MIN_GAME_VIEWPORT_HEIGHT}px`;
 
   return (
     <div
       className={clsx(
         "small-screen-warning",
-        "absolute inset-0 z-sticky flex flex-col justify-center items-center bg-white text-center",
+        "absolute inset-0 z-overlay flex flex-col justify-center items-center bg-white text-center",
         "dark:bg-dark-background",
       )}
     >

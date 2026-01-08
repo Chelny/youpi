@@ -20,11 +20,12 @@
   /* Positioning */
   --z-index-base: 0;
   --z-index-sticky: 10; /* header/footer, sticky sections */
-  --z-index-dropdown: 20; /* simple menus */
+  --z-index-game-overlay: 20; /* game overlay */
   --z-index-overlay: 30; /* screen dimmers, blockers */
-  --z-index-modal: 40; /* dialogs */
-  --z-index-toast: 50; /* toasts */
+  --z-index-dropdown: 40; /* simple menus */
+  --z-index-modal: 50; /* dialogs */
   --z-index-popover: 60; /* context menus, popovers that must beat modals */
+  --z-index-toast: 70; /* toasts */
   --z-index-dev: 9999; /* debug/test banners */
 
   /* Grid Template Rows */
@@ -387,7 +388,7 @@ button:disabled:hover {
   display: flex;
 }
 
-@media (min-width: 1275px) and (min-height: 768px) {
+@media (min-width: 1275px) and (min-height: 920px) {
   .small-screen-warning {
     display: none;
   }

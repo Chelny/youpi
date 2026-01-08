@@ -71,7 +71,7 @@ export default function RoomTable({ roomId, table, roomPlayer }: RoomTableProps)
       socketRef.current?.emit(
         ClientToServerEvents.TABLE_JOIN,
         { tableId: table.id, seatNumber },
-        (response: SocketCallback<void>) => {
+        (response: SocketCallback) => {
           if (response.success) {
             router.push(`${ROUTE_TOWERS.PATH}?room=${roomId}&table=${table.id}`);
           } else {

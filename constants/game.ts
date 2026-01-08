@@ -1,3 +1,6 @@
+export const MIN_GAME_VIEWPORT_WIDTH = 1275;
+export const MIN_GAME_VIEWPORT_HEIGHT = 920;
+
 /**************************************************
  * Room
  **************************************************/

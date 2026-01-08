@@ -85,7 +85,7 @@ export default function TableChangeKeysPanel({
     return (
       <div
         key={key}
-        className={`flex gap-4 p-2 cursor-${isEditable ? "pointer" : "default"}
+        className={`flex gap-4 px-2 py-1.5 cursor-${isEditable ? "pointer" : "default"}
           ${selectedKey === key ? "bg-yellow-200 dark:bg-yellow-300 dark:text-black" : ""}
           ${isDuplicate ? "bg-red-200" : "bg-gray-200 dark:bg-slate-700"}`}
         onClick={() => (isEditable ? setSelectedKey(key) : null)}
@@ -122,7 +122,7 @@ export default function TableChangeKeysPanel({
 
           {Array.from({ length: NUM_TABLE_SEATS }).map((_, index: number) => {
             const keyName: keyof PlayerControlKeysPlainObject =
-              `USE_ITEM_ON_PLAYER_${index + 1}` as keyof PlayerControlKeysPlainObject;
+              `useItemOnPlayer${index + 1}` as keyof PlayerControlKeysPlainObject;
             return renderRow(i18n._("Use Item on Player {number}", { number: index + 1 }), keyName, true);
           })}
         </div>
@@ -131,7 +131,7 @@ export default function TableChangeKeysPanel({
           {Array.from({ length: 12 }).map((_, index: number) => {
             const fKey: keyof typeof fKeyMessages = `F${index + 1}` as keyof typeof fKeyMessages;
             return (
-              <div key={index} className={clsx("flex gap-4 p-2 bg-gray-200", "dark:bg-slate-700")}>
+              <div key={index} className={clsx("flex gap-4 px-2 py-1.5 bg-gray-200", "dark:bg-slate-700")}>
                 <div className="w-1/12">{`F${index + 1}`}</div>
                 <div className="w-11/12">{i18n._(fKeyMessages[fKey])}</div>
               </div>
@@ -139,7 +139,7 @@ export default function TableChangeKeysPanel({
           })}
 
           <div className="flex flex-col">
-            <div className="flex items-evenly gap-2 py-0.5">
+            <div className="flex items-evenly gap-2">
               <Button type="button" className="w-full" disabled={!isConnected} onClick={handleSave}>
                 <Trans>Save</Trans>
               </Button>

@@ -8,9 +8,9 @@ export default function AvatarSelectionSkeleton(): ReactNode {
         <h3 className="text-lg font-semibold">
           <div className={clsx("h-6 mb-2 rounded-md bg-gray-200 w-1/3", "dark:bg-dark-skeleton-content-background")} />
         </h3>
-        <p className={clsx("text-gray-500", "dark:text-dark-text-muted")}>
-          <div className={clsx("h-4 rounded-md bg-gray-200 w-2/3", "dark:bg-dark-skeleton-content-background")} />
-        </p>
+        <div className={clsx("text-gray-500", "dark:text-dark-text-muted")}>
+          <p className={clsx("h-4 rounded-md bg-gray-200 w-2/3", "dark:bg-dark-skeleton-content-background")} />
+        </div>
       </div>
 
       <div className="grid w-full">

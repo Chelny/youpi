@@ -30,7 +30,7 @@ export function useAvatarSave(): AvatarSave {
       socketRef.current?.emit(
         ClientToServerEvents.USER_SETTINGS_AVATAR,
         { avatarId },
-        (response: SocketCallback<void>): void => {
+        (response: SocketCallback): void => {
           if (response.success) {
             options?.onSuccess?.();
           } else {

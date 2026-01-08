@@ -438,7 +438,7 @@ export default function PlayerBoard({
         >
           <div
             className={clsx(
-              "absolute start-1/2 -translate-x-1/2 z-overlay flex flex-col gap-2 text-center",
+              "absolute start-1/2 -translate-x-1/2 z-game-overlay flex flex-col gap-2 text-center",
               isOpponentBoard
                 ? "top-[90%] -translate-y-[90%] w-full px-1 py-2"
                 : "top-1/2 -translate-y-1/2 w-11/12 p-2",

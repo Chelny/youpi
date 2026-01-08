@@ -85,7 +85,7 @@ export default function TableInviteUserModal({
     socketRef.current?.emit(
       ClientToServerEvents.TABLE_INVITE_USER,
       { tableId, inviterId: session?.user.id, inviteeId: selectedPlayerId },
-      (response: SocketCallback<void>) => {
+      (response: SocketCallback) => {
         if (response.success) {
           onCancel?.();
         }

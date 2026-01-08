@@ -211,11 +211,15 @@ export default function Table(): ReactNode {
 
       if (keyCode in fKeyMessages) {
         event.preventDefault();
-        socketRef.current?.emit(ClientToServerEvents.TABLE_MESSAGE_SEND, {
-          tableId,
-          type: TableChatMessageType.F_KEY,
-          textVariables: { username: session?.user.username, fKey: keyCode },
-        });
+        socketRef.current?.emit(
+          ClientToServerEvents.TABLE_MESSAGE_SEND,
+          {
+            tableId,
+            type: TableChatMessageType.F_KEY,
+            textVariables: { username: session?.user.username, fKey: keyCode },
+          },
+          () => {},
+        );
       }
     };
 
@@ -621,7 +625,7 @@ export default function Table(): ReactNode {
   };
 
   const handleQuitTable = (): void => {
-    socketRef.current?.emit(ClientToServerEvents.TABLE_LEAVE, { tableId }, (response: SocketCallback<void>) => {
+    socketRef.current?.emit(ClientToServerEvents.TABLE_LEAVE, { tableId }, (response: SocketCallback) => {
       if (response.success) {
         removeJoinedTable(tableId);
         router.push(`${ROUTE_TOWERS.PATH}?room=${roomId}`);
@@ -979,7 +983,7 @@ export default function Table(): ReactNode {
                   {gameState === GameState.COUNTDOWN && countdown !== null && (
                     <div
                       className={clsx(
-                        "absolute start-1/2 -translate-x-1/2 bottom-[8px] z-overlay flex flex-col items-center w-[450px] h-48 p-1 border-2 border-gray-400 bg-gray-200 shadow-lg",
+                        "absolute start-1/2 -translate-x-1/2 bottom-[8px] z-game-overlay flex flex-col items-center w-[450px] h-48 p-1 border-2 border-gray-400 bg-gray-200 shadow-lg",
                         "dark:bg-slate-700",
                         "rtl:translate-x-1/2",
                       )}
@@ -1000,7 +1004,7 @@ export default function Table(): ReactNode {
                   {gameState === GameState.GAME_OVER && (
                     <div
                       className={clsx(
-                        "absolute start-0 top-0 gap-8 z-overlay flex flex-col justify-start items-center w-full h-max p-1 mt-16 font-medium [text-shadow:_4px_4px_0_rgb(0_0_0)]",
+                        "absolute start-0 top-0 gap-8 z-game-overlay flex flex-col justify-start items-center w-full h-max p-1 mt-16 font-medium [text-shadow:_4px_4px_0_rgb(0_0_0)]",
                         gameOverAnimationClass,
                       )}
                     >

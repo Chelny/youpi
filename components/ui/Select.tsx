@@ -129,7 +129,7 @@ export default function Select({
       position: "fixed",
       ...(isOpenUp ? { bottom: window.innerHeight - rect.top + margin } : { top: rect.bottom + margin }),
       left: rect.left,
-      zIndex: 50,
+      zIndex: 60, // Must be higher than modals (--z-index-modal)
       minWidth: rect.width, // Prevents shrink on first paint
       width: rect.width,
       maxWidth: rect.width,

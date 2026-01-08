@@ -337,7 +337,7 @@ export default function Room(): ReactNode {
   };
 
   const handleExitRoom = (): void => {
-    socketRef.current?.emit(ClientToServerEvents.ROOM_LEAVE, { roomId }, (response: SocketCallback<void>) => {
+    socketRef.current?.emit(ClientToServerEvents.ROOM_LEAVE, { roomId }, (response: SocketCallback) => {
       if (response.success) {
         removeJoinedRoom(roomId);
         router.push(ROUTE_TOWERS.PATH);

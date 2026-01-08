@@ -39,7 +39,7 @@ export default function TableInvitationModal({
     socketRef.current?.emit(
       ClientToServerEvents.TABLE_INVITATION_ACCEPT,
       { invitationId: tableInvitation.id },
-      (response: SocketCallback<void>) => {
+      (response: SocketCallback) => {
         if (response.success) {
           onAcceptInvitation(tableInvitation.roomId, tableInvitation.tableId);
           onCancel?.();
@@ -56,7 +56,7 @@ export default function TableInvitationModal({
         reason,
         isDeclineAll: isDeclineAll,
       },
-      (response: SocketCallback<void>) => {
+      (response: SocketCallback) => {
         if (response.success) {
           onCancel?.();
         }

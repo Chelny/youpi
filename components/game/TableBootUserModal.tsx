@@ -87,7 +87,7 @@ export default function TableBootUserModal({
     socketRef.current?.emit(
       ClientToServerEvents.TABLE_BOOT_USER,
       { tableId, hostId, playerToBootId: selectedPlayerId },
-      (response: SocketCallback<void>) => {
+      (response: SocketCallback) => {
         if (response.success) {
           onCancel?.();
         }
