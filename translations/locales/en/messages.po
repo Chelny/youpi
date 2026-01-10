@@ -580,7 +580,7 @@ msgstr "Accept"
 msgid "Account"
 msgstr "Account"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:188
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:186
 msgid "Add Passkey"
 msgstr "Add Passkey"
 
@@ -749,7 +749,7 @@ msgstr "Confirm New Password"
 msgid "Confirm Password"
 msgstr "Confirm Password"
 
-#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:100
+#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:126
 msgid "Connect or disconnect social accounts used to sign in."
 msgstr "Connect or disconnect social accounts used to sign in."
 
@@ -816,7 +816,7 @@ msgstr "Defuse"
 msgid "Delete"
 msgstr "Delete"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:246
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:242
 msgid "Delete \"{passkeyName}\" passkey"
 msgstr "Delete \"{passkeyName}\" passkey"
 
@@ -868,7 +868,7 @@ msgstr "Drop:"
 msgid "Duplicate keys detected. Each key must be unique."
 msgstr "Duplicate keys detected. Each key must be unique."
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:231
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:227
 msgid "Edit \"{passkeyName}\" passkey"
 msgstr "Edit \"{passkeyName}\" passkey"
 
@@ -893,7 +893,7 @@ msgstr "End"
 msgid "English"
 msgstr "English"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:182
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:180
 msgid "Enter a name for the passkey"
 msgstr "Enter a name for the passkey"
 
@@ -1124,15 +1124,15 @@ msgstr "Left:"
 msgid "Light"
 msgstr "Light"
 
-#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:123
+#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:149
 msgid "Link"
 msgstr "Link"
 
-#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:119
+#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:145
 msgid "Link {label}"
 msgstr "Link {label}"
 
-#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:99
+#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:125
 msgid "Linked Social Accounts"
 msgstr "Linked Social Accounts"
 
@@ -1152,7 +1152,7 @@ msgstr "Losses: {losses}"
 msgid "Magic Link"
 msgstr "Magic Link"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:171
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:169
 msgid "Manage passkeys for faster and more secure sign-in."
 msgstr "Manage passkeys for faster and more secure sign-in."
 
@@ -1212,7 +1212,7 @@ msgstr "Muted"
 
 #: app/[locale]/(public)/(auth)/sign-up/sign-up.form.tsx:146
 #: app/[locale]/(protected)/account/profile/personal-information.form.tsx:125
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:181
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:179
 #: components/game/PlayersList.tsx:232
 msgid "Name"
 msgstr "Name"
@@ -1397,7 +1397,7 @@ msgstr "Page Up"
 msgid "Passkey"
 msgstr "Passkey"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:170
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:168
 msgid "Passkeys"
 msgstr "Passkeys"
 
@@ -1595,7 +1595,7 @@ msgstr "Saturday"
 msgid "Save"
 msgstr "Save"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:222
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:218
 msgid "Save passkey"
 msgstr "Save passkey"
 
@@ -1793,9 +1793,13 @@ msgstr "Thanks, partner."
 msgid "That must have hurt."
 msgstr "That must have hurt."
 
-#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:77
+#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:114
 msgid "The account has been linked!"
 msgstr "The account has been linked!"
+
+#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:85
+msgid "The account has been unlinked!"
+msgstr "The account has been unlinked!"
 
 #: app/[locale]/(protected)/account/settings/avatar-selection.tsx:39
 msgid "The avatar has been updated!"
@@ -1823,7 +1827,7 @@ msgstr "The email is invalid."
 msgid "The email or the password is invalid."
 msgstr "The email or the password is invalid."
 
-#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:25
+#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:26
 msgid "The email you provided does not match the one associated with your account."
 msgstr "The email you provided does not match the one associated with your account."
 
@@ -1833,7 +1837,7 @@ msgstr "The language is invalid."
 
 #: app/[locale]/(public)/(auth)/sign-up/sign-up.form.tsx:54
 #: app/[locale]/(protected)/account/profile/personal-information.form.tsx:51
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:54
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:52
 msgid "The name is invalid."
 msgstr "The name is invalid."
 
@@ -1849,15 +1853,15 @@ msgstr "The new password confirmation is invalid."
 msgid "The new password is invalid."
 msgstr "The new password is invalid."
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:92
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:90
 msgid "The passkey \"{name}\" has been added!"
 msgstr "The passkey \"{name}\" has been added!"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:160
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:158
 msgid "The passkey \"{name}\" has been deleted!"
 msgstr "The passkey \"{name}\" has been deleted!"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:127
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:125
 msgid "The passkey name has been updated!"
 msgstr "The passkey name has been updated!"
 
@@ -1944,11 +1948,11 @@ msgstr "Tuesday"
 msgid "Unknown error occurred"
 msgstr "Unknown error occurred"
 
-#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:123
+#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:149
 msgid "Unlink"
 msgstr "Unlink"
 
-#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:119
+#: app/[locale]/(protected)/account/profile/linked-social-accounts.form.tsx:145
 msgid "Unlink {label}"
 msgstr "Unlink {label}"
 
@@ -2006,7 +2010,7 @@ msgstr "Username must be between 4 and 32 characters long and can contain digits
 #: app/[locale]/(protected)/account/settings/theme.form.tsx:81
 #: app/[locale]/(protected)/account/settings/language.form.tsx:58
 #: app/[locale]/(protected)/account/profile/personal-information.form.tsx:70
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:66
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:64
 #: app/[locale]/(protected)/account/profile/change-password.form.tsx:80
 #: app/[locale]/(protected)/account/profile/change-password.form.tsx:142
 #: app/[locale]/(protected)/account/profile/change-email.form.tsx:56

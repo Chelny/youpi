@@ -159,7 +159,6 @@ This project is inspired by Yahoo! Towers but is an independent work. It is not 
 
 ## Roadmap
 
-- [ ] Add OTP (email and phone)
 - [ ] Add tooltip component (?)
 - [ ] User changing username while in room(s) and table(s)
   - [ ] Prevent user from accessing the profile page while in a game room (show prompt on click)

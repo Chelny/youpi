@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { ErrorContext, SuccessContext } from "@better-fetch/fetch";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { Account } from "better-auth";
 import AccountSectionHeader from "@/components/AccountSectionHeader";
 import AlertMessage from "@/components/ui/AlertMessage";
 import Button from "@/components/ui/Button";
@@ -16,7 +17,7 @@ import { AuthProvider, AuthProviderDetails } from "@/lib/providers";
 export function LinkedSocialAccountsForm(): ReactNode {
   const searchParams: ReadonlyURLSearchParams = useSearchParams();
   const errorParam: string | null = searchParams.get("error");
-  const [accountList, setAccountsList] = useState<{ id: string; provider: string }[]>([]);
+  const [accountList, setAccountsList] = useState<Account[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [formState, setFormState] = useState<ApiResponse>(INITIAL_FORM_STATE);
   const { t } = useLingui();
@@ -26,6 +27,17 @@ export function LinkedSocialAccountsForm(): ReactNode {
       message: "The email you provided does not match the one associated with your account.",
     }),
   };
+
+  useEffect(() => {
+    if (errorParam && errorMessages[errorParam]) {
+      setFormState({
+        success: false,
+        message: errorMessages[errorParam],
+      });
+    }
+
+    getLinkedAccounts();
+  }, []);
 
   const getLinkedAccounts = async (): Promise<void> => {
     await authClient.listAccounts(
@@ -37,19 +49,45 @@ export function LinkedSocialAccountsForm(): ReactNode {
         onResponse: () => {
           setIsLoading(false);
         },
-        onSuccess: (ctx: SuccessContext) => {
+        onSuccess: (ctx: SuccessContext<Account[]>) => {
           setAccountsList(ctx.data);
         },
       },
     );
   };
 
-  const isProviderLinked = (providerName: AuthProvider) =>
-    accountList.some((account) => account.provider === providerName);
+  const isProviderLinked = (providerName: AuthProvider): boolean =>
+    accountList.some((account: Account) => account.providerId === providerName);
 
   const handleLinkUnlink = async (providerName: AuthProvider): Promise<void> => {
     if (isProviderLinked(providerName)) {
-      // TODO: Unlink the account
+      await authClient.unlinkAccount(
+        {
+          providerId: providerName,
+        },
+        {
+          onRequest: () => {
+            setIsLoading(true);
+            setFormState(INITIAL_FORM_STATE);
+          },
+          onResponse: () => {
+            setIsLoading(false);
+          },
+          onError: (ctx: ErrorContext) => {
+            setFormState({
+              success: false,
+              message: ctx.error.message,
+            });
+          },
+          onSuccess: async () => {
+            setFormState({
+              success: true,
+              message: t({ message: "The account has been unlinked!" }),
+            });
+            await getLinkedAccounts();
+          },
+        },
+      );
     } else {
       // Link the account
       await authClient.linkSocial(
@@ -71,28 +109,17 @@ export function LinkedSocialAccountsForm(): ReactNode {
               message: ctx.error.message,
             });
           },
-          onSuccess: (ctx: SuccessContext) => {
+          onSuccess: async () => {
             setFormState({
               success: true,
               message: t({ message: "The account has been linked!" }),
             });
-            setAccountsList((prev) => [...prev, { id: ctx.data.id, provider: providerName }]);
+            await getLinkedAccounts();
           },
         },
       );
     }
   };
-
-  useEffect(() => {
-    if (errorParam && errorMessages[errorParam]) {
-      setFormState({
-        success: false,
-        message: errorMessages[errorParam],
-      });
-    }
-
-    getLinkedAccounts();
-  }, []);
 
   return (
     <AccountSectionHeader
@@ -104,26 +131,27 @@ export function LinkedSocialAccountsForm(): ReactNode {
           <AlertMessage type={formState.success ? "success" : "error"}>{formState.message}</AlertMessage>
         )}
         <ul className="flex flex-col gap-4">
-          {AUTH_PROVIDERS.map(({ name, label, icon }: AuthProviderDetails) => (
-            <li key={name} className="flex items-center justify-between gap-2">
-              <div className="flex-1 flex items-center gap-2">
-                <span>{icon}</span>
-                <span>{label}</span>
-              </div>
-              <Button
-                key={name}
-                type="button"
-                className="flex-1 flex justify-center items-center"
-                disabled={isLoading || isProviderLinked(name)}
-                aria-label={
-                  isProviderLinked(name) ? t({ message: `Unlink ${label}` }) : t({ message: `Link ${label}` })
-                }
-                onClick={() => handleLinkUnlink(name)}
-              >
-                {isProviderLinked(name) ? t({ message: "Unlink" }) : t({ message: "Link" })}
-              </Button>
-            </li>
-          ))}
+          {AUTH_PROVIDERS.map(({ name, label, icon }: AuthProviderDetails) => {
+            return (
+              <li key={name} className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span>{icon}</span>
+                  <span>{label}</span>
+                </div>
+                <Button
+                  type="button"
+                  className="w-30"
+                  disabled={isLoading}
+                  aria-label={
+                    isProviderLinked(name) ? t({ message: `Unlink ${label}` }) : t({ message: `Link ${label}` })
+                  }
+                  onClick={() => handleLinkUnlink(name)}
+                >
+                  {isProviderLinked(name) ? t({ message: "Unlink" }) : t({ message: "Link" })}
+                </Button>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </AccountSectionHeader>
