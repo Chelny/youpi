@@ -27,12 +27,21 @@ export default async function proxy(request: NextRequest) {
   // Access control
   // ---------------------------------------------
 
+  const pathnameParts: string[] = pathname.split("/");
+  const maybeLocale: string = pathnameParts[1];
+  const pathnameNoLocale: string = linguiConfig.locales.includes(maybeLocale)
+    ? `/${pathnameParts.slice(2).join("/")}` || "/"
+    : pathname;
+
+  const isPublicRoute: boolean = PUBLIC_ROUTES.some((route: string) => pathnameNoLocale.startsWith(route));
+  const isProtectedRoute: boolean = PROTECTED_ROUTES.some((route: string) => pathnameNoLocale.startsWith(route));
+
   if (session) {
-    if (PUBLIC_ROUTES.includes(pathname)) {
+    if (isPublicRoute) {
       return NextResponse.redirect(new URL(ROUTE_GAMES.PATH, origin));
     }
   } else {
-    if (PROTECTED_ROUTES.includes(pathname)) {
+    if (isProtectedRoute) {
       return NextResponse.redirect(new URL(ROUTE_SIGN_IN.PATH, origin));
     }
   }

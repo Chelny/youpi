@@ -19,10 +19,12 @@ import AlertMessage from "@/components/ui/AlertMessage";
 import Button from "@/components/ui/Button";
 import Input, { InputImperativeHandle } from "@/components/ui/Input";
 import { INITIAL_FORM_STATE } from "@/constants/api";
+import { useSocket } from "@/context/SocketContext";
 import { authClient } from "@/lib/auth-client";
 import { logger } from "@/lib/logger";
 
 export function PasskeysForm(): ReactNode {
+  const { session } = useSocket();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [formState, setFormState] = useState<ApiResponse>(INITIAL_FORM_STATE);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -46,7 +48,9 @@ export function PasskeysForm(): ReactNode {
     for (const error of errors) {
       switch (error.path.replace("/", "")) {
         case "name":
-          errorMessages.name = t({ message: "The name is invalid." });
+          if (payload.name) {
+            errorMessages.name = t({ message: "The name is invalid." });
+          }
           break;
         default:
           logger.warn(`Add Passkey Validation: Unknown error at ${error.path}`);
@@ -80,7 +84,7 @@ export function PasskeysForm(): ReactNode {
             });
           },
           onSuccess: () => {
-            const name: string = payload.name;
+            const name: string | undefined = payload.name || session?.user.email;
             setFormState({
               success: true,
               message: t({ message: `The passkey "${name}" has been added!` }),
@@ -118,7 +122,7 @@ export function PasskeysForm(): ReactNode {
         onSuccess: () => {
           setFormState({
             success: true,
-            message: t({ message: "The passkey has been updated!" }),
+            message: t({ message: "The passkey name has been updated!" }),
           });
           setEditingId(null);
           setEditingValue("");
@@ -148,7 +152,7 @@ export function PasskeysForm(): ReactNode {
           });
         },
         onSuccess: () => {
-          const name: string | undefined = passkey.name;
+          const name: string | undefined = passkey.name || session?.user.email;
           setFormState({
             success: true,
             message: t({ message: `The passkey "${name}" has been deleted!` }),
@@ -174,47 +178,43 @@ export function PasskeysForm(): ReactNode {
             id="passkeyName"
             label={t({ message: "Name" })}
             placeholder={t({ message: "Enter a name for the passkey" })}
-            required
             dir="ltr"
             dataTestId="passkeys_input-text_name"
             errorMessage={formState?.error?.name}
           />
-          {/* FIXME: Passkey can't sign in */}
-          <Button type="submit" className="max-md:w-full md:place-self-end" disabled={isLoading || true}>
+          <Button type="submit" className="max-md:w-full md:place-self-end" disabled={isLoading}>
             <Trans>Add Passkey</Trans>
           </Button>
         </form>
         {passkeys && passkeys?.length > 0 && (
-          <hr className={clsx("mt-6 mb-4 border border-neutral-200", "dark:border-slate-600")} />
+          <hr className={clsx("mt-6 mb-4 border-t border-neutral-200", "dark:border-slate-600")} />
         )}
         <ul className="flex flex-col gap-2">
           {passkeys?.map((passkey: Passkey) => {
             const isEditing: boolean = editingId === passkey.id;
-            const passkeyName: string = passkey.name!;
+            const passkeyName: string | undefined = passkey.name;
 
             return (
-              <li
-                key={passkey.id}
-                className={clsx(
-                  "flex justify-between items-center gap-2 p-2 border border-gray-200 rounded-sm bg-white",
-                  "dark:border-dark-card-border dark:bg-dark-background",
+              <li key={passkey.id} className="flex justify-between items-center gap-2">
+                {passkeyName ? (
+                  <Input
+                    ref={isEditing ? editPasskeyInputRef : null}
+                    id={`passkey-${passkey.id}`}
+                    className={clsx("flex-1 -mb-4", "")}
+                    readOnly={!isEditing}
+                    defaultValue={isEditing ? editingValue : passkeyName}
+                    onInput={(event: InputEvent<HTMLInputElement>) => {
+                      setEditingValue(event.currentTarget.value);
+                    }}
+                  />
+                ) : (
+                  <div className="flex-1">{session?.user.email}</div>
                 )}
-              >
-                <Input
-                  ref={isEditing ? editPasskeyInputRef : null}
-                  id={`passkey-${passkey.id}`}
-                  className="flex-1 -mb-4"
-                  readOnly={!isEditing}
-                  defaultValue={isEditing ? editingValue : passkeyName}
-                  onInput={(event: InputEvent<HTMLInputElement>) => {
-                    setEditingValue(event.currentTarget.value);
-                  }}
-                ></Input>
                 <div className="flex-1 flex gap-2 justify-end items-center">
                   {isEditing ? (
                     <Button
                       type="button"
-                      disabled={isLoading || isPending || isRefetching}
+                      disabled={isLoading || isPending || isRefetching || !passkeyName}
                       aria-label={t({ message: "Save passkey" })}
                       onClick={() => handleUpdate(passkey)}
                     >
@@ -223,7 +223,7 @@ export function PasskeysForm(): ReactNode {
                   ) : (
                     <Button
                       type="button"
-                      disabled={isLoading || isPending || isRefetching}
+                      disabled={isLoading || isPending || isRefetching || !passkeyName}
                       aria-label={t({ message: `Edit "${passkeyName}" passkey` })}
                       onClick={() => {
                         setEditingId(passkey.id);

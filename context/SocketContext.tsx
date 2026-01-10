@@ -42,8 +42,8 @@ export const SocketProvider = ({ children, session }: PropsWithChildren<{ sessio
   useEffect(() => {
     if (!session) {
       if (socketRef.current) {
-        // TODO: Show a modal or redirect user to sign in page
-        logger.warn("No session found. Disconnecting socket and prompting user to re-auth.");
+        // TODO: Show a modal (prompting user to re-auth?) or redirect user to sign in page
+        logger.warn("No session found. Disconnecting socket.");
         socketRef.current.disconnect();
         socketRef.current = null;
       }
@@ -165,7 +165,7 @@ export const SocketProvider = ({ children, session }: PropsWithChildren<{ sessio
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [session?.user.id]);
+  }, [session]);
 
   useEffect(() => {
     const socket: Socket | null = socketRef.current;

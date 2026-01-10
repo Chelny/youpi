@@ -425,7 +425,7 @@ msgstr "You are not authorized to perform this action. Please sign in and try ag
 #. placeholder {0}: pagination.totalResults
 #. placeholder {1}: pagination.totalResults
 #. placeholder {2}: pagination.totalResults
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:394
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:406
 msgid "{0, plural, zero {No results} one {{1} result} other {{2} results}}"
 msgstr "{0, plural, zero {No results} one {{1} result} other {{2} results}}"
 
@@ -441,75 +441,75 @@ msgstr "{message} Please try again or <0>contact our support team</0> if the iss
 msgid "{myNetDelay, plural, zero {My net delay: {myNetDelay} seconds.} one {My net delay: {myNetDelay} second.} other {My net delay: {myNetDelay} seconds.}}"
 msgstr "{myNetDelay, plural, zero {My net delay: {myNetDelay} seconds.} one {My net delay: {myNetDelay} second.} other {My net delay: {myNetDelay} seconds.}}"
 
-#: components/game/Table.tsx:764
+#: components/game/Table.tsx:768
 msgid "{powerLevel, select, minor {{sourceUsername} minorly defused {targetUsername}} mega {{sourceUsername} mega defused {targetUsername}} other {{sourceUsername} defused {targetUsername}}}"
 msgstr "{powerLevel, select, minor {{sourceUsername} minorly defused {targetUsername}} mega {{sourceUsername} mega defused {targetUsername}} other {{sourceUsername} defused {targetUsername}}}"
 
-#: components/game/Table.tsx:749
+#: components/game/Table.tsx:753
 msgid "{powerLevel, select, minor {{sourceUsername} minorly dithered {targetUsername}} mega {{sourceUsername} mega dithered {targetUsername}} other {{sourceUsername} dithered {targetUsername}}}"
 msgstr "{powerLevel, select, minor {{sourceUsername} minorly dithered {targetUsername}} mega {{sourceUsername} mega dithered {targetUsername}} other {{sourceUsername} dithered {targetUsername}}}"
 
-#: components/game/Table.tsx:656
+#: components/game/Table.tsx:660
 msgid "{powerLevel, select, minor {You can add a stone} normal {You can add 2 stones} mega {You can add 3 stones} other {You can add stones}}"
 msgstr "{powerLevel, select, minor {You can add a stone} normal {You can add 2 stones} mega {You can add 3 stones} other {You can add stones}}"
 
-#: components/game/Table.tsx:702
+#: components/game/Table.tsx:706
 msgid "{powerLevel, select, minor {You can drop a stone} normal {You can drop 2 stones} mega {You can drop 3 stones} other {You can drop stones}}"
 msgstr "{powerLevel, select, minor {You can drop a stone} normal {You can drop 2 stones} mega {You can drop 3 stones} other {You can drop stones}}"
 
-#: components/game/Table.tsx:693
+#: components/game/Table.tsx:697
 msgid "{powerLevel, select, minor {You can minorly clump} mega {You can mega clump} other {You can clump}}"
 msgstr "{powerLevel, select, minor {You can minorly clump} mega {You can mega clump} other {You can clump}}"
 
-#: components/game/Table.tsx:666
+#: components/game/Table.tsx:670
 msgid "{powerLevel, select, minor {You can minorly defuse} mega {You can mega defuse} other {You can defuse}}"
 msgstr "{powerLevel, select, minor {You can minorly defuse} mega {You can mega defuse} other {You can defuse}}"
 
-#: components/game/Table.tsx:647
+#: components/game/Table.tsx:651
 msgid "{powerLevel, select, minor {You can minorly dither} mega {You can mega dither} other {You can dither}}"
 msgstr "{powerLevel, select, minor {You can minorly dither} mega {You can mega dither} other {You can dither}}"
 
-#: components/game/Table.tsx:677
+#: components/game/Table.tsx:681
 msgid "{powerLevel, select, minor {You can minorly remove powers} mega {You can mega remove powers} other {You can remove powers}}"
 msgstr "{powerLevel, select, minor {You can minorly remove powers} mega {You can mega remove powers} other {You can remove powers}}"
 
-#: components/game/Table.tsx:743
+#: components/game/Table.tsx:747
 msgid "{sourceUsername} added a row to {targetUsername}"
 msgstr "{sourceUsername} added a row to {targetUsername}"
 
-#: components/game/Table.tsx:796
+#: components/game/Table.tsx:800
 msgid "{sourceUsername} clumped {targetUsername}"
 msgstr "{sourceUsername} clumped {targetUsername}"
 
-#: components/game/Table.tsx:814
+#: components/game/Table.tsx:818
 msgid "{sourceUsername} color blasted {targetUsername}"
 msgstr "{sourceUsername} color blasted {targetUsername}"
 
-#: components/game/Table.tsx:790
+#: components/game/Table.tsx:794
 msgid "{sourceUsername} removed a row from {targetUsername}"
 msgstr "{sourceUsername} removed a row from {targetUsername}"
 
-#: components/game/Table.tsx:779
+#: components/game/Table.tsx:783
 msgid "{sourceUsername} removed powers from {targetUsername}"
 msgstr "{sourceUsername} removed powers from {targetUsername}"
 
-#: components/game/Table.tsx:826
+#: components/game/Table.tsx:830
 msgid "{sourceUsername} sent a color plague to {targetUsername}"
 msgstr "{sourceUsername} sent a color plague to {targetUsername}"
 
-#: components/game/Table.tsx:773
+#: components/game/Table.tsx:777
 msgid "{sourceUsername} sent a Medusa piece to {targetUsername}"
 msgstr "{sourceUsername} sent a Medusa piece to {targetUsername}"
 
-#: components/game/Table.tsx:820
+#: components/game/Table.tsx:824
 msgid "{sourceUsername} sent a Midas piece to {targetUsername}"
 msgstr "{sourceUsername} sent a Midas piece to {targetUsername}"
 
-#: components/game/Table.tsx:758
+#: components/game/Table.tsx:762
 msgid "{sourceUsername} stoned {targetUsername}"
 msgstr "{sourceUsername} stoned {targetUsername}"
 
-#: components/game/Table.tsx:731
+#: components/game/Table.tsx:735
 msgid "{sourceUsername} used a special cell on {targetUsername}"
 msgstr "{sourceUsername} used a special cell on {targetUsername}"
 
@@ -521,11 +521,11 @@ msgstr "{targetNetDelay, plural, zero {{username}’s net delay: {targetNetDelay
 msgid "{usersCount, plural, zero {no users} one {# user} other {# users}}"
 msgstr "{usersCount, plural, zero {no users} one {# user} other {# users}}"
 
-#: components/game/Table.tsx:804
+#: components/game/Table.tsx:808
 msgid "{value, plural, one {{sourceUsername} dropped 1 stone for {targetUsername}} two {{sourceUsername} dropped 2 stones for {targetUsername}} =3 {{sourceUsername} dropped 3 stones for {targetUsername}} other {{sourceUsername} dropped stones for {targetUsername}}}"
 msgstr "{value, plural, one {{sourceUsername} dropped 1 stone for {targetUsername}} two {{sourceUsername} dropped 2 stones for {targetUsername}} =3 {{sourceUsername} dropped 3 stones for {targetUsername}} other {{sourceUsername} dropped stones for {targetUsername}}}"
 
-#: components/game/Table.tsx:1025
+#: components/game/Table.tsx:1029
 msgid ""
 "{winnersCount, plural, one {Congratulations\n"
 "{firstWinner}} other {Congratulations\n"
@@ -551,7 +551,7 @@ msgstr "<0>Effective Date: {date}</0><1><2>1. Introduction</2><3>Welcome to {nam
 msgid "<0>Email not verified.</0> Please verify your email to continue. <1>Resend verification</1>"
 msgstr "<0>Email not verified.</0> Please verify your email to continue. <1>Resend verification</1>"
 
-#: components/game/Table.tsx:987
+#: components/game/Table.tsx:991
 msgid "<0>The next game is starting in</0><1>{countdown}</1><2>{countdown, plural, one {second} other {seconds}}</2>"
 msgstr "<0>The next game is starting in</0><1>{countdown}</1><2>{countdown, plural, one {second} other {seconds}}</2>"
 
@@ -580,7 +580,7 @@ msgstr "Accept"
 msgid "Account"
 msgstr "Account"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:184
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:188
 msgid "Add Passkey"
 msgstr "Add Passkey"
 
@@ -637,11 +637,11 @@ msgstr "August"
 msgid "Avatar"
 msgstr "Avatar"
 
-#: components/AvatarListbox.tsx:66
+#: components/AvatarListbox.tsx:70
 msgid "Avatars"
 msgstr "Avatars"
 
-#: components/AvatarListbox.tsx:57
+#: components/AvatarListbox.tsx:59
 msgid "Avatars:"
 msgstr "Avatars:"
 
@@ -655,12 +655,12 @@ msgid "Birthdate"
 msgstr "Birthdate"
 
 #: app/[locale]/(protected)/account/relationships/Relationships.tsx:227
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:358
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:370
 msgid "Blocked"
 msgstr "Blocked"
 
 #: components/game/TableBootUserModal.tsx:101
-#: components/game/Table.tsx:918
+#: components/game/Table.tsx:922
 msgid "Boot"
 msgstr "Boot"
 
@@ -676,7 +676,7 @@ msgstr "Booted from table"
 msgid "breadcrumb"
 msgstr "breadcrumb"
 
-#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:267
+#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:273
 msgid "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
 
@@ -685,7 +685,7 @@ msgstr "By signing in, you agree to our <0>Terms of Service</0> and <1>Privacy P
 msgid "Cancel"
 msgstr "Cancel"
 
-#: components/game/Table.tsx:869
+#: components/game/Table.tsx:873
 msgid "Change Keys"
 msgstr "Change Keys"
 
@@ -775,7 +775,7 @@ msgstr "Create Table"
 msgid "Current Password"
 msgstr "Current Password"
 
-#: components/game/Table.tsx:1065
+#: components/game/Table.tsx:1069
 msgid "Cycle Color:"
 msgstr "Cycle Color:"
 
@@ -784,7 +784,7 @@ msgstr "Cycle Color:"
 msgid "Dark"
 msgstr "Dark"
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:310
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:321
 msgid "Date"
 msgstr "Date"
 
@@ -816,7 +816,7 @@ msgstr "Defuse"
 msgid "Delete"
 msgstr "Delete"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:242
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:246
 msgid "Delete \"{passkeyName}\" passkey"
 msgstr "Delete \"{passkeyName}\" passkey"
 
@@ -828,7 +828,7 @@ msgstr "Delete Account"
 msgid "Delete notification"
 msgstr "Delete notification"
 
-#: components/game/Table.tsx:876
+#: components/game/Table.tsx:880
 msgid "Demo"
 msgstr "Demo"
 
@@ -860,7 +860,7 @@ msgstr "Down Arrow"
 msgid "Drop Stones"
 msgstr "Drop Stones"
 
-#: components/game/Table.tsx:1057
+#: components/game/Table.tsx:1061
 msgid "Drop:"
 msgstr "Drop:"
 
@@ -868,7 +868,7 @@ msgstr "Drop:"
 msgid "Duplicate keys detected. Each key must be unique."
 msgstr "Duplicate keys detected. Each key must be unique."
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:227
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:231
 msgid "Edit \"{passkeyName}\" passkey"
 msgstr "Edit \"{passkeyName}\" passkey"
 
@@ -893,7 +893,7 @@ msgstr "End"
 msgid "English"
 msgstr "English"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:176
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:182
 msgid "Enter a name for the passkey"
 msgstr "Enter a name for the passkey"
 
@@ -938,7 +938,7 @@ msgstr "Exit Room"
 msgid "Expand sidebar"
 msgstr "Expand sidebar"
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:271
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:273
 msgid "Failed to load relationships."
 msgstr "Failed to load relationships."
 
@@ -947,7 +947,7 @@ msgid "Failed to update avatar."
 msgstr "Failed to update avatar."
 
 #: app/[locale]/(protected)/account/relationships/Relationships.tsx:224
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:355
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:367
 msgid "Favorite"
 msgstr "Favorite"
 
@@ -956,7 +956,7 @@ msgid "February"
 msgstr "February"
 
 #: app/[locale]/(protected)/account/relationships/Relationships.tsx:221
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:352
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:364
 msgid "Following"
 msgstr "Following"
 
@@ -981,7 +981,7 @@ msgstr "Full"
 msgid "Game option: {ratedOption}"
 msgstr "Game option: {ratedOption}"
 
-#: components/game/Table.tsx:1008
+#: components/game/Table.tsx:1012
 msgid "Game Over"
 msgstr "Game Over"
 
@@ -997,7 +997,7 @@ msgstr "Games Completed: {gamesCompleted}"
 msgid "Go to homepage"
 msgstr "Go to homepage"
 
-#: components/game/Table.tsx:950
+#: components/game/Table.tsx:954
 msgid "Help"
 msgstr "Help"
 
@@ -1064,7 +1064,7 @@ msgid "Invitation Declined"
 msgstr "Invitation Declined"
 
 #: components/game/TableInviteUserModal.tsx:99
-#: components/game/Table.tsx:911
+#: components/game/Table.tsx:915
 msgid "Invite"
 msgstr "Invite"
 
@@ -1115,7 +1115,7 @@ msgstr "Language"
 msgid "Left Arrow"
 msgstr "Left Arrow"
 
-#: components/game/Table.tsx:1041
+#: components/game/Table.tsx:1045
 msgid "Left:"
 msgstr "Left:"
 
@@ -1136,11 +1136,11 @@ msgstr "Link {label}"
 msgid "Linked Social Accounts"
 msgstr "Linked Social Accounts"
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:406
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:418
 msgid "Load more"
 msgstr "Load more"
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:321
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:333
 msgid "Loading..."
 msgstr "Loading..."
 
@@ -1148,11 +1148,11 @@ msgstr "Loading..."
 msgid "Losses: {losses}"
 msgstr "Losses: {losses}"
 
-#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:238
+#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:240
 msgid "Magic Link"
 msgstr "Magic Link"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:165
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:171
 msgid "Manage passkeys for faster and more secure sign-in."
 msgstr "Manage passkeys for faster and more secure sign-in."
 
@@ -1180,7 +1180,7 @@ msgstr "Midas Piece"
 msgid "Monday"
 msgstr "Monday"
 
-#: components/ui/Breadcrumb.tsx:73
+#: components/ui/Breadcrumb.tsx:74
 msgid "More"
 msgstr "More"
 
@@ -1206,13 +1206,13 @@ msgstr "Mute this conversation"
 
 #: app/[locale]/(protected)/account/relationships/Relationships.tsx:238
 #: app/[locale]/(protected)/account/relationships/Relationships.tsx:249
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:296
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:305
 msgid "Muted"
 msgstr "Muted"
 
 #: app/[locale]/(public)/(auth)/sign-up/sign-up.form.tsx:146
 #: app/[locale]/(protected)/account/profile/personal-information.form.tsx:125
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:175
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:181
 #: components/game/PlayersList.tsx:232
 msgid "Name"
 msgstr "Name"
@@ -1233,7 +1233,7 @@ msgstr "New Password"
 msgid "Next Decade"
 msgstr "Next Decade"
 
-#: components/game/TableGameDemoPanel.tsx:743
+#: components/game/TableGameDemoPanel.tsx:744
 msgid "Next game starting..."
 msgstr "Next game starting..."
 
@@ -1253,12 +1253,12 @@ msgstr "No conversations"
 msgid "No notifications"
 msgstr "No notifications"
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:327
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:339
 msgid "No results"
 msgstr "No results"
 
 #: app/[locale]/(protected)/account/relationships/Relationships.tsx:230
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:361
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:373
 #: components/game/GameOptionsModal.tsx:115
 msgid "None"
 msgstr "None"
@@ -1367,7 +1367,7 @@ msgstr "Option: rated"
 msgid "optional"
 msgstr "optional"
 
-#: components/game/Table.tsx:922
+#: components/game/Table.tsx:926
 #: components/game/Room.tsx:427
 #: components/game/GameOptionsModal.tsx:91
 msgid "Options"
@@ -1377,7 +1377,7 @@ msgstr "Options"
 msgid "or sign in with"
 msgstr "or sign in with"
 
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:393
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:405
 msgid "Page"
 msgstr "Page"
 
@@ -1393,11 +1393,11 @@ msgstr "Page Not Found"
 msgid "Page Up"
 msgstr "Page Up"
 
-#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:263
+#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:268
 msgid "Passkey"
 msgstr "Passkey"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:164
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:170
 msgid "Passkeys"
 msgstr "Passkeys"
 
@@ -1463,7 +1463,7 @@ msgstr "Primary navigation"
 msgid "Privacy Policy"
 msgstr "Privacy Policy"
 
-#: components/game/Table.tsx:903
+#: components/game/Table.tsx:907
 msgid "Private"
 msgstr "Private"
 
@@ -1475,7 +1475,7 @@ msgstr "Profanity Filter"
 msgid "Profile"
 msgstr "Profile"
 
-#: components/game/Table.tsx:900
+#: components/game/Table.tsx:904
 msgid "Protected"
 msgstr "Protected"
 
@@ -1487,11 +1487,11 @@ msgstr "provisional"
 msgid "Pseudo"
 msgstr "Pseudo"
 
-#: components/game/Table.tsx:897
+#: components/game/Table.tsx:901
 msgid "Public"
 msgstr "Public"
 
-#: components/game/Table.tsx:953
+#: components/game/Table.tsx:957
 msgid "Quit"
 msgstr "Quit"
 
@@ -1499,7 +1499,7 @@ msgstr "Quit"
 msgid "Rated"
 msgstr "Rated"
 
-#: components/game/Table.tsx:928
+#: components/game/Table.tsx:932
 #: components/game/CreateTableModal.tsx:120
 msgid "Rated Game"
 msgstr "Rated Game"
@@ -1525,7 +1525,7 @@ msgid "Reason"
 msgstr "Reason"
 
 #: app/[locale]/(protected)/account/relationships/Relationships.tsx:210
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:295
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:302
 msgid "Relation Type"
 msgstr "Relation Type"
 
@@ -1562,7 +1562,7 @@ msgstr "Reset"
 msgid "Reset Password"
 msgstr "Reset Password"
 
-#: components/SmallScreenWarning.tsx:23
+#: components/SmallScreenWarning.tsx:24
 msgid "Resize the window (recommended size: {width} by {height})<0/>or use a computer for a better experience."
 msgstr "Resize the window (recommended size: {width} by {height})<0/>or use a computer for a better experience."
 
@@ -1578,7 +1578,7 @@ msgstr "Revoke all other sessions"
 msgid "Right Arrow"
 msgstr "Right Arrow"
 
-#: components/game/Table.tsx:1049
+#: components/game/Table.tsx:1053
 msgid "Right:"
 msgstr "Right:"
 
@@ -1595,11 +1595,11 @@ msgstr "Saturday"
 msgid "Save"
 msgstr "Save"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:218
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:222
 msgid "Save passkey"
 msgstr "Save passkey"
 
-#: components/SmallScreenWarning.tsx:20
+#: components/SmallScreenWarning.tsx:21
 msgid "Screen Too Small"
 msgstr "Screen Too Small"
 
@@ -1666,7 +1666,7 @@ msgstr "Show password"
 msgid "Sign In"
 msgstr "Sign In"
 
-#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:248
+#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:251
 msgid "Sign in with {provider}"
 msgstr "Sign in with {provider}"
 
@@ -1708,7 +1708,7 @@ msgstr "Sort ascending"
 msgid "Sort descending"
 msgstr "Sort descending"
 
-#: components/game/Table.tsx:942
+#: components/game/Table.tsx:946
 msgid "Sound"
 msgstr "Sound"
 
@@ -1721,12 +1721,12 @@ msgid "Space bar"
 msgstr "Space bar"
 
 #: components/towers/PlayerBoard.tsx:469
-#: components/game/Table.tsx:880
+#: components/game/Table.tsx:884
 msgid "Stand"
 msgstr "Stand"
 
 #: components/towers/PlayerBoard.tsx:479
-#: components/game/Table.tsx:861
+#: components/game/Table.tsx:865
 msgid "Start"
 msgstr "Start"
 
@@ -1752,7 +1752,7 @@ msgstr "System"
 msgid "Table"
 msgstr "Table"
 
-#: components/game/Table.tsx:884
+#: components/game/Table.tsx:888
 #: components/game/CreateTableModal.tsx:107
 msgid "Table Type"
 msgstr "Table Type"
@@ -1812,14 +1812,14 @@ msgstr "The current password is invalid."
 
 #: app/[locale]/(public)/(auth)/sign-up/sign-up.form.tsx:62
 #: app/[locale]/(public)/(auth)/sign-in-with-magic-link/sign-in-with-magic-link.form.tsx:40
-#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:59
+#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:60
 #: app/[locale]/(public)/(auth)/forgot-password/forgot-password.form.tsx:39
 #: app/[locale]/(protected)/account/profile/change-email.form.tsx:45
 #: app/[locale]/(protected)/account/delete/delete.form.tsx:40
 msgid "The email is invalid."
 msgstr "The email is invalid."
 
-#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:73
+#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:74
 msgid "The email or the password is invalid."
 msgstr "The email or the password is invalid."
 
@@ -1833,7 +1833,7 @@ msgstr "The language is invalid."
 
 #: app/[locale]/(public)/(auth)/sign-up/sign-up.form.tsx:54
 #: app/[locale]/(protected)/account/profile/personal-information.form.tsx:51
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:49
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:54
 msgid "The name is invalid."
 msgstr "The name is invalid."
 
@@ -1849,17 +1849,17 @@ msgstr "The new password confirmation is invalid."
 msgid "The new password is invalid."
 msgstr "The new password is invalid."
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:86
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:92
 msgid "The passkey \"{name}\" has been added!"
 msgstr "The passkey \"{name}\" has been added!"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:154
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:160
 msgid "The passkey \"{name}\" has been deleted!"
 msgstr "The passkey \"{name}\" has been deleted!"
 
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:121
-msgid "The passkey has been updated!"
-msgstr "The passkey has been updated!"
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:127
+msgid "The passkey name has been updated!"
+msgstr "The passkey name has been updated!"
 
 #: app/[locale]/(public)/(auth)/sign-up/sign-up.form.tsx:83
 #: app/[locale]/(public)/(auth)/reset-password/reset-password.form.tsx:61
@@ -1886,7 +1886,7 @@ msgid "The password has been updated!"
 msgstr "The password has been updated!"
 
 #: app/[locale]/(public)/(auth)/sign-up/sign-up.form.tsx:68
-#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:62
+#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:63
 #: app/[locale]/(public)/(auth)/reset-password/reset-password.form.tsx:49
 #: app/[locale]/(protected)/account/profile/change-password.form.tsx:62
 msgid "The password is invalid."
@@ -1920,7 +1920,7 @@ msgstr "The username is invalid."
 msgid "Theme"
 msgstr "Theme"
 
-#: components/ThemeToggleButton.tsx:71
+#: components/ThemeToggleButton.tsx:72
 msgid "Theme: {themeLabel}"
 msgstr "Theme: {themeLabel}"
 
@@ -1980,7 +1980,7 @@ msgstr "Update Theme"
 msgid "Update your personal details here."
 msgstr "Update your personal details here."
 
-#: components/game/Table.tsx:1073
+#: components/game/Table.tsx:1077
 msgid "Use Item:"
 msgstr "Use Item:"
 
@@ -1989,7 +1989,7 @@ msgid "User menu"
 msgstr "User menu"
 
 #: app/[locale]/(public)/(auth)/sign-up/sign-up.form.tsx:173
-#: app/[locale]/(protected)/account/relationships/Relationships.tsx:291
+#: app/[locale]/(protected)/account/relationships/Relationships.tsx:296
 #: app/[locale]/(protected)/account/profile/personal-information.form.tsx:143
 msgid "Username"
 msgstr "Username"
@@ -2006,7 +2006,7 @@ msgstr "Username must be between 4 and 32 characters long and can contain digits
 #: app/[locale]/(protected)/account/settings/theme.form.tsx:81
 #: app/[locale]/(protected)/account/settings/language.form.tsx:58
 #: app/[locale]/(protected)/account/profile/personal-information.form.tsx:70
-#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:60
+#: app/[locale]/(protected)/account/profile/passkeys.form.tsx:66
 #: app/[locale]/(protected)/account/profile/change-password.form.tsx:80
 #: app/[locale]/(protected)/account/profile/change-password.form.tsx:142
 #: app/[locale]/(protected)/account/profile/change-email.form.tsx:56
@@ -2075,31 +2075,31 @@ msgstr "You"
 msgid "You are not logged in"
 msgstr "You are not logged in"
 
-#: components/game/Table.tsx:644
+#: components/game/Table.tsx:648
 msgid "You can add a row"
 msgstr "You can add a row"
 
-#: components/game/Table.tsx:711
+#: components/game/Table.tsx:715
 msgid "You can color blast"
 msgstr "You can color blast"
 
-#: components/game/Table.tsx:690
+#: components/game/Table.tsx:694
 msgid "You can remove a row"
 msgstr "You can remove a row"
 
-#: components/game/Table.tsx:715
+#: components/game/Table.tsx:719
 msgid "You can send a color plague"
 msgstr "You can send a color plague"
 
-#: components/game/Table.tsx:674
+#: components/game/Table.tsx:678
 msgid "You can send a Medusa piece"
 msgstr "You can send a Medusa piece"
 
-#: components/game/Table.tsx:713
+#: components/game/Table.tsx:717
 msgid "You can send a Midas piece"
 msgstr "You can send a Midas piece"
 
-#: components/game/Table.tsx:636
+#: components/game/Table.tsx:640
 msgid "You can use a special cell"
 msgstr "You can use a special cell"
 
@@ -2111,7 +2111,7 @@ msgstr "You can't touch me."
 msgid "You have new notifications."
 msgstr "You have new notifications."
 
-#: components/game/Table.tsx:1013
+#: components/game/Table.tsx:1017
 msgid "You lose!"
 msgstr "You lose!"
 
@@ -2124,23 +2124,22 @@ msgstr "You must accept the terms and conditions."
 msgid "You must be at least 13 years old."
 msgstr "You must be at least 13 years old."
 
-#: components/game/Table.tsx:532
+#: components/game/Table.tsx:536
 #: components/game/CreateTableModal.tsx:66
 msgid "You must rate this game."
 msgstr "You must rate this game."
 
-#: components/game/Table.tsx:526
+#: components/game/Table.tsx:530
 #: components/game/CreateTableModal.tsx:60
 msgid "You must select a table type."
 msgstr "You must select a table type."
 
-#: components/game/Table.tsx:1020
+#: components/game/Table.tsx:1024
 msgid "You win!"
 msgstr "You win!"
 
-#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:101
-#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:136
-#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:165
+#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:102
+#: app/[locale]/(public)/(auth)/sign-in/sign-in.form.tsx:137
 msgid "You’re signed in successfully. Welcome back!"
 msgstr "You’re signed in successfully. Welcome back!"
 

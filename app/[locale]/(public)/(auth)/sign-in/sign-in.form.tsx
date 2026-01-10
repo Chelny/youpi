@@ -25,6 +25,7 @@ import {
   ERROR_CALLBACK_URL,
   NEW_USER_CALLBACK_URL,
   ROUTE_FORGOT_PASSWORD,
+  ROUTE_HOME,
   ROUTE_PRIVACY_POLICY,
   ROUTE_SIGN_IN_WITH_MAGIC_LINK,
   ROUTE_SIGN_UP,
@@ -143,7 +144,7 @@ export function SignInForm(): ReactNode {
   const handleSignInWithPasskey = async (): Promise<void> => {
     await authClient.signIn.passkey(
       {
-        autoFill: true,
+        autoFill: false,
       },
       {
         onRequest: () => {
@@ -160,10 +161,9 @@ export function SignInForm(): ReactNode {
           });
         },
         onSuccess: () => {
-          setFormState({
-            success: true,
-            message: t({ message: "You’re signed in successfully. Welcome back!" }),
-          });
+          setFormState({ success: true });
+          router.replace(ROUTE_HOME.PATH);
+          router.refresh();
         },
       },
     );
@@ -229,6 +229,7 @@ export function SignInForm(): ReactNode {
       </div>
       <div className="flex flex-col gap-4">
         <Button
+          type="button"
           className="flex justify-center items-center w-full gap-x-2"
           disabled={isLoading}
           dataTestId="sign-in_button_sign-in-with-magic-link"
@@ -256,8 +257,9 @@ export function SignInForm(): ReactNode {
           ))}
         </div>
         <Button
+          type="button"
           className="flex justify-center items-center w-full gap-x-2"
-          disabled={isLoading || true} // FIXME: Passkey can't sign in
+          disabled={isLoading}
           dataTestId="sign-in_button_sign-in-with-passkey"
           onClick={() => handleSignInWithPasskey()}
         >

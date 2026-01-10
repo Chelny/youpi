@@ -159,7 +159,6 @@ This project is inspired by Yahoo! Towers but is an independent work. It is not 
 
 ## Roadmap
 
-- [ ] Fix passkeys (sign-in and profile)
 - [ ] Add OTP (email and phone)
 - [ ] Add tooltip component (?)
 - [ ] User changing username while in room(s) and table(s)

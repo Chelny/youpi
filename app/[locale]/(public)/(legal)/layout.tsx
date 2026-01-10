@@ -20,7 +20,7 @@ export default async function LegalLayout({ params, children }: LegalLayoutProps
           <LocaleSwitcher className="place-self-end" />
           <ul
             className={clsx(
-              "flex flex-row justify-end divide-x divide-white/50",
+              "hidden md:flex flex-row justify-end divide-x divide-white/50",
               "[&_li]:not-last:pe-2 [&_li]:not-first:not-last:px-2 [&_li]:last:ps-2",
             )}
           >
@@ -32,7 +32,7 @@ export default async function LegalLayout({ params, children }: LegalLayoutProps
           </ul>
         </nav>
       </Header>
-      <main className="container mx-auto px-4 py-8">{children}</main>
+      <main className="container mx-auto px-4 py-8 overflow-auto">{children}</main>
       <Footer />
     </div>
   );

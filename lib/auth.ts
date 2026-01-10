@@ -60,7 +60,7 @@ export const auth = betterAuth({
       expiresIn: 600, // 10 minutes
     }),
     passkey({
-      rpID: process.env.NODE_ENV === "development" ? "localhost" : "", // TODO: Set production rpID
+      rpID: process.env.HOSTNAME,
       rpName: APP_CONFIG.NAME,
       origin: process.env.BETTER_AUTH_URL,
       schema: {

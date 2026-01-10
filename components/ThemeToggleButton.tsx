@@ -68,7 +68,9 @@ export default function ThemeToggleButton(): ReactNode {
       onClick={handleSetTheme}
     >
       <Icon className="w-6 h-6 rtl:-scale-y-100 rtl:-rotate-180" aria-hidden="true" />
-      <Trans>Theme: {themeLabel}</Trans>
+      <span className="hidden md:block">
+        <Trans>Theme: {themeLabel}</Trans>
+      </span>
     </button>
   );
 }
