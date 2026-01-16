@@ -2,7 +2,6 @@ import { GameState, TableChatMessageType, TableType } from "db/client";
 import type { Room, RoomLitePlainObject } from "@/server/towers/classes/Room";
 import type { TableInvitation, TableInvitationPlainObject } from "@/server/towers/classes/TableInvitation";
 import { ServerTowersSeat, ServerTowersTeam } from "@/interfaces/table-seats";
-import { logger } from "@/lib/logger";
 import { Player, PlayerPlainObject } from "@/server/towers/classes/Player";
 import { TableChatMessage, TableChatMessagePlainObject } from "@/server/towers/classes/TableChatMessage";
 import { TablePlayer, TablePlayerPlainObject } from "@/server/towers/classes/TablePlayer";
@@ -163,16 +162,6 @@ export class Table {
       .map(([teamNumber, seats]: [number, ServerTowersSeat[]]): ServerTowersTeam => ({ teamNumber, seats }));
 
     return structuredTeams;
-  }
-
-  public checkIfGameCouldBeStarted(): void {
-    if (!this.game) this.game = new Game(this);
-
-    if (this.game?.checkMinimumReadyTeams()) {
-      setTimeout(() => this.game?.startCountdown(), 2000);
-    } else {
-      logger.debug("Not enough ready users or teams to play.");
-    }
   }
 
   public playerQuitsMidGame(tablePlayer: TablePlayer): void {

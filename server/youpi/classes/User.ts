@@ -1,5 +1,4 @@
 import { UserSettings as UserSettingsModel } from "db/client";
-import { Socket } from "socket.io";
 import { UserSettings, UserSettingsPlainObject } from "@/server/youpi/classes/UserSettings";
 
 export interface UserProps {
@@ -18,7 +17,6 @@ export class User {
   public readonly id: string;
   public username: string;
   public userSettings: UserSettings | null = null;
-  public socket: Socket | null = null;
 
   // In-memory properties
   public declineTableInvitations: boolean = false;

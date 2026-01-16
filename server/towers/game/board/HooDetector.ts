@@ -52,6 +52,7 @@ export class HooDetector {
             HOO_DIRECTION_VECTORS[direction],
             isWithin,
           );
+
           if (positions.length > 0) {
             result.push({ positions, hoosFallsCount: HOO_FALLS[direction] });
           }

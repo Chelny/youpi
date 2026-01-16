@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { memo, ReactNode, useEffect, useRef, useState } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import clsx from "clsx/lite";
 import { GameState } from "db/browser";
@@ -30,7 +30,7 @@ import { NextPiecesPlainObject } from "@/server/towers/game/NextPieces";
 import { PiecePlainObject } from "@/server/towers/game/Piece";
 import { PowerBarItemPlainObject, PowerBarPlainObject } from "@/server/towers/game/PowerBar";
 import { TowersPieceBlockPlainObject } from "@/server/towers/game/TowersPieceBlock";
-import { isTestMode } from "@/server/towers/utils/test";
+import { TEST_MODE } from "@/server/towers/utils/test";
 import { Language, languages } from "@/translations/languages";
 
 type PlayerBoardProps = {
@@ -45,14 +45,14 @@ type PlayerBoardProps = {
   tablePlayerForSeat?: TablePlayerPlainObject
   isRatingsVisible: boolean
   onSit: (seatNumber: number) => void
-  onStand: (seatNumber: number) => void
-  onStart: (seatNumber: number) => void
+  onStand: () => void
+  onStartGame: () => void
   onNextPowerBarItem: (nextPowerBarItem?: PowerBarItemPlainObject) => void
 };
 
 const TYPING_TIMEOUT_MS = 3000;
 
-export default function PlayerBoard({
+export default memo(function PlayerBoard({
   roomId,
   tableId,
   seat,
@@ -65,7 +65,7 @@ export default function PlayerBoard({
   isRatingsVisible,
   onSit,
   onStand,
-  onStart,
+  onStartGame,
   onNextPowerBarItem,
 }: PlayerBoardProps): ReactNode {
   const { socketRef, isConnected, session } = useSocket();
@@ -74,9 +74,9 @@ export default function PlayerBoard({
   const boardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const controlKeys: PlayerControlKeysPlainObject | undefined = seat.occupiedByPlayer?.controlKeys;
   const isReversed: boolean = seat.seatNumber % 2 === 0;
-  const [nextPieces, setNextPieces] = useState<NextPiecesPlainObject | null>(seat.nextPieces);
-  const [powerBar, setPowerBar] = useState<PowerBarPlainObject | null>(seat.powerBar);
-  const [board, setBoard] = useState<BoardPlainObject | null>(seat.board);
+  const [nextPieces, setNextPieces] = useState<NextPiecesPlainObject | null>(null);
+  const [powerBar, setPowerBar] = useState<PowerBarPlainObject | null>(null);
+  const [board, setBoard] = useState<BoardPlainObject | null>(null);
   const [currentPiece, setCurrentPiece] = useState<PiecePlainObject | null>(null);
   const [blocksToRemove, setBlocksToRemove] = useState<BlockToRemove[]>([]);
   const typedRef = useRef<string>("");
@@ -93,18 +93,24 @@ export default function PlayerBoard({
     !!seat.occupiedByPlayer &&
     isReady &&
     !isPlaying &&
-    seatedTeamsCount >= (isTestMode() ? MIN_ACTIVE_TEAMS_REQUIRED_TEST : MIN_ACTIVE_TEAMS_REQUIRED);
+    seatedTeamsCount >= (TEST_MODE ? MIN_ACTIVE_TEAMS_REQUIRED_TEST : MIN_ACTIVE_TEAMS_REQUIRED);
   const isPlayerWaitingForMorePlayers: boolean =
     gameState === GameState.WAITING &&
     !!seat.occupiedByPlayer &&
     isReady &&
     !isPlaying &&
-    seatedTeamsCount < (isTestMode() ? MIN_ACTIVE_TEAMS_REQUIRED_TEST : MIN_ACTIVE_TEAMS_REQUIRED);
+    seatedTeamsCount < (TEST_MODE ? MIN_ACTIVE_TEAMS_REQUIRED_TEST : MIN_ACTIVE_TEAMS_REQUIRED);
   const isPlayerWaitingForNextGame: boolean =
     gameState === GameState.PLAYING && !!seat.occupiedByPlayer && !isCurrentUserSeat && !isReady && !isPlaying;
   const currentLanguage: Language | undefined = languages.find(
     (language: Language) => language.locale === session?.user.language,
   );
+
+  const handlePlayerUsernameKeyDown = useKeyboardActions({
+    onEnter: () => seat.occupiedByPlayer && handleOpenPlayerInfoModal(seat.occupiedByPlayer),
+    onSpace: () => seat.occupiedByPlayer && handleOpenPlayerInfoModal(seat.occupiedByPlayer),
+    onKeyI: () => seat.occupiedByPlayer && handleOpenPlayerInfoModal(seat.occupiedByPlayer),
+  });
 
   useEffect(() => {
     setNextPieces(seat.nextPieces);
@@ -119,6 +125,12 @@ export default function PlayerBoard({
       boardEl?.focus();
     }
   }, [gameState]);
+
+  useEffect(() => {
+    if (isCurrentUserSeat) {
+      onNextPowerBarItem(powerBar?.nextItem);
+    }
+  }, [isCurrentUserSeat, nextPieces]);
 
   useEffect(() => {
     if (!controlKeys) return;
@@ -166,12 +178,6 @@ export default function PlayerBoard({
   }, [controlKeys, isPlaying, board]);
 
   useEffect(() => {
-    if (isCurrentUserSeat) {
-      onNextPowerBarItem(powerBar?.nextItem);
-    }
-  }, [isCurrentUserSeat, nextPieces]);
-
-  useEffect(() => {
     const socket: Socket | null = socketRef.current;
     if (!socket) return;
 
@@ -205,7 +211,7 @@ export default function PlayerBoard({
         typedRef.current = "";
       }, TYPING_TIMEOUT_MS);
 
-      socket.emit(ClientToServerEvents.TABLE_TYPED_HERO_CODE, { tableId, code: typedRef.current });
+      socket.emit(ClientToServerEvents.TABLE_HERO_CODE, { tableId, code: typedRef.current });
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -247,23 +253,15 @@ export default function PlayerBoard({
     };
 
     const handleHooSendBlocks = ({
-      tableId: id,
       teamNumber,
       blocks,
     }: {
-      tableId: string
       teamNumber: number
       blocks: TowersPieceBlockPlainObject[]
     }): void => {
-      if (
-        id === tableId &&
-        isCurrentUserSeat &&
-        typeof seat.seatNumber !== "undefined" &&
-        isCurrentUserSeat &&
-        teamNumber !== seat.teamNumber
-      ) {
-        socket.emit(ClientToServerEvents.GAME_HOO_ADD_BLOCKS, { tableId, teamNumber, blocks });
-      }
+      if (!isCurrentUserSeat) return;
+      if (teamNumber === seat.teamNumber) return;
+      socket.emit(ClientToServerEvents.GAME_HOO_ADD_BLOCKS, { tableId, teamNumber, blocks });
     };
 
     const handleBlocksMarkedForRemoval = async ({
@@ -272,7 +270,7 @@ export default function PlayerBoard({
     }: {
       seatNumber: number
       blocks: BlockToRemove[]
-    }) => {
+    }): Promise<void> => {
       if (seatNumber !== seat.seatNumber) return;
 
       setBlocksToRemove(blocks);
@@ -283,13 +281,13 @@ export default function PlayerBoard({
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.GAME_UPDATE, handleGameUpdate);
+      socket.on(ServerToClientEvents.GAME_UPDATED, handleGameUpdate);
       socket.on(ServerToClientEvents.GAME_HOO_SEND_BLOCKS, handleHooSendBlocks);
       socket.on(ServerToClientEvents.GAME_BLOCKS_MARKED_FOR_REMOVAL, handleBlocksMarkedForRemoval);
     };
 
     const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.GAME_UPDATE, handleGameUpdate);
+      socket.off(ServerToClientEvents.GAME_UPDATED, handleGameUpdate);
       socket.off(ServerToClientEvents.GAME_HOO_SEND_BLOCKS, handleHooSendBlocks);
       socket.off(ServerToClientEvents.GAME_BLOCKS_MARKED_FOR_REMOVAL, handleBlocksMarkedForRemoval);
     };
@@ -314,30 +312,24 @@ export default function PlayerBoard({
     openModal(PlayerInformationModal, { roomId, selectedPlayer, isRatingsVisible });
   };
 
-  const handlePlayerUsernameKeyDown = useKeyboardActions({
-    onEnter: () => seat.occupiedByPlayer && handleOpenPlayerInfoModal(seat.occupiedByPlayer),
-    onSpace: () => seat.occupiedByPlayer && handleOpenPlayerInfoModal(seat.occupiedByPlayer),
-    onKeyI: () => seat.occupiedByPlayer && handleOpenPlayerInfoModal(seat.occupiedByPlayer),
-  });
-
   const handleMovePiece = (direction: "left" | "right"): void => {
-    socketRef.current?.emit(ClientToServerEvents.PIECE_MOVE, { direction });
+    socketRef.current?.emit(ClientToServerEvents.GAME_PIECE_MOVE, { tableId, direction });
   };
 
   const handleCyclePiece = (): void => {
-    socketRef.current?.emit(ClientToServerEvents.PIECE_CYCLE);
+    socketRef.current?.emit(ClientToServerEvents.GAME_PIECE_CYCLE, { tableId });
   };
 
   const handleDropPiece = (): void => {
-    socketRef.current?.emit(ClientToServerEvents.PIECE_DROP);
+    socketRef.current?.emit(ClientToServerEvents.GAME_PIECE_DROP, { tableId });
   };
 
   const handleStopDropPiece = (): void => {
-    socketRef.current?.emit(ClientToServerEvents.PIECE_DROP_STOP);
+    socketRef.current?.emit(ClientToServerEvents.GAME_PIECE_DROP_STOP, { tableId });
   };
 
   const handleUsePowerItem = (targetSeatNumber?: number): void => {
-    socketRef.current?.emit(ClientToServerEvents.POWER_USE, { targetSeatNumber });
+    socketRef.current?.emit(ClientToServerEvents.GAME_POWER_USE, { tableId, targetSeatNumber });
   };
 
   return (
@@ -465,7 +457,7 @@ export default function PlayerBoard({
                 )}
                 {isCurrentUserSeated && (
                   <>
-                    <Button className="w-full" tabIndex={seat.seatNumber} onClick={() => onStand(seat.seatNumber)}>
+                    <Button className="w-full" tabIndex={seat.seatNumber} onClick={onStand}>
                       <Trans>Stand</Trans>
                     </Button>
                     <Button
@@ -474,7 +466,7 @@ export default function PlayerBoard({
                         "dark:border-t-yellow-600 dark:border-e-yellow-800 dark:border-b-yellow-800 dark:border-s-yellow-600 dark:bg-yellow-600",
                       )}
                       tabIndex={seat.seatNumber}
-                      onClick={() => onStart(seat.seatNumber)}
+                      onClick={onStartGame}
                     >
                       <Trans>Start</Trans>
                     </Button>
@@ -514,7 +506,7 @@ export default function PlayerBoard({
                 "dark:bg-slate-800",
               )}
             >
-              {isCurrentUserSeat && isPlaying ? <NextPiece nextPiece={nextPieces?.nextPiece} /> : null}
+              {isCurrentUserSeat ? <NextPiece nextPiece={nextPieces?.nextPiece} /> : null}
             </div>
             <div
               className={clsx(
@@ -531,4 +523,4 @@ export default function PlayerBoard({
       </div>
     </div>
   );
-}
+});

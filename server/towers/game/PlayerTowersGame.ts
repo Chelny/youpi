@@ -1,17 +1,16 @@
 import { TableChatMessageType } from "db/client";
-import { DisconnectReason, Socket } from "socket.io";
+import { Server as IoServer } from "socket.io";
 import {
   BLOCK_BREAK_ANIMATION_DURATION_MS,
-  BOARD_ROWS,
   REMOVED_BLOCKS_COUNT_FOR_REMOVE_POWERS,
   REMOVED_BLOCKS_COUNT_FOR_REMOVE_STONES,
   REMOVED_BLOCKS_COUNT_FOR_SPEED_DROP,
+  SPEED_DROP_TICK_COUNT,
 } from "@/constants/game";
 import { ClientToServerEvents } from "@/constants/socket/client-to-server";
 import { ServerInternalEvents } from "@/constants/socket/server-internal";
 import { logger } from "@/lib/logger";
 import { publishRedisEvent } from "@/server/redis/publish";
-import { SocketEventBinder } from "@/server/socket/SocketEventBinder";
 import { TablePlayer } from "@/server/towers/classes/TablePlayer";
 import { TableSeat } from "@/server/towers/classes/TableSeat";
 import { BlockToRemove, Board } from "@/server/towers/game/board/Board";
@@ -31,9 +30,10 @@ import { LoopRunner } from "@/server/towers/utils/LoopRunner";
 import { isMedusaPiece, isMidasPiece } from "@/server/towers/utils/piece-type-check";
 
 enum TickSpeed {
-  NORMAL = 438, // 469 excluding the 00:00
+  NORMAL = 385,
   DROP = TickSpeed.NORMAL / 6,
   SPEED_DROP = TickSpeed.NORMAL / 5,
+  DROP_SPEED_DROP = TickSpeed.SPEED_DROP / 2,
   BREAKING_BLOCKS = 100,
 }
 
@@ -43,134 +43,46 @@ enum TickSpeed {
  * Handles player input, active piece movement, power usage, and game loop logic.
  */
 export class PlayerTowersGame {
+  private io: IoServer;
   public tableId: string;
   public players: TablePlayer[];
   public tablePlayer: TablePlayer;
-  private currentPiece: Piece;
-  private powerManager: PowerManager;
+  private username: string;
+  private currentPiece: Piece | null = null;
+  public powerManager: PowerManager;
   private isSpecialSpeedDropActivated: boolean = false;
+  private speedDropTicksRemaining: number = 0;
+  private pendingSpecialSpeedDrop: boolean = false;
   private loop: LoopRunner = new LoopRunner();
   private tickSpeed: TickSpeed = TickSpeed.NORMAL;
   private isTickInProgress: boolean = false;
   private isPieceLocked: boolean = false;
-  private eventBinder: SocketEventBinder | null = null;
-  private onMovePiece: (data: { tableId: string; seatNumber: number; direction: "left" | "right" }) => void =
-    this.handleMovePiece.bind(this);
-  private onCyclePiece: (data: { tableId: string; seatNumber: number }) => void = this.handleCyclePiece.bind(this);
-  private onDropPiece: (data: { tableId: string; seatNumber: number }) => void = this.handleDropPiece.bind(this);
-  private onStopDropPiece: (data: { tableId: string; seatNumber: number }) => void = this.handleStopDropPiece.bind(this);
-  private onUsePower: (data: { tableId: string; seatNumber: number; targetSeatNumber?: number }) => void =
-    this.handleUsePower.bind(this);
-  private onSpecialSpeedDrop: (data: { tableId: string; seatNumber: number }) => void =
-    this.handleSpecialSpeedDrop.bind(this);
-  private onAddHooBlocks: (data: {
-    tableId: string
-    teamNumber: number
-    blocks: TowersPieceBlockPlainObject[]
-  }) => void = this.handleAddHooBlocks.bind(this);
+  private isGameStopped: boolean = false;
+  private isGameUpdateInFlight: boolean = false;
+  private hasPendingGameUpdate: boolean = false;
+  private deps: {
+    queueSpeedDropNextPiece: (seatNumber: number) => void
+    requestGameOverCheck: () => void
+  };
 
-  constructor(tableId: string, players: TablePlayer[], tablePlayer: TablePlayer) {
+  constructor(
+    io: IoServer,
+    tableId: string,
+    players: TablePlayer[],
+    tablePlayer: TablePlayer,
+    deps: {
+      queueSpeedDropNextPiece: (seatNumber: number) => void
+      requestGameOverCheck: () => void
+    },
+  ) {
+    this.io = io;
     this.tableId = tableId;
     this.players = players;
     this.tablePlayer = tablePlayer;
+    this.username = tablePlayer.player.user.username;
     this.currentPiece = new TowersPiece();
-    this.powerManager = new PowerManager(tableId, players, tablePlayer);
-    this.registerSocketListeners();
-  }
-
-  private registerSocketListeners(): void {
-    const socket: Socket | null = this.tablePlayer.player.user.socket;
-    if (!socket) return;
-
-    this.eventBinder = new SocketEventBinder(socket);
-
-    this.eventBinder.bind(ClientToServerEvents.PIECE_MOVE, this.onMovePiece);
-    this.eventBinder.bind(ClientToServerEvents.PIECE_CYCLE, this.onCyclePiece);
-    this.eventBinder.bind(ClientToServerEvents.PIECE_DROP, this.onDropPiece);
-    this.eventBinder.bind(ClientToServerEvents.PIECE_DROP_STOP, this.onStopDropPiece);
-    this.eventBinder.bind(ClientToServerEvents.POWER_USE, this.onUsePower);
-    this.eventBinder.bind(ClientToServerEvents.PIECE_SPEED, this.onSpecialSpeedDrop);
-    this.eventBinder.bind(ClientToServerEvents.GAME_HOO_ADD_BLOCKS, this.onAddHooBlocks);
-
-    socket.on("disconnect", (reason: DisconnectReason) => {
-      const shouldCleanup: boolean =
-        reason === "forced close" ||
-        reason === "server shutting down" ||
-        reason === "forced server close" ||
-        reason === "client namespace disconnect" ||
-        reason === "server namespace disconnect";
-
-      if (shouldCleanup) {
-        this.eventBinder?.unbindAll();
-        this.eventBinder = null;
-      }
-    });
-  }
-
-  private handleMovePiece({ direction }: { direction: "left" | "right" }): void {
-    if (this.ignoreInput()) return;
-
-    switch (direction) {
-      case "left":
-        this.movePieceLeft();
-        break;
-      case "right":
-        this.movePieceRight();
-        break;
-      default:
-        break;
-    }
-  }
-
-  private handleCyclePiece(): void {
-    if (this.ignoreInput()) return;
-    this.cyclePieceBlocks();
-  }
-
-  private handleDropPiece(): void {
-    if (this.ignoreInput()) return;
-    this.movePieceDown();
-  }
-
-  private handleStopDropPiece(): void {
-    if (this.ignoreInput()) return;
-    this.stopMovingPieceDown();
-  }
-
-  private handleUsePower({ targetSeatNumber }: { targetSeatNumber?: number }): void {
-    if (this.ignoreInput()) return;
-    this.usePower(targetSeatNumber);
-  }
-
-  private handleSpecialSpeedDrop(): void {
-    if (this.ignoreInput()) return;
-    this.applySpecialSpeedDrop();
-  }
-
-  private handleAddHooBlocks({
-    tableId,
-    teamNumber,
-    blocks,
-  }: {
-    tableId: string
-    teamNumber: number
-    blocks: TowersPieceBlockPlainObject[]
-  }): void {
-    if (this.tableId !== tableId || !blocks || blocks.length === 0 || this.isPieceLocked) {
-      return;
-    }
-
-    const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByPlayerId(this.tableId, this.tablePlayer.playerId);
-    const board: Board | null | undefined = tableSeat?.board;
-    if (!tableSeat || !board) return;
-
-    const isPartner: boolean = tableSeat.teamNumber === teamNumber;
-
-    if (tableSeat.seatNumber && !isPartner && this.tablePlayer.isPlaying && !board?.isGameOver) {
-      board.placeBlocksFromHoo(
-        blocks.map((block: TowersPieceBlockPlainObject) => TowersPieceBlock.fromPlainObject(block)),
-      );
-    }
+    this.powerManager = new PowerManager(tableId, players, tablePlayer, deps);
+    this.deps = deps;
   }
 
   public startGameLoop(): void {
@@ -180,16 +92,13 @@ export class PlayerTowersGame {
     );
   }
 
-  public stopGameLoop(): void {
-    // Hide current piece from board
-    this.currentPiece.position = { ...this.currentPiece.position, row: BOARD_ROWS + 1 };
-
+  public async stopGameLoop(): Promise<void> {
+    this.isGameStopped = true;
+    this.isPieceLocked = false;
+    this.updateTickSpeed(TickSpeed.NORMAL);
+    this.currentPiece = null;
     this.loop.stop();
-
-    this.eventBinder?.unbindAll();
-    this.eventBinder = null;
-
-    void this.sendGameStateToClient();
+    await this.sendGameStateToClient();
   }
 
   private updateTickSpeed(speed: TickSpeed): void {
@@ -201,53 +110,59 @@ export class PlayerTowersGame {
    */
   private async tickFallPiece(): Promise<void> {
     if (this.isTickInProgress) return;
+    if (this.isGameStopped) return;
+    if (!this.tablePlayer.isPlaying) return;
+
+    const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByPlayerId(this.tableId, this.tablePlayer.playerId);
+    const nextPieces: NextPieces | null | undefined = tableSeat?.nextPieces;
+    const board: Board | null | undefined = tableSeat?.board;
+    if (!tableSeat || !nextPieces || !board) return;
+
+    if (board.isGameOver) return;
+
+    const currentPiece: Piece | null = this.currentPiece;
+    if (!currentPiece) return;
+
     this.isTickInProgress = true;
 
     try {
-      const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByPlayerId(
-        this.tableId,
-        this.tablePlayer.playerId,
-      );
-      const nextPieces: NextPieces | null | undefined = tableSeat?.nextPieces;
-      const board: Board | null | undefined = tableSeat?.board;
-
-      if (!tableSeat || !nextPieces || !board) return;
-
       const newPosition: PieceBlockPosition = {
-        row: this.currentPiece.position.row + 1,
-        col: this.currentPiece.position.col,
+        row: currentPiece.position.row + 1,
+        col: currentPiece.position.col,
       };
 
-      const simulatedPiece: Piece = Piece.simulateAtPosition(this.currentPiece, newPosition);
+      const simulatedPiece: Piece = Piece.simulateAtPosition(currentPiece, newPosition);
 
       if (board.hasCollision(simulatedPiece)) {
         this.isPieceLocked = true;
         this.updateTickSpeed(TickSpeed.BREAKING_BLOCKS);
 
         await this.lockPieceInPlace();
+        if (this.isGameStopped) return;
 
-        if (board.checkIfGameOver(this.currentPiece)) {
+        if (board.checkIfGameOver(currentPiece)) {
           this.tablePlayer.isPlaying = false;
           await TablePlayerManager.upsert(this.tablePlayer);
-          this.stopGameLoop();
+          this.deps.requestGameOverCheck();
+          await this.stopGameLoop();
           return;
         }
 
+        this.speedDropTick();
+
         // Generate next piece
         this.currentPiece = nextPieces.getNextPiece();
+
+        this.pendingSpeedDrop();
+
         logger.debug(
-          `New piece generated: ${JSON.stringify(this.currentPiece.blocks.map((block: PieceBlock) => block.letter))}`,
+          `[Towers: ${this.username}] New piece generated: ${JSON.stringify(this.currentPiece.blocks.map((block: PieceBlock) => block.letter))}`,
         );
-
-        if (this.isSpecialSpeedDropActivated) {
-          this.removeSpecialSpeedDrop();
-        }
-
-        this.sendGameStateToClient();
       } else {
-        this.currentPiece.position = newPosition;
-        await this.sendGameStateToClient();
+        currentPiece.position = newPosition;
       }
+
+      await this.sendGameStateToClient();
     } finally {
       this.isTickInProgress = false;
     }
@@ -257,9 +172,13 @@ export class PlayerTowersGame {
    * Lock the piece to the board and gets the next one.
    */
   private async lockPieceInPlace(): Promise<void> {
+    if (this.isGameStopped) return;
+
     const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByPlayerId(this.tableId, this.tablePlayer.playerId);
     const board: Board | null | undefined = tableSeat?.board;
     if (!tableSeat || !board) return;
+
+    if (!this.currentPiece) return;
 
     if (!this.isPieceLocked) {
       this.isPieceLocked = true;
@@ -268,35 +187,48 @@ export class PlayerTowersGame {
 
     board.placePiece(this.currentPiece);
     logger.debug(
-      `Piece committed to the board at position X=${this.currentPiece.position.col}, Y=${this.currentPiece.position.row}`,
+      `[Towers: ${this.username}] Piece committed to the board at position X=${this.currentPiece.position.col}, Y=${this.currentPiece.position.row}`,
     );
 
     // Apply piece effects (power blocks)
     if (isMedusaPiece(this.currentPiece) || isMidasPiece(this.currentPiece)) {
       await board.convertSurroundingBlocksToPowerBlocks(this.currentPiece);
-      this.sendGameStateToClient();
+      await this.sendGameStateToClient();
     }
 
     // Run all recursive block-breaking logic
-    await board.processLandedPiece(async (board: Board, blocksToRemove: BlockToRemove[]): Promise<void> => {
-      await this.waitForClientToFade(board, blocksToRemove);
-    });
+    const { selfOutgoing, partnerOutgoing, isHooOccurred } = await board.processLandedPiece(
+      async (board: Board, blocksToRemove: BlockToRemove[]): Promise<void> => {
+        await this.waitForClientToFade(board, blocksToRemove);
+      },
+    );
 
-    if (board.isHooDetected) {
-      this.sendCipherKey();
+    if (isHooOccurred) {
+      await this.sendCipherKey();
     }
 
     // Send removed blocks while hoo is detected to opponents
-    if (board.removedBlocksFromHoo.length > 0) {
+    if (selfOutgoing.length > 0) {
       await publishRedisEvent(ServerInternalEvents.GAME_HOO_SEND_BLOCKS, {
         tableId: this.tableId,
         teamNumber: tableSeat.teamNumber,
-        blocks: board.removedBlocksFromHoo.map((block: TowersPieceBlock) =>
+        blocks: selfOutgoing.map((block: TowersPieceBlock) =>
           new TowersPieceBlock(block.letter as TowersBlockLetter, block.position).toPlainObject(),
         ),
       });
+    }
 
-      board.removedBlocksFromHoo = [];
+    if (partnerOutgoing.length > 0 && board.partnerBoard) {
+      const partnerSeat: TableSeat | undefined = TableSeatManager.getSeatByBoard(this.tableId, board.partnerBoard);
+      if (partnerSeat) {
+        await publishRedisEvent(ServerInternalEvents.GAME_HOO_SEND_BLOCKS, {
+          tableId: this.tableId,
+          teamNumber: partnerSeat.teamNumber,
+          blocks: partnerOutgoing.map((block: TowersPieceBlock) =>
+            new TowersPieceBlock(block.letter as TowersBlockLetter, block.position).toPlainObject(),
+          ),
+        });
+      }
     }
 
     this.addSpecialDiamondsToPowerBar();
@@ -322,6 +254,8 @@ export class PlayerTowersGame {
   }
 
   private async waitForClientToFade(board: Board, blocksToRemove: BlockToRemove[]) {
+    if (this.isGameStopped) return;
+
     const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByBoard(this.tableId, board);
     if (!tableSeat) return;
 
@@ -331,25 +265,32 @@ export class PlayerTowersGame {
       blocks: blocksToRemove,
     });
 
-    const socket: Socket | null = this.tablePlayer.player.user.socket;
-    if (!socket) return;
-
     // Wait for client animation event, fallback to short timeout
     await new Promise<void>((resolve) => {
-      let isResolved: boolean = false;
+      let isSettled: boolean = false;
 
-      const onDone = (): void => {
-        if (!isResolved) {
-          isResolved = true;
-          socket.off(ClientToServerEvents.GAME_CLIENT_BLOCKS_ANIMATION_DONE, onDone);
-          clearTimeout(timeoutId);
-          resolve();
-        }
+      const onDone = (data: { tableId: string; seatNumber: number }) => {
+        if (isSettled) return;
+        if (data.tableId !== this.tableId) return;
+        if (data.seatNumber !== tableSeat.seatNumber) return;
+
+        isSettled = true;
+        clearTimeout(timeoutId);
+        this.io.off(ClientToServerEvents.GAME_CLIENT_BLOCKS_ANIMATION_DONE, onDone);
+        resolve();
       };
 
-      socket.once(ClientToServerEvents.GAME_CLIENT_BLOCKS_ANIMATION_DONE, onDone);
-      const timeoutId: NodeJS.Timeout = setTimeout(onDone, BLOCK_BREAK_ANIMATION_DURATION_MS);
+      this.io.on(ClientToServerEvents.GAME_CLIENT_BLOCKS_ANIMATION_DONE, onDone);
+
+      const timeoutId: NodeJS.Timeout = setTimeout(() => {
+        if (isSettled) return;
+        isSettled = true;
+        this.io.off(ClientToServerEvents.GAME_CLIENT_BLOCKS_ANIMATION_DONE, onDone);
+        resolve();
+      }, BLOCK_BREAK_ANIMATION_DURATION_MS);
     });
+
+    if (this.isGameStopped) return;
   }
 
   /**
@@ -378,14 +319,21 @@ export class PlayerTowersGame {
     }
   }
 
+  public inputMovePiece(direction: "left" | "right"): void {
+    if (!this.canProcessInput()) return;
+    if (direction === "left") this.movePieceLeft();
+    if (direction === "right") this.movePieceRight();
+  }
+
   /**
    * Moves the current piece to the left.
    */
   private movePieceLeft(): void {
     const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByPlayerId(this.tableId, this.tablePlayer.playerId);
     const board: Board | null | undefined = tableSeat?.board;
-
     if (!tableSeat || !board) return;
+
+    if (!this.currentPiece) return;
 
     const newPosition: PieceBlockPosition = {
       row: this.currentPiece.position.row,
@@ -395,8 +343,7 @@ export class PlayerTowersGame {
 
     if (!board.hasCollision(simulatedPiece)) {
       this.currentPiece.position = newPosition;
-      logger.debug("Moved piece left");
-      this.sendGameStateToClient();
+      this.queueSendGameState();
     }
   }
 
@@ -406,8 +353,9 @@ export class PlayerTowersGame {
   private movePieceRight(): void {
     const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByPlayerId(this.tableId, this.tablePlayer.playerId);
     const board: Board | null | undefined = tableSeat?.board;
-
     if (!tableSeat || !board) return;
+
+    if (!this.currentPiece) return;
 
     const newPosition: PieceBlockPosition = {
       row: this.currentPiece.position.row,
@@ -417,42 +365,36 @@ export class PlayerTowersGame {
 
     if (!board.hasCollision(simulatedPiece)) {
       this.currentPiece.position = newPosition;
-      logger.debug("Moved piece right");
-      this.sendGameStateToClient();
+      this.queueSendGameState();
     }
   }
 
   /**
    * Cycles the piece blocks up.
    */
-  private cyclePieceBlocks(): void {
+  public cyclePieceBlocks(): void {
+    if (!this.canProcessInput() || !this.currentPiece) return;
     this.currentPiece.cycleBlocks();
-    logger.debug("Cycle piece blocks");
-    this.sendGameStateToClient();
+    this.queueSendGameState();
   }
 
   /**
    * Increases the piece drop speed.
    */
-  private movePieceDown(): void {
-    if (this.isSpecialSpeedDropActivated) return;
-
-    this.updateTickSpeed(TickSpeed.DROP);
-    logger.debug(`Increased piece drop speed to ${this.tickSpeed}ms.`);
-
-    void this.sendGameStateToClient();
+  public movePieceDown(): void {
+    if (!this.canProcessInput()) return;
+    this.updateTickSpeed(this.isSpecialSpeedDropActivated ? TickSpeed.DROP_SPEED_DROP : TickSpeed.DROP);
+    this.queueSendGameState();
   }
 
   /**
    * Stops the piece from moving down fast.
    */
-  private stopMovingPieceDown(): void {
+  public stopMovingPieceDown(): void {
+    if (!this.canProcessInput()) return;
     if (this.isSpecialSpeedDropActivated) return;
-
     this.updateTickSpeed(TickSpeed.NORMAL);
-    logger.debug(`Reset piece drop speed to ${this.tickSpeed}ms.`);
-
-    void this.sendGameStateToClient();
+    this.queueSendGameState();
   }
 
   /**
@@ -460,24 +402,71 @@ export class PlayerTowersGame {
    * @param targetSeatNumber - Optional. The seat number to target.
    */
   public usePower(targetSeatNumber?: number): void {
+    if (!this.canProcessInput()) return;
     this.powerManager.usePower(targetSeatNumber);
-    this.sendGameStateToClient();
+    this.queueSendGameState();
   }
 
-  public applySpecialSpeedDrop(): void {
-    if (this.isSpecialSpeedDropActivated) return;
+  public applyHooBlocks({ teamNumber, blocks }: { teamNumber: number; blocks: TowersPieceBlockPlainObject[] }): void {
+    if (!blocks || blocks.length === 0 || this.isPieceLocked) return;
+
+    const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByPlayerId(this.tableId, this.tablePlayer.playerId);
+    const board: Board | null | undefined = tableSeat?.board;
+    if (!tableSeat || !board) return;
+
+    const isPartner: boolean = tableSeat.teamNumber === teamNumber;
+
+    if (!isPartner && this.tablePlayer.isPlaying && !board?.isGameOver) {
+      board.placeBlocksFromHoo(blocks.map(TowersPieceBlock.fromPlainObject));
+    }
+  }
+
+  public queueSpecialSpeedDropNextPiece(): void {
+    this.pendingSpecialSpeedDrop = true;
+    this.speedDropTicksRemaining = SPEED_DROP_TICK_COUNT;
+  }
+
+  private pendingSpeedDrop(): void {
+    if (!this.pendingSpecialSpeedDrop) return;
+    this.pendingSpecialSpeedDrop = false;
+    this.activateSpecialSpeedDrop();
+  }
+
+  private speedDropTick(): void {
+    if (!this.isSpecialSpeedDropActivated) return;
+
+    this.speedDropTicksRemaining--;
+
+    if (this.speedDropTicksRemaining > 0) {
+      this.activateSpecialSpeedDrop();
+    } else {
+      this.deactivateSpecialSpeedDrop();
+    }
+  }
+
+  public activateSpecialSpeedDrop(): void {
     this.isSpecialSpeedDropActivated = true;
     this.updateTickSpeed(TickSpeed.SPEED_DROP);
   }
 
-  public removeSpecialSpeedDrop(): void {
-    if (!this.isSpecialSpeedDropActivated) return;
+  public deactivateSpecialSpeedDrop(): void {
     this.isSpecialSpeedDropActivated = false;
     this.updateTickSpeed(TickSpeed.NORMAL);
   }
 
-  private ignoreInput(): boolean {
-    return !this.tablePlayer.isPlaying || this.isPieceLocked;
+  /**
+   * True when this input is allowed to be processed by this PlayerTowersGame instance.
+   * - Must be for this player's current seat
+   * - Player must be playing
+   * - Piece must not be locked
+   */
+  private canProcessInput(): boolean {
+    if (this.tablePlayer.seatNumber == null) return false;
+    if (!this.tablePlayer.isPlaying) return false;
+    if (this.isPieceLocked) return false;
+    if (this.isGameStopped) return false;
+    if (!this.currentPiece) return false;
+    return true;
   }
 
   /**
@@ -489,11 +478,11 @@ export class PlayerTowersGame {
    *
    * Typical use case: reward system after gameplay milestones (e.g., clearing lines, surviving a turn, etc.).
    */
-  private sendCipherKey(): void {
+  private async sendCipherKey(): Promise<void> {
     const cipherKey: CipherKey | null = CipherHeroManager.getCipherKey(this.tablePlayer.playerId);
 
     if (cipherKey) {
-      TableChatMessageManager.create({
+      await TableChatMessageManager.create({
         tableId: this.tableId,
         player: this.tablePlayer.player,
         text: null,
@@ -504,7 +493,28 @@ export class PlayerTowersGame {
     }
   }
 
-  private async sendGameStateToClient(): Promise<void> {
+  public queueSendGameState(): void {
+    this.hasPendingGameUpdate = true;
+
+    if (this.isGameUpdateInFlight) return;
+
+    this.isGameUpdateInFlight = true;
+
+    void (async () => {
+      try {
+        while (this.hasPendingGameUpdate) {
+          this.hasPendingGameUpdate = false;
+          await this.sendGameStateToClient();
+        }
+      } catch (err) {
+        logger.error(`[Towers: ${this.username}] GAME_UPDATE failed`, err);
+      } finally {
+        this.isGameUpdateInFlight = false;
+      }
+    })();
+  }
+
+  public async sendGameStateToClient(): Promise<void> {
     const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByPlayerId(this.tableId, this.tablePlayer.playerId);
 
     await publishRedisEvent(ServerInternalEvents.GAME_UPDATE, {
@@ -513,7 +523,7 @@ export class PlayerTowersGame {
       nextPieces: tableSeat?.nextPieces?.toPlainObject(),
       powerBar: tableSeat?.powerBar?.toPlainObject(),
       board: tableSeat?.board?.toPlainObject(),
-      currentPiece: this.currentPiece.toPlainObject(),
+      currentPiece: this.currentPiece ? this.currentPiece.toPlainObject() : null,
     });
   }
 }

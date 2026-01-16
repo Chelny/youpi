@@ -39,26 +39,23 @@ export const POWER_BAR_LENGTH = 8;
 export const REMOVED_BLOCKS_COUNT_FOR_SPEED_DROP = 50;
 export const REMOVED_BLOCKS_COUNT_FOR_REMOVE_POWERS = 100;
 export const REMOVED_BLOCKS_COUNT_FOR_REMOVE_STONES = 150;
+export const SPEED_DROP_TICK_COUNT = 3;
 export const BLOCK_BREAK_ANIMATION_DURATION_MS = 190;
 export const HERO_CODE_ELIGIBILITY_TIME = 2 * 60 * 60 * 1000; // 2 hours
 export const HERO_CODE_REQUIRED_WINS = 25;
-
-export const MATCH_DIRECTIONS = [
-  { row: -1, col: 0 }, // Up
-  { row: 1, col: 0 }, // Down
-  { row: 0, col: -1 }, // Left
-  { row: 0, col: 1 }, // Right
-  { row: -1, col: -1 }, // Top-left
-  { row: -1, col: 1 }, // Top-right
-  { row: 1, col: -1 }, // Bottom-left
-  { row: 1, col: 1 }, // Bottom-right
-];
 
 export const HOO_DIRECTIONS = [
   { row: 0, col: 1 }, // →
   { row: 1, col: 0 }, // ↓
   { row: 1, col: 1 }, // ↘
   { row: -1, col: 1 }, // ↗
+];
+
+export const COLOR_MATCH_DIRECTIONS = [
+  { row: 0, col: 1 }, // Right
+  { row: 1, col: 0 }, // Down
+  { row: 1, col: 1 }, // Down-right
+  { row: 1, col: -1 }, // Down-left
 ];
 
 /**************************************************

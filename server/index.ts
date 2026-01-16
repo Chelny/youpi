@@ -53,13 +53,6 @@ class AppServer {
 
     this.redisPub.on("ready", (): void => {
       logger.info("Redis connection successful.");
-
-      if (this.io) {
-        towersServerToClientEvents(this.redisSub, this.io);
-        youpiServerToClientEvents(this.redisSub, this.io);
-      } else {
-        logger.warn("Socket.IO server not yet initialized — delaying serverEvents setup.");
-      }
     });
 
     this.redisPub.on("error", (error: Error): void => {
@@ -89,6 +82,9 @@ class AppServer {
       },
     });
 
+    towersServerToClientEvents(this.redisSub, this.io);
+    youpiServerToClientEvents(this.redisSub, this.io);
+
     this.io.use((socket, next) => {
       const session = socket.handshake.auth.session;
 
@@ -104,10 +100,10 @@ class AppServer {
     this.io.on("connection", this.handleConnection.bind(this));
 
     // Debug room lifecycle
-    this.io.of("/").adapter.on("create-room", (room) => logger.info(`Room ${room} created`));
-    this.io.of("/").adapter.on("join-room", (room, id) => logger.info(`Socket ${id} joined ${room}`));
-    this.io.of("/").adapter.on("leave-room", (room, id) => logger.info(`Socket ${id} left ${room}`));
-    this.io.of("/").adapter.on("delete-room", (room) => logger.info(`Room ${room} deleted`));
+    this.io.of("/").adapter.on("create-room", (room: string) => logger.info(`Room ${room} created`));
+    this.io.of("/").adapter.on("join-room", (room: string, id: string) => logger.info(`Socket ${id} joined ${room}`));
+    this.io.of("/").adapter.on("leave-room", (room: string, id: string) => logger.info(`Socket ${id} left ${room}`));
+    this.io.of("/").adapter.on("delete-room", (room: string) => logger.info(`Room ${room} deleted`));
   }
 
   private async handleConnection(socket: Socket): Promise<void> {
@@ -119,18 +115,14 @@ class AppServer {
       return;
     }
 
-    const userId: string = sessionUser.id;
-    const username: string = sessionUser.username;
-    logger.info(`Socket connected: ${socket.id} for ${username} (${userId})`);
-
-    const user: User | null = await UserManager.loadUserFromDb(userId);
+    const user: User | null = await UserManager.loadUserFromDb(sessionUser.id);
     if (!user) {
       socket.disconnect(true);
       return;
     }
 
-    user.socket = socket;
-    socket.join(user.id);
+    await UserManager.attachSocket(this.io, user.id, socket);
+    logger.info(`Socket connected: ${socket.id} for ${user.username} (${user.id})`);
 
     // **************************************************
     // * Socket Recovery
@@ -151,11 +143,11 @@ class AppServer {
     // * Socket IO Events
     // **************************************************
 
-    socket.conn.on("upgrade", (transport) => {
+    socket.conn.on("upgrade", (transport): void => {
       logger.info(`Transport upgraded to ${transport.name}`);
     });
 
-    socket.conn.on("close", (reason) => {
+    socket.conn.on("close", (reason: string): void => {
       logger.info(`Socket ${socket.id} connection closed due to ${reason}.`);
     });
 
@@ -163,16 +155,16 @@ class AppServer {
       logger.info(`Socket ${socket.id} disconnecting due to ${reason}.`);
     });
 
-    socket.on("disconnect", async (reason: DisconnectReason) => {
+    socket.on("disconnect", (reason: DisconnectReason): void => {
       logger.info(`Socket ${socket.id} disconnected due to ${reason}.`);
-      socket.leave(user.id);
     });
 
-    socket.on("error", (error: Error) => {
+    socket.on("error", (error: Error): void => {
       logger.error(`Socket error: ${error.message}`);
     });
 
-    socket.on(ClientToServerEvents.SIGN_OUT, () => {
+    socket.on(ClientToServerEvents.SIGN_OUT, async (): Promise<void> => {
+      await RoomManager.leaveAllRoomsForUser(user, socket);
       socket.emit(ServerToClientEvents.SIGN_OUT_SUCCESS);
       socket.disconnect(true);
     });

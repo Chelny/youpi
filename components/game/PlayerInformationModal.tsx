@@ -58,7 +58,7 @@ export default function PlayerInformationModal({
     if (isCurrentUser) return;
 
     socketRef.current?.emit(
-      ClientToServerEvents.GAME_WATCH_USER_AT_TABLE,
+      ClientToServerEvents.ROOM_WATCH_USER_PLAY_AT_TABLE,
       { roomId, userId: selectedPlayer?.id },
       (response: SocketCallback<{ roomId: string; tableId: string }>) => {
         if (response.success) {
@@ -108,13 +108,13 @@ export default function PlayerInformationModal({
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.USER_RELATIONSHIP_MUTE, handleMuteUser);
-      socket.on(ServerToClientEvents.USER_RELATIONSHIP_UNMUTE, handleUnmuteUser);
+      socket.on(ServerToClientEvents.USER_RELATIONSHIP_MUTED, handleMuteUser);
+      socket.on(ServerToClientEvents.USER_RELATIONSHIP_UNMUTED, handleUnmuteUser);
     };
 
     const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.USER_RELATIONSHIP_MUTE, handleMuteUser);
-      socket.off(ServerToClientEvents.USER_RELATIONSHIP_UNMUTE, handleUnmuteUser);
+      socket.off(ServerToClientEvents.USER_RELATIONSHIP_MUTED, handleMuteUser);
+      socket.off(ServerToClientEvents.USER_RELATIONSHIP_UNMUTED, handleUnmuteUser);
     };
 
     const onConnect = (): void => {

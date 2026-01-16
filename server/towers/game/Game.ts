@@ -1,6 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import { TableChatMessageType } from "db/client";
 import { GameState } from "db/client";
+import { Server as IoServer } from "socket.io";
 import type { Table } from "@/server/towers/classes/Table";
 import {
   COUNTDOWN_START_NUMBER,
@@ -18,11 +19,12 @@ import { Board } from "@/server/towers/game/board/Board";
 import { CipherHeroManager } from "@/server/towers/game/CipherHeroManager";
 import { EloRating, EloResult, EloUserRating } from "@/server/towers/game/EloRating";
 import { PlayerTowersGame } from "@/server/towers/game/PlayerTowersGame";
+import { TowersPieceBlockPlainObject } from "@/server/towers/game/TowersPieceBlock";
 import { PlayerStatsManager } from "@/server/towers/managers/PlayerStatsManager";
 import { TableChatMessageManager } from "@/server/towers/managers/TableChatMessageManager";
 import { TablePlayerManager } from "@/server/towers/managers/TablePlayerManager";
 import { TableSeatManager } from "@/server/towers/managers/TableSeatManager";
-import { isTestMode } from "@/server/towers/utils/test";
+import { TEST_MODE } from "@/server/towers/utils/test";
 import { delay } from "@/server/towers/utils/timers";
 
 export interface GamePlainObject {
@@ -37,20 +39,24 @@ export interface GamePlainObject {
 type RoundPlayer = { playerId: string; teamNumber: number };
 
 export class Game {
+  private io: IoServer;
   public readonly id: string;
   private readonly table: Table;
   private playersThisRound: RoundPlayer[] = [];
   private isUsersPlayingListSaved: boolean = false;
   private _state: GameState = GameState.WAITING;
-  public countdown: number | null = isTestMode() ? COUNTDOWN_START_NUMBER_TEST : COUNTDOWN_START_NUMBER;
+  private _countdown: number | null = TEST_MODE ? COUNTDOWN_START_NUMBER_TEST : COUNTDOWN_START_NUMBER;
   private countdownIntervalId: NodeJS.Timeout | null = null;
-  public timer: number | null = null;
+  private _timer: number | null = null;
   private gameTimerIntervalId: NodeJS.Timeout | null = null;
   private isGameOver: boolean = false;
   public winners: TablePlayer[] = [];
   private playerGameInstances: Map<string, PlayerTowersGame> = new Map<string, PlayerTowersGame>();
+  private playerGamesBySeat: Map<number, PlayerTowersGame> = new Map<number, PlayerTowersGame>();
+  private gameOverCheckQueued: boolean = false;
 
-  constructor(table: Table) {
+  constructor(io: IoServer, table: Table) {
+    this.io = io;
     this.id = createId();
     this.table = table;
   }
@@ -63,15 +69,33 @@ export class Game {
     // Clear board before starting a new game
     if (state === GameState.COUNTDOWN && state !== this._state) {
       this.table.seats.forEach((ts: TableSeat) => ts.clearSeatGame());
-      this.emitSeatUpdates();
+      this.emitTableSeatUpdates();
     }
 
     this._state = state;
-    this.emitGameStateToAll();
+    void this.emitGameStateToAll();
   }
 
   public get state(): GameState {
     return this._state;
+  }
+
+  public set countdown(countdown: number | null) {
+    this._countdown = countdown;
+    void this.emitCountdownToAll();
+  }
+
+  public get countdown(): number | null {
+    return this._countdown;
+  }
+
+  public set timer(timer: number | null) {
+    this._timer = timer;
+    void this.emitTimerToAll();
+  }
+
+  public get timer(): number | null {
+    return this._timer;
   }
 
   private getSeatedPlayers(): TablePlayer[] {
@@ -100,7 +124,7 @@ export class Game {
    * @returns True if game has enough ready players across multiple teams
    */
   private checkMinimumTeams(players: TablePlayer[], condition: (p: TablePlayer) => boolean): boolean {
-    if (isTestMode()) {
+    if (TEST_MODE) {
       // In test mode, require only 1 player/team
       return players.length >= MIN_ACTIVE_TEAMS_REQUIRED_TEST && players.every(condition);
     }
@@ -126,32 +150,27 @@ export class Game {
   }
 
   public startCountdown(): void {
-    if (this.countdown === null) {
-      this.countdown = isTestMode() ? COUNTDOWN_START_NUMBER_TEST : COUNTDOWN_START_NUMBER;
-    }
+    this.countdown = TEST_MODE ? COUNTDOWN_START_NUMBER_TEST : COUNTDOWN_START_NUMBER;
 
     this.clearGameTimer(true);
 
     this.state = GameState.COUNTDOWN;
 
-    this.emitCountdownToAll();
-
     this.countdownIntervalId = setInterval(() => {
       if (this.countdown !== null) {
-        logger.debug(`Countdown: ${this.countdown}`);
+        logger.debug(`[Towers] Countdown: ${this.countdown}`);
 
         if (this.countdown > 1) {
           this.countdown -= 1;
-          this.emitCountdownToAll();
 
           if (!this.checkMinimumReadyTeams()) {
             this.clearCountdown();
-            logger.debug("Game Over: Not enough ready users or teams");
+            logger.debug("[Towers] Game Over: Not enough ready users or teams");
             this.gameOver();
           }
         } else if (this.countdown === 1) {
           this.clearCountdown();
-          this.startGame();
+          void this.startGame();
         }
       }
     }, 1000);
@@ -164,46 +183,78 @@ export class Game {
     }
 
     this.countdown = null;
-    this.emitCountdownToAll();
   }
 
-  private startGame(): void {
+  private async startGame(): Promise<void> {
+    // Initialize seats that are occupied
     this.table.seats.filter((ts: TableSeat) => ts.occupiedByPlayer).forEach((ts: TableSeat) => ts.initialize());
 
-    this.table.seats
-      .filter((tableSeat: TableSeat) => tableSeat.occupiedByPlayer !== null)
-      .forEach(async (tableSeat: TableSeat, index: number) => {
-        // Always pair up if there is a partner, regardless of index
-        const partnerIndex: number = index % 2 === 0 ? index + 1 : index - 1;
-        const partnerSeat: TableSeat | undefined = this.table.seats[partnerIndex];
+    const occupiedSeats: TableSeat[] = this.table.seats.filter((ts: TableSeat) => ts.occupiedByPlayer !== null);
 
-        if (partnerSeat?.occupiedByPlayer && tableSeat.board && partnerSeat.board) {
+    // Link partner boards (partner = adjacent seat by seatNumber)
+    const getPartnerSeatNumber = (seatNumber: number): number =>
+      seatNumber % 2 === 0 ? seatNumber + 1 : seatNumber - 1;
+
+    const seatByNumber: Map<number, TableSeat> = new Map<number, TableSeat>();
+    for (const occupiedSeat of occupiedSeats) {
+      if (occupiedSeat.seatNumber != null) seatByNumber.set(occupiedSeat.seatNumber, occupiedSeat);
+    }
+
+    for (const tableSeat of occupiedSeats) {
+      if (!tableSeat.board || tableSeat.seatNumber == null) continue;
+
+      const partnerSeatNumber: number = getPartnerSeatNumber(tableSeat.seatNumber);
+      const partnerSeat: TableSeat | undefined = seatByNumber.get(partnerSeatNumber);
+
+      // Partner must exist, be occupied, and have a board
+      if (partnerSeat?.occupiedByPlayer && partnerSeat.board) {
+        const isSameTeam: boolean = partnerSeat.teamNumber === tableSeat.teamNumber;
+        if (!isSameTeam) {
+          tableSeat.board.partnerBoard = null;
+          tableSeat.board.partnerSide = null;
+        } else {
           tableSeat.board.partnerBoard = partnerSeat.board;
-
-          if (index % 2 === 0) {
-            tableSeat.board.partnerSide = "right";
-          } else {
-            tableSeat.board.partnerSide = "left";
-          }
+          tableSeat.board.partnerSide = partnerSeat.seatNumber > tableSeat.seatNumber ? "right" : "left";
         }
+      } else {
+        tableSeat.board.partnerBoard = null;
+        tableSeat.board.partnerSide = null;
+      }
+    }
 
-        const tablePlayer: TablePlayer | undefined = tableSeat.occupiedByPlayerId
-          ? TablePlayerManager.get(this.table.id, tableSeat.occupiedByPlayerId)
-          : undefined;
-        if (!tablePlayer) return;
+    // Start PlayerTowersGame instances for seated and ready players
+    for (const tableSeat of occupiedSeats) {
+      const tablePlayer: TablePlayer | undefined = tableSeat.occupiedByPlayerId
+        ? TablePlayerManager.get(this.table.id, tableSeat.occupiedByPlayerId)
+        : undefined;
 
-        if (tablePlayer.isReady) {
-          this.playersThisRound.push({ playerId: tablePlayer.playerId, teamNumber: tableSeat.teamNumber });
+      if (!tablePlayer) continue;
+      if (!tablePlayer.isReady) continue;
 
-          const gameInstance: PlayerTowersGame = new PlayerTowersGame(this.table.id, this.table.players, tablePlayer);
+      this.playersThisRound.push({ playerId: tablePlayer.playerId, teamNumber: tableSeat.teamNumber });
 
-          this.playerGameInstances.set(tablePlayer.playerId, gameInstance);
-          gameInstance.startGameLoop();
+      const gameInstance: PlayerTowersGame = new PlayerTowersGame(
+        this.io,
+        this.table.id,
+        this.table.players,
+        tablePlayer,
+        {
+          queueSpeedDropNextPiece: (seatNumber: number) => this.queueSpeedDropNextPiece(seatNumber),
+          requestGameOverCheck: () => this.requestGameOverCheck(),
+        },
+      );
 
-          tablePlayer.isPlaying = true;
-          await TablePlayerManager.upsert(tablePlayer);
-        }
-      });
+      this.playerGameInstances.set(tablePlayer.playerId, gameInstance);
+
+      if (tablePlayer.seatNumber != null) {
+        this.playerGamesBySeat.set(tablePlayer.seatNumber, gameInstance);
+      }
+
+      tablePlayer.isPlaying = true;
+      await TablePlayerManager.upsert(tablePlayer);
+
+      gameInstance.startGameLoop();
+    }
 
     this.startGameTimer();
   }
@@ -211,84 +262,89 @@ export class Game {
   private startGameTimer(): void {
     this.state = GameState.PLAYING;
 
-    if (this.timer === null) {
-      this.timer = 0;
-    }
-
-    this.emitTimerToAll();
+    this.timer = 0;
 
     this.gameTimerIntervalId = setInterval(() => {
-      if (this.timer !== null) {
-        logger.debug(`Game Timer: ${this.timer} seconds`);
+      if (this.state !== GameState.PLAYING || this.timer === null) return;
+      if (this.isGameOver) return;
 
-        if (this.checkIfGameOver()) {
-          const finalTimer: number | null = this.timer;
+      if (this.checkIfGameOver()) {
+        const finalTimer: number | null = this.timer;
 
-          this.clearGameTimer();
+        this.clearGameTimer();
 
-          const aliveTeams: { teamNumber: number; players: TablePlayer[] }[] = this.getActiveTeams();
+        const aliveTeams: { teamNumber: number; players: TablePlayer[] }[] = this.getActiveTeams();
 
-          if (aliveTeams.length === 0) {
-            logger.debug("Game Over — No alive teams.");
-            this.gameOver(finalTimer);
-            return;
-          }
-
-          const winningTeam: { teamNumber: number; players: TablePlayer[] } = aliveTeams[0];
-          logger.debug(
-            `Game Over — Winning team: ${winningTeam.players.map((tp: TablePlayer) => tp.player.user.username)}`,
-          );
-          this.gameOver(finalTimer, winningTeam.players);
-          return;
+        if (aliveTeams.length === 0) {
+          logger.debug("[Towers] Game Over: No alive teams.");
+          return void this.gameOver(finalTimer);
         }
 
-        if (
-          !this.isUsersPlayingListSaved &&
-          this.timer >= MIN_GRACE_PERIOD_SECONDS &&
-          this.checkMinimumPlayingTeams()
-        ) {
-          this.playersThisRound = this.table.players
-            .filter((tp: TablePlayer) => tp.isPlaying)
-            .map((tp: TablePlayer) => {
-              const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByPlayerId(this.table.id, tp.playerId);
-              return {
-                playerId: tp.playerId,
-                teamNumber: tableSeat?.teamNumber ?? -1,
-              };
-            });
+        const winningTeam: { teamNumber: number; players: TablePlayer[] } = aliveTeams[0];
+        logger.debug(
+          `[Towers] Game Over: Winning team: ${winningTeam.players.map((tp: TablePlayer) => tp.player.user.username)}`,
+        );
+        this.gameOver(finalTimer, winningTeam.players);
+        return;
+      }
 
-          this.isUsersPlayingListSaved = true;
-          logger.debug(`Rated players locked: ${JSON.stringify(this.playersThisRound)}`);
-        }
+      if (!this.isUsersPlayingListSaved && this.timer >= MIN_GRACE_PERIOD_SECONDS && this.checkMinimumPlayingTeams()) {
+        this.playersThisRound = this.table.players
+          .filter((tp: TablePlayer) => tp.isPlaying)
+          .map((tp: TablePlayer) => {
+            const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByPlayerId(this.table.id, tp.playerId);
+            return {
+              playerId: tp.playerId,
+              teamNumber: tableSeat?.teamNumber ?? -1,
+            };
+          });
 
-        this.timer += 1;
-        this.emitTimerToAll();
+        this.isUsersPlayingListSaved = true;
+      }
 
-        if (this.timer <= MIN_GRACE_PERIOD_SECONDS && !this.checkMinimumPlayingTeams()) {
-          const finalTimer: number | null = this.timer;
+      this.timer += 1;
 
-          this.clearGameTimer();
+      if (this.timer <= MIN_GRACE_PERIOD_SECONDS && !this.checkMinimumPlayingTeams()) {
+        const finalTimer: number | null = this.timer;
 
-          logger.debug(
-            `Game Over: Not enough users or teams playing within the first ${MIN_GRACE_PERIOD_SECONDS} seconds.`,
-          );
-          this.gameOver(finalTimer);
-        }
+        this.clearGameTimer();
+
+        logger.debug(
+          `[Towers] Game Over: Not enough users or teams playing within the first ${MIN_GRACE_PERIOD_SECONDS} seconds.`,
+        );
+        this.gameOver(finalTimer);
       }
     }, 1000);
   }
 
-  private clearGameTimer(shouldEmit: boolean = false): void {
+  private clearGameTimer(shouldResetTimer: boolean = false): void {
     if (this.gameTimerIntervalId !== null) {
       clearInterval(this.gameTimerIntervalId);
       this.gameTimerIntervalId = null;
     }
 
-    this.timer = null;
-
-    if (shouldEmit) {
-      this.emitTimerToAll();
+    if (shouldResetTimer) {
+      this.timer = null;
     }
+  }
+
+  public getPlayerGameBySeat(seatNumber: number): PlayerTowersGame | undefined {
+    return this.playerGamesBySeat.get(seatNumber);
+  }
+
+  public async applyHooBlocksToOpponents(teamNumber: number, blocks: TowersPieceBlockPlainObject[]): Promise<void> {
+    if (!blocks || blocks.length === 0) return;
+
+    for (const playerGame of this.playerGameInstances.values()) {
+      playerGame.applyHooBlocks({ teamNumber, blocks });
+      await playerGame.sendGameStateToClient();
+    }
+  }
+
+  public queueSpeedDropNextPiece(seatNumber: number): void {
+    const gameInstance: PlayerTowersGame | undefined = this.playerGamesBySeat.get(seatNumber);
+    if (!gameInstance) return;
+    gameInstance.queueSpecialSpeedDropNextPiece();
   }
 
   /**
@@ -362,6 +418,7 @@ export class Game {
       this.winners = this.table.players.filter(
         (tp: TablePlayer) => tp.isPlaying && tp.playerId !== tablePlayer.playerId,
       );
+      this.requestGameOverCheck();
     }
   }
 
@@ -374,7 +431,7 @@ export class Game {
    * @returns `true` if the game is over and a winner is declared, otherwise `false`.
    */
   private checkIfGameOver(): boolean {
-    return this.getActiveTeams().length < (isTestMode() ? MIN_ACTIVE_TEAMS_REQUIRED_TEST : MIN_ACTIVE_TEAMS_REQUIRED);
+    return this.getActiveTeams().length < (TEST_MODE ? MIN_ACTIVE_TEAMS_REQUIRED_TEST : MIN_ACTIVE_TEAMS_REQUIRED);
   }
 
   /**
@@ -394,10 +451,11 @@ export class Game {
     if (this.isGameOver) return;
 
     this.isGameOver = true;
-    logger.debug("Game stopped.");
+    logger.debug("[Towers] Game stopped.");
 
     this.playerGameInstances.forEach((ptg: PlayerTowersGame) => ptg.stopGameLoop());
     this.playerGameInstances.clear();
+    this.playerGamesBySeat.clear();
 
     this.state = GameState.GAME_OVER;
 
@@ -417,7 +475,7 @@ export class Game {
 
         if (tablePlayer.player.stats.isHeroEligible()) {
           const heroCode: string = CipherHeroManager.generateHeroCode(tablePlayer.playerId);
-          TableChatMessageManager.create({
+          await TableChatMessageManager.create({
             tableId: this.table.id,
             player: tablePlayer.player,
             text: null,
@@ -453,15 +511,15 @@ export class Game {
       if (this.table.isRated) {
         const ratingResults: EloResult[] = EloRating.rateTeams(roundTeams, winnerIds);
 
-        ratingResults.forEach((er: EloResult) => {
+        ratingResults.forEach(async (er: EloResult) => {
           const tablePlayer: TablePlayer | undefined = this.table.players.find(
             (tp: TablePlayer) => tp.playerId === er.playerId,
           );
 
           if (tablePlayer) {
-            PlayerStatsManager.updateRating(tablePlayer.playerId, er.newRating);
+            await PlayerStatsManager.updateRating(tablePlayer.playerId, er.newRating);
 
-            TableChatMessageManager.create({
+            await TableChatMessageManager.create({
               tableId: this.table.id,
               player: tablePlayer.player,
               text: null,
@@ -494,6 +552,30 @@ export class Game {
     await delay(10_000);
 
     this.reset();
+  }
+
+  public requestGameOverCheck(): void {
+    if (this.gameOverCheckQueued) return;
+    this.gameOverCheckQueued = true;
+
+    queueMicrotask(() => {
+      this.gameOverCheckQueued = false;
+
+      if (this.isGameOver) return;
+      if (this.state !== GameState.PLAYING) return;
+      if (!this.checkIfGameOver()) return;
+
+      const finalTimer: number = this.timer ?? 0;
+      this.clearGameTimer();
+
+      const playingTeams: { teamNumber: number; players: TablePlayer[] }[] = this.getActiveTeams();
+      if (playingTeams.length === 0) {
+        void this.gameOver(finalTimer);
+        return;
+      }
+
+      void this.gameOver(finalTimer, playingTeams[0].players);
+    });
   }
 
   private cleanupGame({ emitState = true, fullDestroy = false } = {}): void {
@@ -534,12 +616,12 @@ export class Game {
   public destroy(): void {
     this.playerGameInstances.forEach((ptg: PlayerTowersGame) => ptg.stopGameLoop());
     this.playerGameInstances.clear();
-
-    this.cleanupGame({ emitState: true, fullDestroy: true });
+    this.playerGamesBySeat.clear();
+    this.cleanupGame({ emitState: false, fullDestroy: true });
   }
 
-  private async emitSeatUpdates(): Promise<void> {
-    await publishRedisEvent(ServerInternalEvents.GAME_SEATS_UPDATE, {
+  private async emitTableSeatUpdates(): Promise<void> {
+    await publishRedisEvent(ServerInternalEvents.GAME_TABLE_SEATS, {
       tableId: this.table.id,
       tableSeats: this.table.seats.map((ts: TableSeat) => ts.toPlainObject()),
     });
@@ -550,12 +632,10 @@ export class Game {
   }
 
   private async emitCountdownToAll(): Promise<void> {
-    if (this.state === GameState.COUNTDOWN) {
-      await publishRedisEvent(ServerInternalEvents.GAME_COUNTDOWN, {
-        tableId: this.table.id,
-        countdown: this.countdown,
-      });
-    }
+    await publishRedisEvent(ServerInternalEvents.GAME_COUNTDOWN, {
+      tableId: this.table.id,
+      countdown: this.countdown,
+    });
   }
 
   private async emitTimerToAll(): Promise<void> {

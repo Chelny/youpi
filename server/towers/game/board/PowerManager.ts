@@ -1,19 +1,26 @@
-import { DisconnectReason, Socket } from "socket.io";
-import { ClientToServerEvents } from "@/constants/socket/client-to-server";
 import { ServerInternalEvents } from "@/constants/socket/server-internal";
 import { logger } from "@/lib/logger";
 import { publishRedisEvent } from "@/server/redis/publish";
-import { SocketEventBinder } from "@/server/socket/SocketEventBinder";
 import { TablePlayer } from "@/server/towers/classes/TablePlayer";
 import { TableSeat } from "@/server/towers/classes/TableSeat";
 import { Board, BoardGrid } from "@/server/towers/game/board/Board";
-import { buildDefaultRegistry, PowerEffect, PowerEffectContext } from "@/server/towers/game/board/PowerEffectRegistry";
+import {
+  buildDefaultRegistry,
+  PowerEffect,
+  PowerEffectContext,
+  PowerEffectRegistry,
+} from "@/server/towers/game/board/PowerEffectRegistry";
 import { TowersBlockLetter, TowersBlockPowerType } from "@/server/towers/game/PieceBlock";
 import { PowerBarItem, PowerBarItemPlainObject } from "@/server/towers/game/PowerBar";
 import { SpecialDiamond, SpecialDiamondPlainObject } from "@/server/towers/game/SpecialDiamond";
 import { TowersPieceBlock, TowersPieceBlockPlainObject } from "@/server/towers/game/TowersPieceBlock";
 import { TableSeatManager } from "@/server/towers/managers/TableSeatManager";
 import { isTowersPieceBlock } from "@/server/towers/utils/piece-type-check";
+import { TEST_MODE } from "@/server/towers/utils/test";
+
+type PowerManagerDeps = {
+  queueSpeedDropNextPiece: (seatNumber: number) => void
+};
 
 export class PowerManager {
   private tableId: string;
@@ -21,42 +28,18 @@ export class PowerManager {
   private tablePlayer: TablePlayer;
   private tableSeat?: TableSeat;
   private targetTablePlayer?: TablePlayer;
-  private eventBinder: SocketEventBinder | null = null;
-  private onApplyPower: (data: {
-    sourceUsername?: string
-    targetUsername?: string
-    powerItem: PowerBarItemPlainObject
-  }) => void = this.handleApplyPower.bind(this);
-  private readonly registry = buildDefaultRegistry();
+  private readonly registry: PowerEffectRegistry = buildDefaultRegistry();
 
-  constructor(tableId: string, players: TablePlayer[], tablePlayer: TablePlayer) {
+  constructor(
+    tableId: string,
+    players: TablePlayer[],
+    tablePlayer: TablePlayer,
+    private deps: PowerManagerDeps,
+  ) {
     this.tableId = tableId;
     this.players = players;
     this.tablePlayer = tablePlayer;
     this.tableSeat = TableSeatManager.getSeatByPlayerId(tableId, tablePlayer.playerId);
-    this.registerSocketListeners();
-  }
-
-  private registerSocketListeners(): void {
-    const socket: Socket | null = this.tablePlayer.player.user.socket;
-    if (!socket) return;
-
-    this.eventBinder = new SocketEventBinder(socket);
-    this.eventBinder.bind(ClientToServerEvents.GAME_POWER_APPLY, this.onApplyPower);
-
-    socket.on("disconnect", (reason: DisconnectReason) => {
-      const shouldCleanup: boolean =
-        reason === "forced close" ||
-        reason === "server shutting down" ||
-        reason === "forced server close" ||
-        reason === "client namespace disconnect" ||
-        reason === "server namespace disconnect";
-
-      if (shouldCleanup) {
-        this.eventBinder?.unbindAll();
-        this.eventBinder = null;
-      }
-    });
   }
 
   /**
@@ -72,25 +55,24 @@ export class PowerManager {
    * - The source player's power bar
    * - Optional debug metadata for logging and tracing (usernames)
    */
-  private makeContext(debug?: { sourceUsername?: string; targetUsername?: string }): PowerEffectContext {
+  private makeContext(): PowerEffectContext {
     const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByPlayerId(this.tableId, this.tablePlayer.playerId);
     const board: Board | null = tableSeat?.board ?? null;
-    const grid: BoardGrid | undefined = tableSeat?.board?.grid;
 
     return {
       tableId: this.tableId,
       seat: tableSeat,
+      game: {
+        queueSpeedDropNextPiece: this.deps.queueSpeedDropNextPiece,
+      },
       board,
-      grid,
+      grid: board?.grid,
       setGrid: (grid: BoardGrid): void => {
-        if (board) {
-          board.grid = grid;
-        }
+        if (board) board.grid = grid;
       },
       powerBar: tableSeat?.powerBar ?? null,
       source: this.tablePlayer,
       target: this.targetTablePlayer,
-      debug,
     };
   }
 
@@ -98,23 +80,9 @@ export class PowerManager {
    * Applies the specified power item effect to the current board,
    * depending on the item's type and whether it's an attack or defense.
    *
-   * @param sourceUsername - The username of the source player for logging purposes.
-   * @param targetUsername - The username of the target player for logging purposes.
    * @param powerItem - The power item to apply (either a TowersPieceBlock or SpecialDiamond).
    */
-  private handleApplyPower({
-    sourceUsername,
-    targetUsername,
-    powerItem,
-  }: {
-    sourceUsername?: string
-    targetUsername?: string
-    powerItem: PowerBarItemPlainObject
-  }): void {
-    const ctx: PowerEffectContext = this.makeContext();
-
-    ctx.debug = { sourceUsername, targetUsername };
-
+  public applyPower({ powerItem }: { powerItem: PowerBarItemPlainObject }): void {
     if ("powerLevel" in powerItem) {
       const item: TowersPieceBlock = TowersPieceBlock.fromPlainObject(powerItem as TowersPieceBlockPlainObject);
       const mode: TowersBlockPowerType = item.powerType;
@@ -122,14 +90,12 @@ export class PowerManager {
         item.letter as TowersBlockLetter,
         mode,
       );
+      if (!effect) return;
 
-      if (!effect) {
-        logger.warn(`[power] missing effect ${item.letter}:${mode}`);
-        return;
-      }
+      const ctx: PowerEffectContext = this.makeContext();
 
       logger.debug(
-        `${sourceUsername ?? "?"} -> ${targetUsername ?? "?"} : ${item.letter}:${mode} (${item.powerLevel ?? "n/a"})`,
+        `[Towers] Apply Power - ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}: ${item.letter}:${mode} (${item.powerLevel})`,
       );
 
       effect.apply(ctx, item);
@@ -139,19 +105,19 @@ export class PowerManager {
     if ("powerType" in powerItem) {
       const item: SpecialDiamond = SpecialDiamond.fromPlainObject(powerItem as SpecialDiamondPlainObject);
       const effect: PowerEffect<SpecialDiamond> | undefined = this.registry.getDiamond(item.powerType);
+      if (!effect) return;
 
-      if (!effect) {
-        logger.warn(`[power] missing diamond effect ${item.powerType}`);
-        return;
-      }
+      const ctx: PowerEffectContext = this.makeContext();
 
-      logger.debug(`${sourceUsername ?? "?"} -> ${targetUsername ?? "?"} : diamond:${item.powerType}`);
+      logger.debug(
+        `[Towers] Apply Special Power - ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}: diamond:${item.powerType}`,
+      );
 
       effect.apply(ctx, item);
       return;
     }
 
-    logger.warn("Unknown power item");
+    logger.warn("[Towers] Unknown power item");
   }
 
   /**
@@ -162,11 +128,15 @@ export class PowerManager {
   public usePower(targetSeatNumber?: number): void {
     this.targetTablePlayer = undefined; // Clear previous target
 
+    // Refresh seat
+    this.tableSeat = TableSeatManager.getSeatByPlayerId(this.tableId, this.tablePlayer.playerId);
+
     const powerItem: PowerBarItem | null | undefined = this.tableSeat?.powerBar?.useItem();
-    if (!powerItem) {
-      logger.warn("No power item available");
-      return;
-    }
+    if (!powerItem) return;
+
+    const resolveTarget = (target: TablePlayer): TablePlayer => {
+      return TEST_MODE ? this.tablePlayer : target;
+    };
 
     const isAttackPower: boolean =
       (isTowersPieceBlock(powerItem) && powerItem.powerType === "attack") ||
@@ -191,18 +161,19 @@ export class PowerManager {
     const sendPowerToTarget = async (targetTablePlayer: TablePlayer): Promise<void> => {
       if (!this.tableSeat) return;
 
-      if (isAttackPower && this.isPartner(targetTablePlayer) && typeof targetSeatNumber === "undefined") {
-        logger.warn(`Blocked spacebar attack to partner: ${targetTablePlayer.player.user.username}`);
+      if (!TEST_MODE && isAttackPower && this.isPartner(targetTablePlayer) && typeof targetSeatNumber === "undefined") {
+        logger.warn(`[Towers] Blocked spacebar attack to partner: ${targetTablePlayer.player.user.username}`);
         return;
       }
 
-      this.targetTablePlayer = targetTablePlayer;
+      const target: TablePlayer = resolveTarget(targetTablePlayer);
+      this.targetTablePlayer = target;
 
-      await publishRedisEvent(ServerInternalEvents.GAME_POWER_FIRE, {
-        sourceUsername: this.tablePlayer.player.user.username,
-        targetUsername: targetTablePlayer.player.user.username,
-        targetSeatNumber: targetTablePlayer.seatNumber,
+      await publishRedisEvent(ServerInternalEvents.GAME_POWER_USE, {
+        tableId: this.tableId,
         powerItem: powerItem.toPlainObject(),
+        source: this.tablePlayer.toPlainObject(),
+        target: target.toPlainObject(),
       });
     };
 
@@ -214,28 +185,30 @@ export class PowerManager {
       });
 
       if (typeof targetTablePlayer !== "undefined") {
-        if ((isAttackPower && isOpponent(targetTablePlayer)) || isDefensePower) {
-          sendPowerToTarget(targetTablePlayer);
+        if (TEST_MODE || (isAttackPower && isOpponent(targetTablePlayer)) || isDefensePower) {
+          void sendPowerToTarget(targetTablePlayer);
         } else {
-          logger.warn(`Invalid target at seat #${targetSeatNumber} for power: ${powerItem.powerType}`);
+          logger.warn(`[Towers] Invalid target at seat #${targetSeatNumber} for power: ${powerItem.powerType}`);
         }
       } else {
-        logger.warn(`Target not found at seat #${targetSeatNumber}`);
+        logger.warn(`[Towers] Target not found at seat #${targetSeatNumber}`);
       }
     }
 
     // Handle spacebar press (no target specified)
-    else {
-      if (isAttackPower && opponents.length > 0) {
+    else if (isAttackPower) {
+      if (TEST_MODE) {
+        void sendPowerToTarget(this.tablePlayer); // Self
+      } else if (opponents.length > 0) {
         const targetTablePlayer: TablePlayer = opponents[Math.floor(Math.random() * opponents.length)];
-        sendPowerToTarget(targetTablePlayer);
-      } else if (isDefensePower) {
+        void sendPowerToTarget(targetTablePlayer);
+      }
+    } else if (isDefensePower) {
+      if (TEST_MODE) {
+        void sendPowerToTarget(this.tablePlayer); // Self
+      } else {
         // Defense to self
-        this.handleApplyPower({
-          sourceUsername: this.tablePlayer.player.user.username,
-          targetUsername: this.tablePlayer.player.user.username,
-          powerItem,
-        });
+        this.applyPower({ powerItem });
 
         // Also send to partner, if they exist and playing
         if (typeof partner !== "undefined" && this.tableSeat?.tableId) {
@@ -245,7 +218,7 @@ export class PowerManager {
           );
 
           if (typeof partnerTableSeat !== "undefined" && !partnerTableSeat?.board?.isGameOver) {
-            sendPowerToTarget(partner);
+            void sendPowerToTarget(partner);
           }
         }
       }

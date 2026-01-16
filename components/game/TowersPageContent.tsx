@@ -11,8 +11,8 @@ import { useGame } from "@/context/GameContext";
 import { useSocket } from "@/context/SocketContext";
 import { NotificationPlainObject } from "@/server/towers/classes/Notification";
 
-const Room = dynamic(() => import("@/components/game/Room"));
-const Table = dynamic(() => import("@/components/game/Table"));
+const Room = dynamic(() => import("@/components/game/room/Room"));
+const Table = dynamic(() => import("@/components/game/table/Table"));
 
 export default function TowersPageContent(): ReactNode {
   const router = useRouter();

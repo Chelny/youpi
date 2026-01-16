@@ -1,25 +1,25 @@
 import { Socket } from "socket.io";
 
-type EventHandler<T> = (data: T) => void;
+type AnyFn = <T>(...args: T[]) => void;
 
 interface Listener {
   event: string
-  handler: unknown
+  handler: AnyFn
 }
 
 export class SocketEventBinder {
-  constructor(private socket: Socket) {}
-
   private listeners: Listener[] = [];
 
-  public bind<T>(event: string, handler: EventHandler<T>): void {
-    this.listeners.push({ event, handler });
+  constructor(private socket: Socket) {}
+
+  public bind<T>(event: string, handler: (data: T) => void): void {
+    this.listeners.push({ event, handler: handler as AnyFn });
     this.socket.on(event, handler);
   }
 
-  public unbindAll<T>(): void {
+  public unbindAll(): void {
     for (const { event, handler } of this.listeners) {
-      this.socket.off(event, handler as (...args: T[]) => void);
+      this.socket.off(event, handler);
     }
 
     this.listeners = [];

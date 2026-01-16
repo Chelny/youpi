@@ -32,35 +32,35 @@ export function youpiServerToClientEvents(redisSub: Redis, io: IoServer): void {
       }
       case ServerInternalEvents.USER_RELATIONSHIP_MUTE: {
         const { sourceUserId } = data;
-        io.to(sourceUserId).emit(ServerToClientEvents.USER_RELATIONSHIP_MUTE);
+        io.to(sourceUserId).emit(ServerToClientEvents.USER_RELATIONSHIP_MUTED);
         break;
       }
       case ServerInternalEvents.USER_RELATIONSHIP_UNMUTE: {
         const { sourceUserId } = data;
-        io.to(sourceUserId).emit(ServerToClientEvents.USER_RELATIONSHIP_UNMUTE);
+        io.to(sourceUserId).emit(ServerToClientEvents.USER_RELATIONSHIP_UNMUTED);
         break;
       }
       case ServerInternalEvents.CONVERSATION_MUTE: {
         const { userId, conversationId, unreadConversationsCount } = data;
-        io.to(userId).emit(ServerToClientEvents.CONVERSATION_MUTE, { conversationId });
+        io.to(userId).emit(ServerToClientEvents.CONVERSATION_MUTED, { conversationId });
         io.to(userId).emit(ServerToClientEvents.CONVERSATIONS_UNREAD, { unreadConversationsCount });
         break;
       }
       case ServerInternalEvents.CONVERSATION_UNMUTE: {
         const { userId, conversationId, unreadConversationsCount } = data;
-        io.to(userId).emit(ServerToClientEvents.CONVERSATION_UNMUTE, { conversationId });
+        io.to(userId).emit(ServerToClientEvents.CONVERSATION_UNMUTED, { conversationId });
         io.to(userId).emit(ServerToClientEvents.CONVERSATIONS_UNREAD, { unreadConversationsCount });
         break;
       }
       case ServerInternalEvents.CONVERSATION_REMOVE: {
         const { userId, conversationId, unreadConversationsCount } = data;
-        io.to(userId).emit(ServerToClientEvents.CONVERSATION_REMOVE, { conversationId });
+        io.to(userId).emit(ServerToClientEvents.CONVERSATION_REMOVED, { conversationId });
         io.to(userId).emit(ServerToClientEvents.CONVERSATIONS_UNREAD, { unreadConversationsCount });
         break;
       }
       case ServerInternalEvents.CONVERSATION_RESTORE: {
         const { userId, conversation, unreadConversationsCount } = data;
-        io.to(userId).emit(ServerToClientEvents.CONVERSATION_RESTORE, { conversation });
+        io.to(userId).emit(ServerToClientEvents.CONVERSATION_RESTORED, { conversation });
         io.to(userId).emit(ServerToClientEvents.CONVERSATIONS_UNREAD, { unreadConversationsCount });
         break;
       }

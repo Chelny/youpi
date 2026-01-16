@@ -14,7 +14,6 @@ import {
 import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { ROUTE_HOME } from "@/constants/routes";
-import { ClientToServerEvents } from "@/constants/socket/client-to-server";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { Session } from "@/lib/auth-client";
 import { logger } from "@/lib/logger";
@@ -72,112 +71,107 @@ export const SocketProvider = ({ children, session }: PropsWithChildren<{ sessio
     // * Socket IO Events
     // **************************************************
 
-    socket.on("connect", () => {
+    const handleConnect = (): void => {
       setIsConnected(true);
       logger.info(`Socket connected. Socket ID: ${socket.id}.`);
-    });
+    };
 
-    socket.on("connect_error", (error: Error) => {
+    const handleConnectError = (error: Error): void => {
       logger.error(`Socket connection error: ${error.message}.`);
-    });
+    };
 
-    socket.on("reconnect", (attempt: number) => {
-      logger.info(`Reconnected to the socket successfully after ${attempt} attempts.`);
-    });
+    const handleReconnect = (attempt: number): void => {
+      logger.info(`Reconnected after ${attempt} attempts.`);
+    };
 
-    socket.on("reconnect_attempt", (attempt: number) => {
-      logger.info(`Attempting to reconnect to the socket... Attempt number: ${attempt}.`);
-
-      // Re-attach the session on every reconnect attempt
+    const handleReconnectAttempt = (attempt: number): void => {
+      logger.info(`Reconnect attempt #${attempt}`);
       socket.auth = { session };
-    });
+    };
 
-    socket.on("reconnect_error", (error: Error) => {
+    const handleReconnectError = (error: Error): void => {
       logger.error(`Socket reconnection error: ${error.message}.`);
-    });
+    };
 
-    socket.on("reconnect_failed", () => {
+    const handleReconnectFailed = (): void => {
       logger.error("Socket reconnection failed.");
-    });
+    };
 
-    socket.on("disconnect", (reason: string) => {
+    const handleDisconnect = (reason: string): void => {
       setIsConnected(false);
       logger.info(`Socket disconnected due to ${reason}.`);
-    });
+    };
 
-    socket.on("error", (error: Error) => {
+    const handleError = (error: Error): void => {
       logger.error(`Socket error: ${error.message}.`);
-    });
+    };
 
-    socket.on(ServerToClientEvents.SIGN_OUT_SUCCESS, () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-
+    const handleSignOutSuccess = (): void => {
+      socket.disconnect();
+      socketRef.current = null;
       router.push(ROUTE_HOME.PATH);
-    });
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("connect_error", handleConnectError);
+    socket.on("reconnect", handleReconnect);
+    socket.on("reconnect_attempt", handleReconnectAttempt);
+    socket.on("reconnect_error", handleReconnectError);
+    socket.on("reconnect_failed", handleReconnectFailed);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("error", handleError);
+    socket.on(ServerToClientEvents.SIGN_OUT_SUCCESS, handleSignOutSuccess);
 
     // **************************************************
     // * Server Error Events
     // **************************************************
 
-    socket.on(ServerToClientEvents.SERVER_ERROR, (message: string) => {
+    const handleServerError = (message: string): void => {
       logger.error(`Server error: ${message}.`);
-    });
+    };
+
+    socket.on(ServerToClientEvents.SERVER_ERROR, handleServerError);
 
     // **************************************************
     // * Network Events
     // **************************************************
 
-    const handleOnline = (): void => {
-      logger.info("You are online. Reconnecting socket...");
-      socket.connect();
+    const handleUserOnline = ({ userId }: { userId: string }): void => {
+      logger.info(`${userId} is online`);
     };
 
-    const handleOffline = (): void => {
-      logger.warn("You are offline. Disconnecting socket...");
-      socket.disconnect();
+    const handleUserOffline = ({ userId }: { userId: string }): void => {
+      logger.info(`${userId} is offline`);
     };
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    socket.on(ServerToClientEvents.USER_ONLINE, handleUserOnline);
+    socket.on(ServerToClientEvents.USER_OFFLINE, handleUserOffline);
 
     // **************************************************
     // * Cleanups
     // **************************************************
 
     return () => {
-      socketRef.current?.disconnect();
-      socketRef.current = null;
+      socket.off("connect", handleConnect);
+      socket.off("connect_error", handleConnectError);
+      socket.off("reconnect", handleReconnect);
+      socket.off("reconnect_attempt", handleReconnectAttempt);
+      socket.off("reconnect_error", handleReconnectError);
+      socket.off("reconnect_failed", handleReconnectFailed);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("error", handleError);
 
-      socket.off("connect");
-      socket.off("connect_error");
-      socket.off("reconnect");
-      socket.off("reconnect_attempt");
-      socket.off("reconnect_error");
-      socket.off("reconnect_failed");
-      socket.off("disconnect");
-      socket.off("error");
-      socket.off(ServerToClientEvents.SIGN_OUT_SUCCESS);
-      socket.off(ServerToClientEvents.SERVER_ERROR);
+      socket.off(ServerToClientEvents.SIGN_OUT_SUCCESS, handleSignOutSuccess);
+      socket.off(ServerToClientEvents.SERVER_ERROR, handleServerError);
 
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      socket.off(ServerToClientEvents.USER_ONLINE, handleUserOnline);
+      socket.off(ServerToClientEvents.USER_OFFLINE, handleUserOffline);
     };
   }, [session]);
 
   useEffect(() => {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
-
-    const handleUserOnline = (): void => {
-      socket.emit(ClientToServerEvents.USER_CONNECTED);
-    };
-
-    const handleUserOffline = (): void => {
-      socket.emit(ClientToServerEvents.USER_DISCONNECTED);
-    };
 
     const handlePingEcho = (_: unknown, callback: (response: boolean) => void): void => {
       callback(true);
@@ -187,14 +181,10 @@ export const SocketProvider = ({ children, session }: PropsWithChildren<{ sessio
       setUserAvatar(userId, avatarId);
     };
 
-    socket.on(ServerToClientEvents.USER_ONLINE, handleUserOnline);
-    socket.on(ServerToClientEvents.USER_OFFLINE, handleUserOffline);
     socket.on(ServerToClientEvents.PING_ECHO, handlePingEcho);
     socket.on(ServerToClientEvents.USER_SETTINGS_AVATAR, handleAvatarUpdate);
 
     return () => {
-      socket.off(ServerToClientEvents.USER_ONLINE, handleUserOnline);
-      socket.off(ServerToClientEvents.USER_OFFLINE, handleUserOffline);
       socket.off(ServerToClientEvents.PING_ECHO, handlePingEcho);
       socket.off(ServerToClientEvents.USER_SETTINGS_AVATAR, handleAvatarUpdate);
     };

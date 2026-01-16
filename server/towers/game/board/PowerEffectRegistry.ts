@@ -1,7 +1,5 @@
 import { BOARD_COLS, BOARD_ROWS, EMPTY_CELL, HIDDEN_ROWS_COUNT } from "@/constants/game";
-import { ServerInternalEvents } from "@/constants/socket/server-internal";
 import { logger } from "@/lib/logger";
-import { publishRedisEvent } from "@/server/redis/publish";
 import { TablePlayer } from "@/server/towers/classes/TablePlayer";
 import { TableSeat } from "@/server/towers/classes/TableSeat";
 import { Board, BoardBlock, BoardGrid, BoardGridRow } from "@/server/towers/game/board/Board";
@@ -31,12 +29,14 @@ export interface PowerEffectContext {
   tableId: string
   seat?: TableSeat
   board?: Board | null
+  game?: {
+    queueSpeedDropNextPiece: (seatNumber: number) => void
+  }
   readonly grid?: BoardGrid
   setGrid?: (grid: BoardGrid) => void
   powerBar?: PowerBar | null
   source: TablePlayer
   target?: TablePlayer
-  debug?: { sourceUsername?: string; targetUsername?: string }
 }
 
 export interface PowerEffect<TItem> {
@@ -89,7 +89,7 @@ export class AddRowEffect implements PowerEffect<TowersPieceBlock> {
     grid.push(Array.from({ length: BOARD_COLS }, () => new TowersPieceBlock()));
     PowerGridOps.commit(ctx, grid);
 
-    logger.debug(`Towers power - Add row: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(`[Towers] Attack - Add row: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`);
   }
 }
 
@@ -105,7 +105,9 @@ export class RemoveRowEffect implements PowerEffect<TowersPieceBlock> {
     grid.unshift(new Array(BOARD_COLS).fill(EMPTY_CELL));
     PowerGridOps.commit(ctx, grid);
 
-    logger.debug(`Towers power - Remove row: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(
+      `[Towers] Defense - Remove row: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`,
+    );
   }
 }
 
@@ -167,7 +169,7 @@ export class DitherEffect implements PowerEffect<TowersPieceBlock> {
 
     PowerGridOps.commit(ctx, grid);
 
-    logger.debug(`Towers power - Dither: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(`[Towers] Attack - Dither: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`);
   }
 }
 
@@ -224,7 +226,7 @@ export class ClumpEffect implements PowerEffect<TowersPieceBlock> {
 
     PowerGridOps.commit(ctx, grid);
 
-    logger.debug(`Towers power - Clump: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(`[Towers] Defense - Clump: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`);
   }
 }
 
@@ -267,7 +269,9 @@ export class AddStonesEffect implements PowerEffect<TowersPieceBlock> {
 
     PowerGridOps.commit(ctx, grid);
 
-    logger.debug(`Towers power - Add stones: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(
+      `[Towers] Attack - Add stones: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`,
+    );
   }
 }
 
@@ -341,7 +345,9 @@ export class DropStonesEffect implements PowerEffect<TowersPieceBlock> {
 
     PowerGridOps.commit(ctx, grid);
 
-    logger.debug(`Towers power - Drop stones: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(
+      `[Towers] Defense - Drop stones: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`,
+    );
   }
 }
 
@@ -376,7 +382,7 @@ export class DefuseEffect implements PowerEffect<TowersPieceBlock> {
 
     PowerGridOps.commit(ctx, grid);
 
-    logger.debug(`Towers power - Defuse: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(`[Towers] Attack - Defuse: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`);
   }
 }
 
@@ -421,7 +427,9 @@ export class ColorBlastEffect implements PowerEffect<TowersPieceBlock> {
 
     PowerGridOps.commit(ctx, grid);
 
-    logger.debug(`Towers power - Color blast: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(
+      `[Towers] Defense - Color blast: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`,
+    );
   }
 }
 
@@ -432,7 +440,9 @@ export class ColorBlastEffect implements PowerEffect<TowersPieceBlock> {
 export class MedusaPieceEffect implements PowerEffect<TowersPieceBlock> {
   apply(ctx: PowerEffectContext): void {
     ctx.seat?.nextPieces?.addMedusaPiece();
-    logger.debug(`Towers power - Medusa piece: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(
+      `[Towers] Attack - Medusa piece: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`,
+    );
   }
 }
 
@@ -443,7 +453,9 @@ export class MedusaPieceEffect implements PowerEffect<TowersPieceBlock> {
 export class MidasPieceEffect implements PowerEffect<TowersPieceBlock> {
   apply(ctx: PowerEffectContext): void {
     ctx.seat?.nextPieces?.addMidasPiece();
-    logger.debug(`Towers power - Midas piece: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(
+      `[Towers] Defense - Midas piece: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`,
+    );
   }
 }
 
@@ -456,7 +468,7 @@ export class RemovePowersEffect implements PowerEffect<TowersPieceBlock> {
     if (!ctx.grid || !ctx.setGrid || !ctx.powerBar || !item.powerLevel) return;
 
     if (!ctx.powerBar.queue || ctx.powerBar.queue.length === 0) {
-      logger.warn("Couldn’t remove items from power bar because power bar is empty.");
+      logger.warn("[Towers] Couldn’t remove items from power bar because power bar is empty.");
       return;
     }
 
@@ -492,7 +504,9 @@ export class RemovePowersEffect implements PowerEffect<TowersPieceBlock> {
 
     PowerGridOps.commit(ctx, grid);
 
-    logger.debug(`Towers power - Remove powers: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(
+      `[Towers] Attack - Remove powers: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`,
+    );
   }
 }
 
@@ -514,7 +528,7 @@ export class ColorPlagueEffect implements PowerEffect<TowersPieceBlock> {
     }
 
     let least: string | null = null;
-    let leastCount = Infinity;
+    let leastCount: number = Infinity;
 
     for (const [letter, count] of Object.entries(counts)) {
       if (count < leastCount) {
@@ -535,7 +549,9 @@ export class ColorPlagueEffect implements PowerEffect<TowersPieceBlock> {
     PowerGridOps.commit(ctx, grid);
     ctx.board.shiftDownBlocks();
 
-    logger.debug(`Towers power - Color plague: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(
+      `[Towers] Defense - Color plague: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`,
+    );
   }
 }
 
@@ -544,14 +560,14 @@ export class ColorPlagueEffect implements PowerEffect<TowersPieceBlock> {
  */
 export class SpecialSpeedDropEffect implements PowerEffect<SpecialDiamond> {
   async apply(ctx: PowerEffectContext): Promise<void> {
-    if (!ctx.target) return;
+    const seatNumber: number | undefined = ctx.seat?.seatNumber;
+    if (seatNumber == null) return;
 
-    await publishRedisEvent(ServerInternalEvents.PIECE_SPEED, {
-      tableId: ctx.tableId,
-      seatNumber: ctx.target.seatNumber,
-    });
+    ctx.game?.queueSpeedDropNextPiece(seatNumber);
 
-    logger.debug(`Towers power - Speed drop: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(
+      `[Towers] Special Attack - Speed drop: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`,
+    );
   }
 }
 
@@ -571,7 +587,9 @@ export class SpecialRemovePowersEffect implements PowerEffect<SpecialDiamond> {
     PowerGridOps.commit(ctx, grid);
     ctx.powerBar.clear();
 
-    logger.debug(`Towers power - Remove power: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(
+      `[Towers] Special Attack - Remove power: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`,
+    );
   }
 }
 
@@ -589,7 +607,9 @@ export class SpecialRemoveStonesEffect implements PowerEffect<SpecialDiamond> {
     PowerGridOps.commit(ctx, grid);
     ctx.board.shiftDownBlocks();
 
-    logger.debug(`Towers power - Remove stones: ${ctx.debug?.sourceUsername} -> ${ctx.debug?.targetUsername}`);
+    logger.debug(
+      `[Towers] Special Defense - Remove stones: ${ctx.source.player.user.username} -> ${ctx.target?.player.user.username}`,
+    );
   }
 }
 

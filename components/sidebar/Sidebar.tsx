@@ -94,7 +94,7 @@ export default function Sidebar(): ReactNode {
       socket.on(ServerToClientEvents.TABLE_INVITATION_DECLINED_NOTIFICATION, handleUpdateNotification);
       socket.on(ServerToClientEvents.TABLE_BOOTED_NOTIFICATION, handleUpdateNotification);
       socket.on(ServerToClientEvents.NOTIFICATION_MARK_AS_READ, handleUpdateNotification);
-      socket.on(ServerToClientEvents.NOTIFICATION_DELETE, handleDeleteNotification);
+      socket.on(ServerToClientEvents.NOTIFICATION_DELETED, handleDeleteNotification);
     };
 
     const detachListeners = (): void => {
@@ -102,7 +102,7 @@ export default function Sidebar(): ReactNode {
       socket.off(ServerToClientEvents.TABLE_INVITATION_DECLINED_NOTIFICATION, handleUpdateNotification);
       socket.off(ServerToClientEvents.TABLE_BOOTED_NOTIFICATION, handleUpdateNotification);
       socket.off(ServerToClientEvents.NOTIFICATION_MARK_AS_READ, handleUpdateNotification);
-      socket.off(ServerToClientEvents.NOTIFICATION_DELETE, handleDeleteNotification);
+      socket.off(ServerToClientEvents.NOTIFICATION_DELETED, handleDeleteNotification);
     };
 
     const onConnect = (): void => {

@@ -1,5 +1,6 @@
 import { logger } from "better-auth";
 import { GameState, RoomLevel, TableType } from "db/client";
+import { Socket } from "socket.io";
 import { ServerInternalEvents } from "@/constants/socket/server-internal";
 import { ServerTowersSeat, ServerTowersTeam } from "@/interfaces/table-seats";
 import { publishRedisEvent } from "@/server/redis/publish";
@@ -84,29 +85,34 @@ export class RoomManager {
     return false;
   }
 
-  public static async joinRoom(room: Room, user: User): Promise<void> {
+  public static async joinRoom(room: Room, user: User, socket: Socket): Promise<void> {
     const player: Player | undefined = PlayerManager.get(user.id);
     if (!player) throw new Error("Player not found");
+
+    if (RoomPlayerManager.isInRoom(room.id, player.id)) {
+      await socket.join(room.id);
+      return;
+    }
 
     const roomPlayer: RoomPlayer = RoomPlayerManager.create({ room, player });
     room.addPlayer(roomPlayer);
 
-    await user.socket?.join(room.id);
+    await socket.join(room.id);
 
     await publishRedisEvent(ServerInternalEvents.ROOM_JOIN, { roomId: room.id, roomPlayer: roomPlayer.toPlainObject() });
     logger.debug(`${roomPlayer.player.user?.username} has joined the room ${this.name}.`);
   }
 
-  public static async leaveRoom(room: Room, user: User): Promise<void> {
+  public static async leaveRoom(room: Room, user: User, socket: Socket): Promise<void> {
     const player: Player | undefined = PlayerManager.get(user.id);
     if (!player) throw new Error("Player not found");
 
     const roomPlayer: RoomPlayer | undefined = RoomPlayerManager.get(room.id, player.id);
     if (!roomPlayer) return;
 
-    await user.socket?.leave(room.id);
+    await socket.leave(room.id);
 
-    TableManager.leaveAllTablesInRoom(room.id, player);
+    TableManager.leaveAllTablesInRoom(room.id, player, socket);
 
     room.removePlayer(roomPlayer);
     RoomPlayerManager.delete(room.id, player);
@@ -116,6 +122,20 @@ export class RoomManager {
       roomPlayer: roomPlayer.toPlainObject(),
     });
     logger.debug(`${roomPlayer.player.user?.username} has left the room ${this.name}.`);
+  }
+
+  public static async leaveAllRoomsForUser(user: User, socket: Socket): Promise<void> {
+    const roomPlayers: RoomPlayer[] = RoomPlayerManager.getRoomsForPlayer(user.id);
+
+    for (const rp of roomPlayers) {
+      const room: Room | undefined = this.get(rp.roomId);
+      if (!room) {
+        // RoomPlayerManager.delete(rp.roomId, rp.player); // Already in leaveRoom
+        continue;
+      }
+
+      await this.leaveRoom(room, user, socket);
+    }
   }
 
   public static async sendMessage(roomId: string, playerId: string, text: string): Promise<void> {
@@ -175,10 +195,11 @@ export class RoomManager {
    *
    * @param roomId
    * @param user
+   * @param socket
    * @returns The ID of the table the user joined.
    * @throws If no empty seat is available.
    */
-  public static playNow(roomId: string, user: User): string {
+  public static playNow(roomId: string, user: User, socket: Socket): string {
     const room: Room | undefined = this.get(roomId);
     if (!room) throw new Error("Room not found");
 
@@ -189,7 +210,7 @@ export class RoomManager {
       return (
         table.tableType === TableType.PUBLIC &&
         table.game?.state !== GameState.PLAYING &&
-        !table.players.some((tablePlayer: TablePlayer) => tablePlayer.playerId === player.id)
+        !table.players.some((tp: TablePlayer) => tp.playerId === player.id)
       );
     });
 
@@ -244,7 +265,7 @@ export class RoomManager {
     // Pick the first available seat from the priority list
     const selectedSeat: ServerTowersSeat = orderedPreferredSeats[0];
 
-    TableManager.joinTable(chosenTable, user, selectedSeat.seatNumber);
+    TableManager.joinTable(chosenTable, user, socket, selectedSeat.seatNumber);
 
     return chosenTable.id;
   }
@@ -256,6 +277,7 @@ export class RoomManager {
     room.removeTable(table);
     TableManager.delete(table.id);
   }
+
   public static roomViewForPlayer(room: Room, playerId: string): RoomPlainObject {
     const base: RoomPlainObject = room.toPlainObject();
 

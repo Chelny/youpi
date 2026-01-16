@@ -1,7 +1,7 @@
 import { act } from "react";
 import { render, screen } from "@testing-library/react";
 import { vi } from "vitest";
-import Timer from "@/components/game/Timer";
+import Timer from "@/components/game/table/Timer";
 
 describe("Timer Component", () => {
   beforeEach(() => {

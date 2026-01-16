@@ -1,7 +1,7 @@
 import { logger } from "better-auth";
 import { TableChatMessageType } from "db/client";
 import { Redis } from "ioredis";
-import { Server as IoServer, Socket } from "socket.io";
+import { Server as IoServer } from "socket.io";
 import { ServerInternalEvents } from "@/constants/socket/server-internal";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { Room } from "@/server/towers/classes/Room";
@@ -29,16 +29,15 @@ export function towersServerToClientEvents(redisSub: Redis, io: IoServer): void 
     ServerInternalEvents.TABLE_SEAT_STAND,
     ServerInternalEvents.TABLE_SEAT_PLAYER_STATE,
     ServerInternalEvents.GAME_CONTROL_KEYS_UPDATE,
-    ServerInternalEvents.GAME_SEATS_UPDATE,
+    ServerInternalEvents.GAME_TABLE_SEATS,
     ServerInternalEvents.GAME_STATE,
     ServerInternalEvents.GAME_COUNTDOWN,
     ServerInternalEvents.GAME_TIMER,
     ServerInternalEvents.GAME_UPDATE,
     ServerInternalEvents.GAME_OVER,
-    ServerInternalEvents.GAME_POWER_FIRE,
+    ServerInternalEvents.GAME_POWER_USE,
     ServerInternalEvents.GAME_HOO_SEND_BLOCKS,
     ServerInternalEvents.GAME_BLOCKS_MARKED_FOR_REMOVAL,
-    ServerInternalEvents.PIECE_SPEED,
     ServerInternalEvents.NOTIFICATION_MARK_AS_READ,
     ServerInternalEvents.NOTIFICATION_DELETE,
   ];
@@ -72,34 +71,31 @@ export function towersServerToClientEvents(redisSub: Redis, io: IoServer): void 
         const senderId: string = chatMessage.player.id;
 
         for (const rp of room.players) {
-          const socket: Socket | null = rp.player.user?.socket;
-          if (!socket) continue;
-
           const mutedUserIds: string[] = await UserRelationshipManager.mutedUserIdsFor(rp.player.id);
 
           // Only send if they have NOT muted the sender
           if (!mutedUserIds.includes(senderId)) {
-            socket.emit(ServerToClientEvents.ROOM_MESSAGE_SENT, { chatMessage });
+            io.to(rp.player.id).emit(ServerToClientEvents.ROOM_MESSAGE_SENT, { chatMessage });
           }
         }
 
         break;
       }
       case ServerInternalEvents.TABLE_JOIN: {
-        const { table, tablePlayer } = data;
-        io.to([table.roomId, table.id]).emit(ServerToClientEvents.TABLE_PLAYER_JOINED, { tablePlayer });
-        io.to(table.roomId).emit(ServerToClientEvents.TABLE_UPDATED, { table });
+        const { roomId, tableId, table, tablePlayer } = data;
+        io.to([roomId, tableId]).emit(ServerToClientEvents.TABLE_PLAYER_JOINED, { tablePlayer });
+        io.to(roomId).emit(ServerToClientEvents.TABLE_UPDATED, { table });
         break;
       }
       case ServerInternalEvents.TABLE_LEAVE: {
-        const { table, tablePlayer } = data;
-        io.to([table.roomId, table.id]).emit(ServerToClientEvents.TABLE_PLAYER_LEFT, { tablePlayer });
-        io.to(table.roomId).emit(ServerToClientEvents.TABLE_UPDATED, { table });
+        const { roomId, tableId, table, tablePlayer } = data;
+        io.to([roomId, tableId]).emit(ServerToClientEvents.TABLE_PLAYER_LEFT, { tablePlayer });
+        io.to(roomId).emit(ServerToClientEvents.TABLE_UPDATED, { table });
         break;
       }
       case ServerInternalEvents.TABLE_OPTIONS_UPDATE: {
-        const { table } = data;
-        io.to(table.roomId).emit(ServerToClientEvents.TABLE_UPDATED, { table });
+        const { roomId, table } = data;
+        io.to(roomId).emit(ServerToClientEvents.TABLE_UPDATED, { table });
         break;
       }
       case ServerInternalEvents.TABLE_MESSAGE_SEND: {
@@ -111,14 +107,11 @@ export function towersServerToClientEvents(redisSub: Redis, io: IoServer): void 
         const senderId: string = chatMessage.player.id;
 
         for (const tp of table.players) {
-          const socket: Socket | null = tp.player.user?.socket;
-          if (!socket) continue;
-
           const mutedUserIds: string[] = await UserRelationshipManager.mutedUserIdsFor(tp.player.id);
 
           // Only send if they have NOT muted the sender
           if (!(mutedUserIds.includes(senderId) && chatMessage.type === TableChatMessageType.CHAT)) {
-            socket.emit(ServerToClientEvents.TABLE_MESSAGE_SENT, { chatMessage });
+            io.to(tp.player.id).emit(ServerToClientEvents.TABLE_MESSAGE_SENT, { chatMessage });
           }
         }
 
@@ -145,24 +138,24 @@ export function towersServerToClientEvents(redisSub: Redis, io: IoServer): void 
         break;
       }
       case ServerInternalEvents.TABLE_HOST_LEAVE: {
-        const { table } = data;
-        io.to([table.roomId, table.id]).emit(ServerToClientEvents.TABLE_UPDATED, { table });
+        const { roomId, tableId, table } = data;
+        io.to([roomId, tableId]).emit(ServerToClientEvents.TABLE_UPDATED, { table });
         break;
       }
       case ServerInternalEvents.TABLE_DELETE: {
-        const { table } = data;
-        io.to(table.roomId).emit(ServerToClientEvents.TABLE_DELETED, { tableId: table.id });
+        const { roomId, table } = data;
+        io.to(roomId).emit(ServerToClientEvents.TABLE_DELETED, { tableId: table.id });
         break;
       }
       case ServerInternalEvents.TABLE_SEAT_SIT:
       case ServerInternalEvents.TABLE_SEAT_STAND: {
-        const { roomId, tableSeat, tablePlayer } = data;
-        io.to([roomId, tableSeat.tableId]).emit(ServerToClientEvents.TABLE_SEAT_UPDATED, { tableSeat, tablePlayer });
+        const { roomId, tableId, tableSeat, tablePlayer } = data;
+        io.to([roomId, tableId]).emit(ServerToClientEvents.TABLE_SEAT_UPDATED, { tableSeat, tablePlayer });
         break;
       }
       case ServerInternalEvents.TABLE_SEAT_PLAYER_STATE: {
-        const { tablePlayer } = data;
-        io.to([tablePlayer.tableId]).emit(ServerToClientEvents.TABLE_PLAYER_UPDATED, { tablePlayer });
+        const { tableId, tablePlayer } = data;
+        io.to(tableId).emit(ServerToClientEvents.TABLE_PLAYER_UPDATED, { tablePlayer });
         break;
       }
       case ServerInternalEvents.GAME_CONTROL_KEYS_UPDATE: {
@@ -170,29 +163,35 @@ export function towersServerToClientEvents(redisSub: Redis, io: IoServer): void 
         io.to(userId).emit(ServerToClientEvents.GAME_CONTROL_KEYS_UPDATED, { controlKeys });
         break;
       }
-      case ServerInternalEvents.GAME_SEATS_UPDATE: {
+      case ServerInternalEvents.GAME_TABLE_SEATS: {
         const { tableId, tableSeats } = data;
-        io.to(tableId).emit(ServerToClientEvents.GAME_SEATS, { tableSeats });
+        io.to(tableId).emit(ServerToClientEvents.GAME_TABLE_SEATS_UPDATED, { tableSeats });
         break;
       }
       case ServerInternalEvents.GAME_STATE: {
         const { tableId, gameState } = data;
-        io.to(tableId).emit(ServerToClientEvents.GAME_STATE, { gameState });
+        io.to(tableId).emit(ServerToClientEvents.GAME_STATE_UPDATED, { gameState });
         break;
       }
       case ServerInternalEvents.GAME_COUNTDOWN: {
         const { tableId, countdown } = data;
-        io.to(tableId).emit(ServerToClientEvents.GAME_COUNTDOWN, { countdown });
+        io.to(tableId).emit(ServerToClientEvents.GAME_COUNTDOWN_UPDATED, { countdown });
         break;
       }
       case ServerInternalEvents.GAME_TIMER: {
         const { tableId, timer } = data;
-        io.to(tableId).emit(ServerToClientEvents.GAME_TIMER, { timer });
+        io.to(tableId).emit(ServerToClientEvents.GAME_TIMER_UPDATED, { timer });
         break;
       }
       case ServerInternalEvents.GAME_UPDATE: {
         const { tableId, seatNumber, nextPieces, powerBar, board, currentPiece } = data;
-        io.to(tableId).emit(ServerToClientEvents.GAME_UPDATE, { seatNumber, nextPieces, powerBar, board, currentPiece });
+        io.to(tableId).emit(ServerToClientEvents.GAME_UPDATED, {
+          seatNumber,
+          nextPieces,
+          powerBar,
+          board,
+          currentPiece,
+        });
         break;
       }
       case ServerInternalEvents.GAME_OVER: {
@@ -200,29 +199,19 @@ export function towersServerToClientEvents(redisSub: Redis, io: IoServer): void 
         io.to(tableId).emit(ServerToClientEvents.GAME_OVER, { winners, playerResults });
         break;
       }
-      case ServerInternalEvents.GAME_POWER_FIRE: {
-        const { tableId, sourceUsername, targetUsername, targetSeatNumber, powerItem } = data;
-        io.to(tableId).emit(ServerToClientEvents.GAME_POWER_FIRE, {
-          sourceUsername,
-          targetUsername,
-          targetSeatNumber,
-          powerItem,
-        });
+      case ServerInternalEvents.GAME_POWER_USE: {
+        const { tableId, powerItem, source, target } = data;
+        io.to(tableId).emit(ServerToClientEvents.GAME_POWER_USE, { powerItem, source, target });
         break;
       }
       case ServerInternalEvents.GAME_HOO_SEND_BLOCKS: {
         const { tableId, teamNumber, blocks } = data;
-        io.to(tableId).emit(ServerToClientEvents.GAME_HOO_SEND_BLOCKS, { tableId, teamNumber, blocks });
+        io.to(tableId).emit(ServerToClientEvents.GAME_HOO_SEND_BLOCKS, { teamNumber, blocks });
         break;
       }
       case ServerInternalEvents.GAME_BLOCKS_MARKED_FOR_REMOVAL: {
         const { tableId, seatNumber, blocks } = data;
-        io.to(tableId).emit(ServerToClientEvents.GAME_BLOCKS_MARKED_FOR_REMOVAL, { tableId, seatNumber, blocks });
-        break;
-      }
-      case ServerInternalEvents.PIECE_SPEED: {
-        const { tableId, seatNumber } = data;
-        io.to(tableId).emit(ServerToClientEvents.PIECE_SPEED, { tableId, seatNumber });
+        io.to(tableId).emit(ServerToClientEvents.GAME_BLOCKS_MARKED_FOR_REMOVAL, { seatNumber, blocks });
         break;
       }
       case ServerInternalEvents.NOTIFICATION_MARK_AS_READ: {
@@ -232,7 +221,7 @@ export function towersServerToClientEvents(redisSub: Redis, io: IoServer): void 
       }
       case ServerInternalEvents.NOTIFICATION_DELETE: {
         const { userId, notificationId } = data;
-        io.to(userId).emit(ServerToClientEvents.NOTIFICATION_DELETE, { notificationId });
+        io.to(userId).emit(ServerToClientEvents.NOTIFICATION_DELETED, { notificationId });
         break;
       }
     }

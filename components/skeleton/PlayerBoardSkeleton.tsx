@@ -4,37 +4,62 @@ import clsx from "clsx/lite";
 type PlayerBoardSkeletonProps = {
   isOpponentBoard: boolean
   isReversed: boolean
+  dir: string
 };
 
 export default function PlayerBoardSkeleton({
   isOpponentBoard = false,
   isReversed = false,
+  dir = "ltr",
 }: PlayerBoardSkeletonProps): ReactNode {
   return (
     <div className={clsx("flex flex-col animate-pulse", isOpponentBoard && "w-player-board-opponent-width")}>
       {/* User avatar + username */}
       <div
         className={clsx(
-          "flex justify-start items-center gap-2 w-full px-1 mx-1",
-          !isOpponentBoard ? "w-[175px] h-6" : "h-4",
-          !isOpponentBoard && isReversed && "ms-2 me-13",
-          // !isOpponentBoard && !isReversed && "ms-16",
+          "grid gap-1",
+          !isOpponentBoard ? "h-6" : "h-4",
+          !isOpponentBoard &&
+            isReversed &&
+            "grid-cols-[1fr_max-content] ps-0 pe-2 rtl:grid-cols-[max-content_1fr] rtl:ps-2 rtl:pe-0",
+          !isOpponentBoard &&
+            !isReversed &&
+            "grid-cols-[max-content_1fr] ps-2 pe-0 rtl:grid-cols-[1fr_max-content] rtl:ps-0 rtl:pe-2",
+          isOpponentBoard && isReversed && "grid-cols-1 ps-0 pe-1.5 rtl:grid-cols-1 rtl:ps-1.5 rtl:pe-0",
+          isOpponentBoard && !isReversed && "grid-cols-1 ps-1.5 pe-0 rtl:grid-cols-1 rtl:ps-0 rtl:pe-1.5",
         )}
+        dir={dir}
       >
         <div
           className={clsx(
-            "flex rounded-full bg-gray-200",
-            isOpponentBoard ? "w-4 h-4" : "w-6 h-6",
-            "dark:bg-dark-skeleton-content-background",
+            "w-player-board-username-empty-space-width",
+            isOpponentBoard && "hidden",
+            isReversed ? "order-2 rtl:order-1" : "order-1 rtl:order-2",
+            "before:content-[' ']",
           )}
         />
         <div
           className={clsx(
-            "rounded-sm bg-gray-200",
-            isOpponentBoard ? "h-3 w-16" : "h-4 w-24",
-            "dark:bg-dark-skeleton-content-background",
+            "flex items-center truncate",
+            isOpponentBoard ? "gap-1 w-player-board-username-opponent-width" : "gap-2 w-player-board-username-width",
+            isReversed ? "order-1 ms-1 me-0.5 rtl:order-2" : "order-2 ms-0.5 me-1 rtl:order-1",
           )}
-        />
+        >
+          <>
+            <div
+              className={clsx(
+                "shrink-0 rounded-full bg-gray-200 dark:bg-dark-skeleton-content-background",
+                isOpponentBoard ? "w-4 h-4" : "w-6 h-6",
+              )}
+            />
+            <div
+              className={clsx(
+                "rounded bg-gray-200 dark:bg-dark-skeleton-content-background",
+                isOpponentBoard ? "w-full h-4" : "w-full h-6",
+              )}
+            />
+          </>
+        </div>
       </div>
 
       {/* Main board */}

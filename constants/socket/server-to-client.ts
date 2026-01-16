@@ -1,27 +1,25 @@
 export const ServerToClientEvents = {
   // User
   USER_SETTINGS_AVATAR: "stc:user-settings:avatar",
-  USER_RELATIONSHIP_MUTE: "stc:user-relationship:mute",
-  USER_RELATIONSHIP_UNMUTE: "stc:user-relationship:unmute",
+  USER_RELATIONSHIP_MUTED: "stc:user-relationship:muted",
+  USER_RELATIONSHIP_UNMUTED: "stc:user-relationship:unmuted",
   USER_ONLINE: "stc:user:online",
   USER_OFFLINE: "stc:user:offline",
   PING_ECHO: "stc:user:ping:echo",
 
   // Conversation
   CONVERSATIONS_UNREAD: "stc:conversation:all:unread",
-  CONVERSATION_MUTE: "stc:conversation:mute",
+  CONVERSATION_MUTED: "stc:conversation:muted",
   CONVERSATION_MARK_AS_READ: "stc:conversation:read",
-  CONVERSATION_UNMUTE: "stc:conversation:unmute",
-  CONVERSATION_REMOVE: "stc:conversation:remove",
-  CONVERSATION_RESTORE: "stc:conversation:restore",
+  CONVERSATION_UNMUTED: "stc:conversation:unmuted",
+  CONVERSATION_REMOVED: "stc:conversation:removed",
+  CONVERSATION_RESTORED: "stc:conversation:restored",
   CONVERSATION_MESSAGE_SENT: "stc:conversation:message:sent",
 
   // Rooms
   ROOMS_LIST_UPDATED: "stc:rooms:list:updated",
 
   // Room
-  ROOM_JOIN: "stc:room:join",
-  ROOM_LEAVE: "stc:room:leave",
   ROOM_PLAYER_JOINED: "stc:room:player:joined",
   ROOM_PLAYER_LEFT: "stc:room:player:left",
   ROOM_MESSAGE_SENT: "stc:room:message:sent",
@@ -40,20 +38,19 @@ export const ServerToClientEvents = {
 
   // Game
   GAME_CONTROL_KEYS_UPDATED: "stc:game:control-keys:updated",
-  GAME_SEATS: "stc:game:seats",
-  GAME_STATE: "stc:game:state",
-  GAME_COUNTDOWN: "stc:game:countdown",
-  GAME_TIMER: "stc:game:timer",
-  GAME_UPDATE: "stc:game:update",
+  GAME_TABLE_SEATS_UPDATED: "stc:game:table-seats:updated",
+  GAME_STATE_UPDATED: "stc:game:state:updated",
+  GAME_COUNTDOWN_UPDATED: "stc:game:countdown:updated",
+  GAME_TIMER_UPDATED: "stc:game:timer:updated",
+  GAME_UPDATED: "stc:game:updated",
   GAME_OVER: "stc:game:over",
-  GAME_POWER_FIRE: "stc:game:power-fire",
+  GAME_POWER_USE: "stc:game:power:use",
   GAME_HOO_SEND_BLOCKS: "stc:game:hoo-send-blocks",
   GAME_BLOCKS_MARKED_FOR_REMOVAL: "stc:game:blocks-marked-for-removal",
-  PIECE_SPEED: "stc:piece:speed",
 
   // Notification
   NOTIFICATION_MARK_AS_READ: "stc:notification:read",
-  NOTIFICATION_DELETE: "stc:notification:delete",
+  NOTIFICATION_DELETED: "stc:notification:deleted",
 
   // Socket
   SIGN_OUT_SUCCESS: "stc:sign-out:success",

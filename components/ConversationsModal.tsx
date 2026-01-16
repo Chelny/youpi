@@ -313,19 +313,19 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
 
     const attachListeners = (): void => {
       socket.on(ServerToClientEvents.CONVERSATION_MARK_AS_READ, handleMarkConversationAsRead);
-      socket.on(ServerToClientEvents.CONVERSATION_MUTE, handleMuteConversation);
-      socket.on(ServerToClientEvents.CONVERSATION_UNMUTE, handleUnmuteConversation);
-      socket.on(ServerToClientEvents.CONVERSATION_REMOVE, handleRemoveConversation);
-      socket.on(ServerToClientEvents.CONVERSATION_RESTORE, handleRestoreConversation);
+      socket.on(ServerToClientEvents.CONVERSATION_MUTED, handleMuteConversation);
+      socket.on(ServerToClientEvents.CONVERSATION_UNMUTED, handleUnmuteConversation);
+      socket.on(ServerToClientEvents.CONVERSATION_REMOVED, handleRemoveConversation);
+      socket.on(ServerToClientEvents.CONVERSATION_RESTORED, handleRestoreConversation);
       socket.on(ServerToClientEvents.CONVERSATION_MESSAGE_SENT, handleUpdateConversation);
     };
 
     const detachListeners = (): void => {
       socket.off(ServerToClientEvents.CONVERSATION_MARK_AS_READ, handleMarkConversationAsRead);
-      socket.off(ServerToClientEvents.CONVERSATION_MUTE, handleMuteConversation);
-      socket.off(ServerToClientEvents.CONVERSATION_UNMUTE, handleUnmuteConversation);
-      socket.off(ServerToClientEvents.CONVERSATION_REMOVE, handleRemoveConversation);
-      socket.off(ServerToClientEvents.CONVERSATION_RESTORE, handleRestoreConversation);
+      socket.off(ServerToClientEvents.CONVERSATION_MUTED, handleMuteConversation);
+      socket.off(ServerToClientEvents.CONVERSATION_UNMUTED, handleUnmuteConversation);
+      socket.off(ServerToClientEvents.CONVERSATION_REMOVED, handleRemoveConversation);
+      socket.off(ServerToClientEvents.CONVERSATION_RESTORED, handleRestoreConversation);
       socket.off(ServerToClientEvents.CONVERSATION_MESSAGE_SENT, handleUpdateConversation);
     };
 

@@ -1,4 +1,4 @@
-import { DisconnectReason, Server, Socket } from "socket.io";
+import { Server, Socket } from "socket.io";
 import { ClientToServerEvents } from "@/constants/socket/client-to-server";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { SocketCallback } from "@/interfaces/socket";
@@ -20,6 +20,8 @@ export class YoupiSocketHandler {
   ) {}
 
   public registerSocketListeners(): void {
+    this.socket.on("disconnect", this.handleDisconnect);
+
     this.socket.on(ClientToServerEvents.USER_SETTINGS_AVATAR, this.handleSetUserAvatar);
     this.socket.on(ClientToServerEvents.USER_RELATIONSHIP_MUTE_CHECK, this.handleCheckUserMuted);
     this.socket.on(ClientToServerEvents.USER_RELATIONSHIP_MUTE, this.handleMuteUser);
@@ -34,22 +36,11 @@ export class YoupiSocketHandler {
     this.socket.on(ClientToServerEvents.CONVERSATION_UNMUTE, this.handleUnmuteConversation);
     this.socket.on(ClientToServerEvents.CONVERSATION_REMOVE, this.handleRemoveConversation);
     this.socket.on(ClientToServerEvents.CONVERSATION_MESSAGE_SEND, this.handleSendInstantMessage);
-
-    this.socket.on("disconnect", (reason: DisconnectReason) => {
-      const shouldCleanup: boolean =
-        reason === "forced close" ||
-        reason === "server shutting down" ||
-        reason === "forced server close" ||
-        reason === "client namespace disconnect" ||
-        reason === "server namespace disconnect";
-
-      if (shouldCleanup) {
-        this.cleanupSocketListeners();
-      }
-    });
   }
 
   private cleanupSocketListeners(): void {
+    this.socket.off("disconnect", this.handleDisconnect);
+
     this.socket.off(ClientToServerEvents.USER_SETTINGS_AVATAR, this.handleSetUserAvatar);
     this.socket.off(ClientToServerEvents.USER_RELATIONSHIP_MUTE_CHECK, this.handleCheckUserMuted);
     this.socket.off(ClientToServerEvents.USER_RELATIONSHIP_MUTE, this.handleMuteUser);
@@ -65,6 +56,10 @@ export class YoupiSocketHandler {
     this.socket.off(ClientToServerEvents.CONVERSATION_REMOVE, this.handleRemoveConversation);
     this.socket.off(ClientToServerEvents.CONVERSATION_MESSAGE_SEND, this.handleSendInstantMessage);
   }
+
+  private handleDisconnect = (): void => {
+    this.cleanupSocketListeners();
+  };
 
   private handleSetUserAvatar = async (
     { avatarId }: { avatarId: string },

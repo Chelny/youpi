@@ -95,10 +95,10 @@ export class TableSeat {
       targetNumber: this.targetNumber,
       teamNumber: this.teamNumber,
       occupiedByPlayerId: this.occupiedByPlayerId ?? null,
-      occupiedByPlayer: this.occupiedByPlayer?.toPlainObject() ?? null,
-      board: this.board?.toPlainObject() ?? null,
-      nextPieces: this.nextPieces?.toPlainObject() ?? null,
-      powerBar: this.powerBar?.toPlainObject() ?? null,
+      occupiedByPlayer: this.occupiedByPlayer ? this.occupiedByPlayer.toPlainObject() : null,
+      board: this.board ? this.board.toPlainObject() : null,
+      nextPieces: this.nextPieces ? this.nextPieces.toPlainObject() : null,
+      powerBar: this.powerBar ? this.powerBar.toPlainObject() : null,
     };
   }
 }

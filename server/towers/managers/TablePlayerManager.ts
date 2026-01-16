@@ -55,6 +55,7 @@ export class TablePlayerManager {
       PlayerManager.updateLastActiveAt(props.player.id);
 
       await publishRedisEvent(ServerInternalEvents.TABLE_SEAT_PLAYER_STATE, {
+        tableId: tablePlayer.tableId,
         tablePlayer: tablePlayer.toPlainObject(),
       });
 

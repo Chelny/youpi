@@ -130,7 +130,9 @@ export class TowersPieceBlockPowerManager {
           brokenBlocksCount: 0, // Reset after granting power
         };
 
-        logger.debug(`"${blockLetter}" power updated → ${nextPowerType.toUpperCase()} ${nextPowerLevel.toUpperCase()}`);
+        logger.debug(
+          `[Towers] "${blockLetter}" power updated → ${nextPowerType.toUpperCase()} ${nextPowerLevel.toUpperCase()}`,
+        );
       }
     }
   }
