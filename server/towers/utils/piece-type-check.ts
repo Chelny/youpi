@@ -1,14 +1,14 @@
-import type { BoardBlock } from "@/server/towers/game/board/Board";
+import type { BoardBlock } from "@/server/towers/game/board/board";
 import { EMPTY_CELL } from "@/constants/game";
-import { MedusaPiece } from "@/server/towers/game/MedusaPiece";
-import { MedusaPieceBlock } from "@/server/towers/game/MedusaPieceBlock";
-import { MidasPiece } from "@/server/towers/game/MidasPiece";
-import { MidasPieceBlock } from "@/server/towers/game/MidasPieceBlock";
-import { Piece } from "@/server/towers/game/Piece";
-import { PieceBlock } from "@/server/towers/game/PieceBlock";
-import { PowerBarItem } from "@/server/towers/game/PowerBar";
-import { SpecialDiamond } from "@/server/towers/game/SpecialDiamond";
-import { TowersPieceBlock } from "@/server/towers/game/TowersPieceBlock";
+import { MedusaPiece } from "@/server/towers/game/pieces/medusa/medusa-piece";
+import { MedusaPieceBlock } from "@/server/towers/game/pieces/medusa/medusa-piece-block";
+import { MidasPiece } from "@/server/towers/game/pieces/midas/midas-piece";
+import { MidasPieceBlock } from "@/server/towers/game/pieces/midas/midas-piece-block";
+import { Piece } from "@/server/towers/game/pieces/piece";
+import { PieceBlock } from "@/server/towers/game/pieces/piece-block";
+import { SpecialDiamond } from "@/server/towers/game/pieces/special-diamond/special-diamond";
+import { TowersPieceBlock } from "@/server/towers/game/pieces/towers/towers-piece-block";
+import { PowerBarItem } from "@/server/towers/game/power-bar";
 
 export type Block = TowersPieceBlock | MedusaPieceBlock | MidasPieceBlock | SpecialDiamond | typeof EMPTY_CELL;
 

@@ -3,7 +3,7 @@
 import { ReactNode } from "react";
 import clsx from "clsx/lite";
 import Banner from "@/components/Banner";
-import { RoomLitePlainObject } from "@/server/towers/classes/Room";
+import { RoomLitePlainObject } from "@/server/towers/modules/room/room.entity";
 
 type RoomHeaderProps = {
   room: RoomLitePlainObject | null

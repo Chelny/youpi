@@ -7,7 +7,7 @@ import clsx from "clsx/lite";
 import { GoTriangleDown, GoTriangleLeft } from "react-icons/go";
 import { NotificationDropdownItem } from "@/components/sidebar/NotificationDropdownItem";
 import { MenuItem, SidebarMenuActionItem, SidebarMenuLinkItem } from "@/interfaces/sidebar-menu";
-import { NotificationPlainObject } from "@/server/towers/classes/Notification";
+import { NotificationPlainObject } from "@/server/towers/modules/notification/notification.entity";
 import { isLinkItem, isNotificationItem } from "@/utils/sidebar-menu";
 
 type SidebarMenuSubItemProps = {

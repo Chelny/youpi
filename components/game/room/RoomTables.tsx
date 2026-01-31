@@ -4,8 +4,8 @@ import { Trans } from "@lingui/react/macro";
 import clsx from "clsx/lite";
 import RoomTableSkeleton from "@/components/skeleton/RoomTableSkeleton";
 import { useSocket } from "@/context/SocketContext";
-import { RoomPlayerPlainObject } from "@/server/towers/classes/RoomPlayer";
-import { TablePlainObject } from "@/server/towers/classes/Table";
+import { RoomPlayerPlainObject } from "@/server/towers/modules/room-player/room-player.entity";
+import { TablePlainObject } from "@/server/towers/modules/table/table.entity";
 
 const RoomTable = dynamic(() => import("@/components/game/room/RoomTable"), {
   loading: () => <RoomTableSkeleton />,

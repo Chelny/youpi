@@ -15,8 +15,8 @@ import {
 import { useModal } from "@/context/ModalContext";
 import { useSocket } from "@/context/SocketContext";
 import { useKeyboardActions } from "@/hooks/useKeyboardActions";
-import { RoomPlayerPlainObject } from "@/server/towers/classes/RoomPlayer";
-import { TablePlayerPlainObject } from "@/server/towers/classes/TablePlayer";
+import { RoomPlayerPlainObject } from "@/server/towers/modules/room-player/room-player.entity";
+import { TablePlayerPlainObject } from "@/server/towers/modules/table-player/table-player.entity";
 
 type PlayerListItem = RoomPlayerPlainObject | TablePlayerPlainObject;
 

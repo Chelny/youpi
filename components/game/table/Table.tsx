@@ -28,17 +28,30 @@ import { useSocket } from "@/context/SocketContext";
 import { TablePanelView } from "@/enums/table-panel-view";
 import { SocketCallback } from "@/interfaces/socket";
 import { fetcher } from "@/lib/fetcher";
-import { PlayerControlKeysPlainObject } from "@/server/towers/classes/PlayerControlKeys";
-import { TableLitePlainObject, TablePlainObject } from "@/server/towers/classes/Table";
-import { TableChatMessagePlainObject } from "@/server/towers/classes/TableChatMessage";
-import { TableInvitationPlainObject } from "@/server/towers/classes/TableInvitation";
-import { TablePlayerPlainObject } from "@/server/towers/classes/TablePlayer";
-import { TableSeatPlainObject } from "@/server/towers/classes/TableSeat";
-import { PowerBarItemPlainObject } from "@/server/towers/game/PowerBar";
+import { SocketListener } from "@/lib/socket/socket-listener";
+import { BoardPlainObject } from "@/server/towers/game/board/board";
+import { NextPiecesPlainObject } from "@/server/towers/game/next-pieces";
+import { PiecePlainObject } from "@/server/towers/game/pieces/piece";
+import { PowerBarItemPlainObject, PowerBarPlainObject } from "@/server/towers/game/power-bar";
+import { PlayerControlKeysPlainObject } from "@/server/towers/modules/player-control-keys/player-control-keys.entity";
+import { TableLitePlainObject, TablePlainObject } from "@/server/towers/modules/table/table.entity";
+import { TableChatMessagePlainObject } from "@/server/towers/modules/table-chat-message/table-chat-message.entity";
+import { TableInvitationPlainObject } from "@/server/towers/modules/table-invitation/table-invitation.entity";
+import { TablePlayerPlainObject } from "@/server/towers/modules/table-player/table-player.entity";
+import { TableSeatGamePlainObject, TableSeatPlainObject } from "@/server/towers/modules/table-seat/table-seat.entity";
 
 const TableHeader = dynamic(() => import("@/components/game/TableHeader"), {
   loading: () => <TableHeaderSkeleton />,
 });
+
+type SeatGameState = {
+  board: BoardPlainObject | null
+  nextPieces: NextPiecesPlainObject | null
+  powerBar: PowerBarPlainObject | null
+  currentPiece: PiecePlainObject | null
+};
+
+type GameStateBySeat = Record<number, SeatGameState>;
 
 export default function Table(): ReactNode {
   const router = useRouter();
@@ -69,6 +82,7 @@ export default function Table(): ReactNode {
   const [nextPowerBarItem, setNextPowerBarItem] = useState<PowerBarItemPlainObject | undefined>(undefined);
   const isSocialRoom: boolean = tableInfo?.room?.level === RoomLevel.SOCIAL;
   const [isTableHydrated, setIsTableHydrated] = useState<boolean>(false);
+  const [gameStateBySeat, setGameStateBySeat] = useState<GameStateBySeat>({});
 
   const {
     data: tableResponse,
@@ -158,6 +172,8 @@ export default function Table(): ReactNode {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
 
+    const socketListener: SocketListener = new SocketListener(socket);
+
     const emitInitialData = (): void => {
       socket.emit(
         ClientToServerEvents.TABLE_JOIN,
@@ -228,7 +244,15 @@ export default function Table(): ReactNode {
       tablePlayer: TablePlayerPlainObject
     }): void => {
       setSeats((prev: TableSeatPlainObject[]) =>
-        prev.map((ts: TableSeatPlainObject) => (ts.id === tableSeat.id ? tableSeat : ts)),
+        prev.map((ts: TableSeatPlainObject) =>
+          ts.id === tableSeat.id
+            ? {
+                ...ts,
+                occupiedByPlayerId: tableSeat.occupiedByPlayerId,
+                occupiedByPlayer: tableSeat.occupiedByPlayer,
+              }
+            : ts,
+        ),
       );
 
       setPlayers((prev: TablePlayerPlainObject[]) =>
@@ -274,10 +298,6 @@ export default function Table(): ReactNode {
       setControlKeys(controlKeys);
     };
 
-    const handleGameSeats = ({ tableSeats }: { tableSeats: TableSeatPlainObject[] }): void => {
-      setSeats(tableSeats);
-    };
-
     const handleGameState = ({ gameState }: { gameState: GameState }): void => {
       setGameState(gameState);
     };
@@ -286,30 +306,57 @@ export default function Table(): ReactNode {
       setCountdown(countdown);
     };
 
-    const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.TABLE_UPDATED, handleUpdateTable);
-      socket.on(ServerToClientEvents.TABLE_SEAT_UPDATED, handleUpdateTableSeat);
-      socket.on(ServerToClientEvents.TABLE_PLAYER_JOINED, handlePlayerJoin);
-      socket.on(ServerToClientEvents.TABLE_PLAYER_LEFT, handlePlayerLeave);
-      socket.on(ServerToClientEvents.TABLE_PLAYER_UPDATED, handleUpdateTablePlayer);
-      socket.on(ServerToClientEvents.TABLE_MESSAGE_SENT, handleUpdateChatMessages);
-      socket.on(ServerToClientEvents.GAME_CONTROL_KEYS_UPDATED, handleUpdateControlKeys);
-      socket.on(ServerToClientEvents.GAME_TABLE_SEATS_UPDATED, handleGameSeats);
-      socket.on(ServerToClientEvents.GAME_STATE_UPDATED, handleGameState);
-      socket.on(ServerToClientEvents.GAME_COUNTDOWN_UPDATED, handleCountdown);
+    const handleGameUpdate = ({
+      seatNumber,
+      nextPieces,
+      powerBar,
+      board,
+      currentPiece,
+    }: {
+      seatNumber: number
+      nextPieces: NextPiecesPlainObject
+      powerBar: PowerBarPlainObject
+      board: BoardPlainObject
+      currentPiece: PiecePlainObject
+    }) => {
+      setGameStateBySeat((prev: GameStateBySeat) => ({
+        ...prev,
+        [seatNumber]: {
+          board,
+          nextPieces,
+          powerBar,
+          currentPiece,
+        },
+      }));
     };
 
-    const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.TABLE_UPDATED, handleUpdateTable);
-      socket.off(ServerToClientEvents.TABLE_SEAT_UPDATED, handleUpdateTableSeat);
-      socket.off(ServerToClientEvents.TABLE_PLAYER_JOINED, handlePlayerJoin);
-      socket.off(ServerToClientEvents.TABLE_PLAYER_LEFT, handlePlayerLeave);
-      socket.off(ServerToClientEvents.TABLE_PLAYER_UPDATED, handleUpdateTablePlayer);
-      socket.off(ServerToClientEvents.TABLE_MESSAGE_SENT, handleUpdateChatMessages);
-      socket.off(ServerToClientEvents.GAME_CONTROL_KEYS_UPDATED, handleUpdateControlKeys);
-      socket.off(ServerToClientEvents.GAME_TABLE_SEATS_UPDATED, handleGameSeats);
-      socket.off(ServerToClientEvents.GAME_STATE_UPDATED, handleGameState);
-      socket.off(ServerToClientEvents.GAME_COUNTDOWN_UPDATED, handleCountdown);
+    const handleClearGameBoards = ({ tableSeats }: { tableSeats: TableSeatGamePlainObject[] }): void => {
+      const newGameStateBySeat: GameStateBySeat = {};
+
+      tableSeats.forEach((seat: TableSeatGamePlainObject) => {
+        newGameStateBySeat[seat.seatNumber] = {
+          board: seat.board,
+          nextPieces: seat.nextPieces,
+          powerBar: seat.powerBar,
+          currentPiece: null,
+        };
+      });
+
+      setGameStateBySeat(newGameStateBySeat);
+    };
+
+    const attachListeners = (): void => {
+      socketListener.on(ServerToClientEvents.TABLE_UPDATED, handleUpdateTable);
+      socketListener.on(ServerToClientEvents.TABLE_SEAT_UPDATED, handleUpdateTableSeat);
+      socketListener.on(ServerToClientEvents.TABLE_PLAYER_JOINED, handlePlayerJoin);
+      socketListener.on(ServerToClientEvents.TABLE_PLAYER_LEFT, handlePlayerLeave);
+      socketListener.on(ServerToClientEvents.TABLE_PLAYER_UPDATED, handleUpdateTablePlayer);
+      socketListener.on(ServerToClientEvents.TABLE_MESSAGE_SENT, handleUpdateChatMessages);
+      socketListener.on(ServerToClientEvents.GAME_CONTROL_KEYS_UPDATED, handleUpdateControlKeys);
+      socketListener.on(ServerToClientEvents.GAME_STATE_UPDATED, handleGameState);
+      socketListener.on(ServerToClientEvents.GAME_COUNTDOWN_UPDATED, handleCountdown);
+      socketListener.on(ServerToClientEvents.GAME_BOARD_UPDATED, handleGameUpdate);
+      socketListener.on(ServerToClientEvents.GAME_CLEAR_BOARDS_UPDATED, handleClearGameBoards);
     };
 
     const onConnect = (): void => {
@@ -320,12 +367,11 @@ export default function Table(): ReactNode {
     if (socket.connected) {
       onConnect();
     } else {
-      socket.once("connect", onConnect);
+      socketListener.on("connect", onConnect);
     }
 
     return () => {
-      socket.off("connect", onConnect);
-      detachListeners();
+      socketListener.dispose();
     };
   }, [isConnected, tableId]);
 
@@ -401,6 +447,7 @@ export default function Table(): ReactNode {
                 players={players}
                 invitations={invitations}
                 currentTablePlayer={currentTablePlayer}
+                gameStateBySeat={gameStateBySeat}
                 seatNumber={seatNumber}
                 gameState={gameState}
                 onSit={handleSit}

@@ -10,7 +10,8 @@ import { ClientToServerEvents } from "@/constants/socket/client-to-server";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { useSocket } from "@/context/SocketContext";
 import { SocketCallback } from "@/interfaces/socket";
-import { TablePlayerPlainObject } from "@/server/towers/classes/TablePlayer";
+import { SocketListener } from "@/lib/socket/socket-listener";
+import { TablePlayerPlainObject } from "@/server/towers/modules/table-player/table-player.entity";
 
 const PlayersList = dynamic(() => import("@/components/game/PlayersList"), {
   loading: () => <PlayersListSkeleton />,
@@ -40,6 +41,8 @@ export default function TableBootUserModal({
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
 
+    const socketListener: SocketListener = new SocketListener(socket);
+
     const handleUpdatePlayersList = (): void => {
       socket.emit(
         ClientToServerEvents.TABLE_PLAYERS_TO_BOOT,
@@ -57,13 +60,8 @@ export default function TableBootUserModal({
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.TABLE_PLAYER_JOINED, handleUpdatePlayersList);
-      socket.on(ServerToClientEvents.TABLE_PLAYER_LEFT, handleUpdatePlayersList);
-    };
-
-    const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.TABLE_PLAYER_JOINED, handleUpdatePlayersList);
-      socket.off(ServerToClientEvents.TABLE_PLAYER_LEFT, handleUpdatePlayersList);
+      socketListener.on(ServerToClientEvents.TABLE_PLAYER_JOINED, handleUpdatePlayersList);
+      socketListener.on(ServerToClientEvents.TABLE_PLAYER_LEFT, handleUpdatePlayersList);
     };
 
     const onConnect = (): void => {
@@ -74,12 +72,11 @@ export default function TableBootUserModal({
     if (socket.connected) {
       onConnect();
     } else {
-      socket.once("connect", onConnect);
+      socketListener.on("connect", onConnect);
     }
 
     return () => {
-      socket.off("connect", onConnect);
-      detachListeners();
+      socketListener.dispose();
     };
   }, [isConnected, tableId]);
 

@@ -4,7 +4,7 @@ import { handleApiError, handleUnauthorizedApiError } from "@/lib/api-error";
 import { auth, Session } from "@/lib/auth";
 import { getCurrentLocale } from "@/lib/locale";
 import prisma from "@/lib/prisma";
-import { ConversationFactory } from "@/server/youpi/factories/ConversationFactory";
+import { ConversationFactory } from "@/server/youpi/modules/conversation/conversation.factory";
 import { dynamicActivate } from "@/translations/languages";
 import { ConversationWithRelations, getConversationIncludes } from "@/types/prisma";
 

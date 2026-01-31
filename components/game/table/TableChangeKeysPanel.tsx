@@ -12,7 +12,7 @@ import { useSocket } from "@/context/SocketContext";
 import { TablePanelView } from "@/enums/table-panel-view";
 import { getReadableKeyLabel } from "@/lib/keyboard/get-readable-key-label";
 import { keyboardKeyLabels } from "@/lib/keyboard/keyboard-key-labels";
-import { PlayerControlKeysPlainObject } from "@/server/towers/classes/PlayerControlKeys";
+import { PlayerControlKeysPlainObject } from "@/server/towers/modules/player-control-keys/player-control-keys.entity";
 
 interface TableChangeKeysPanelProps {
   controlKeys: PlayerControlKeysPlainObject | null

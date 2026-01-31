@@ -5,7 +5,8 @@ import { GameState } from "db/enums";
 import { Socket } from "socket.io-client";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { useSocket } from "@/context/SocketContext";
-import { TablePlayerPlainObject } from "@/server/towers/classes/TablePlayer";
+import { SocketListener } from "@/lib/socket/socket-listener";
+import { TablePlayerPlainObject } from "@/server/towers/modules/table-player/table-player.entity";
 
 type TableGameOverOverlayProps = {
   gameState: GameState
@@ -35,6 +36,8 @@ export function TableGameOverOverlay({ gameState }: TableGameOverOverlayProps): 
   useEffect(() => {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
+
+    const socketListener: SocketListener = new SocketListener(socket);
 
     const handleGameOver = ({
       winners,
@@ -66,11 +69,7 @@ export function TableGameOverOverlay({ gameState }: TableGameOverOverlayProps): 
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.GAME_OVER, handleGameOver);
-    };
-
-    const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.GAME_OVER, handleGameOver);
+      socketListener.on(ServerToClientEvents.GAME_OVER, handleGameOver);
     };
 
     const onConnect = (): void => {
@@ -80,12 +79,11 @@ export function TableGameOverOverlay({ gameState }: TableGameOverOverlayProps): 
     if (socket.connected) {
       onConnect();
     } else {
-      socket.once("connect", onConnect);
+      socketListener.on("connect", onConnect);
     }
 
     return () => {
-      socket.off("connect", onConnect);
-      detachListeners();
+      socketListener.dispose();
     };
   }, [isConnected]);
 

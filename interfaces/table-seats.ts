@@ -1,4 +1,4 @@
-import { TableSeatPlainObject } from "@/server/towers/classes/TableSeat";
+import { TableSeatPlainObject } from "@/server/towers/modules/table-seat/table-seat.entity";
 
 export interface ServerTowersTeam {
   teamNumber: number

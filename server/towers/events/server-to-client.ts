@@ -4,11 +4,11 @@ import { Redis } from "ioredis";
 import { Server as IoServer } from "socket.io";
 import { ServerInternalEvents } from "@/constants/socket/server-internal";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
-import { Room } from "@/server/towers/classes/Room";
-import { Table } from "@/server/towers/classes/Table";
-import { RoomManager } from "@/server/towers/managers/RoomManager";
-import { TableManager } from "@/server/towers/managers/TableManager";
-import { UserRelationshipManager } from "@/server/youpi/managers/UserRelationshipManager";
+import { Room } from "@/server/towers/modules/room/room.entity";
+import { RoomManager } from "@/server/towers/modules/room/room.manager";
+import { Table } from "@/server/towers/modules/table/table.entity";
+import { TableManager } from "@/server/towers/modules/table/table.manager";
+import { UserRelationshipManager } from "@/server/youpi/modules/user-relationship/user-relationship.manager";
 
 export function towersServerToClientEvents(redisSub: Redis, io: IoServer): void {
   const channels: string[] = [
@@ -29,11 +29,11 @@ export function towersServerToClientEvents(redisSub: Redis, io: IoServer): void 
     ServerInternalEvents.TABLE_SEAT_STAND,
     ServerInternalEvents.TABLE_SEAT_PLAYER_STATE,
     ServerInternalEvents.GAME_CONTROL_KEYS_UPDATE,
-    ServerInternalEvents.GAME_TABLE_SEATS,
     ServerInternalEvents.GAME_STATE,
     ServerInternalEvents.GAME_COUNTDOWN,
     ServerInternalEvents.GAME_TIMER,
-    ServerInternalEvents.GAME_UPDATE,
+    ServerInternalEvents.GAME_BOARD,
+    ServerInternalEvents.GAME_CLEAR_BOARDS,
     ServerInternalEvents.GAME_OVER,
     ServerInternalEvents.GAME_POWER_USE,
     ServerInternalEvents.GAME_HOO_SEND_BLOCKS,
@@ -163,11 +163,6 @@ export function towersServerToClientEvents(redisSub: Redis, io: IoServer): void 
         io.to(userId).emit(ServerToClientEvents.GAME_CONTROL_KEYS_UPDATED, { controlKeys });
         break;
       }
-      case ServerInternalEvents.GAME_TABLE_SEATS: {
-        const { tableId, tableSeats } = data;
-        io.to(tableId).emit(ServerToClientEvents.GAME_TABLE_SEATS_UPDATED, { tableSeats });
-        break;
-      }
       case ServerInternalEvents.GAME_STATE: {
         const { tableId, gameState } = data;
         io.to(tableId).emit(ServerToClientEvents.GAME_STATE_UPDATED, { gameState });
@@ -183,15 +178,20 @@ export function towersServerToClientEvents(redisSub: Redis, io: IoServer): void 
         io.to(tableId).emit(ServerToClientEvents.GAME_TIMER_UPDATED, { timer });
         break;
       }
-      case ServerInternalEvents.GAME_UPDATE: {
+      case ServerInternalEvents.GAME_BOARD: {
         const { tableId, seatNumber, nextPieces, powerBar, board, currentPiece } = data;
-        io.to(tableId).emit(ServerToClientEvents.GAME_UPDATED, {
+        io.to(tableId).emit(ServerToClientEvents.GAME_BOARD_UPDATED, {
           seatNumber,
           nextPieces,
           powerBar,
           board,
           currentPiece,
         });
+        break;
+      }
+      case ServerInternalEvents.GAME_CLEAR_BOARDS: {
+        const { tableId, tableSeats } = data;
+        io.to(tableId).emit(ServerToClientEvents.GAME_CLEAR_BOARDS_UPDATED, { tableSeats });
         break;
       }
       case ServerInternalEvents.GAME_OVER: {

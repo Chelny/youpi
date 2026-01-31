@@ -1,9 +1,9 @@
 import { EMPTY_CELL } from "@/constants/game";
-import { BoardBlockPlainObject } from "@/server/towers/game/board/Board";
-import { PieceBlockPlainObject, PowerPieceBlockPlainObject } from "@/server/towers/game/PieceBlock";
-import { PowerBarPlainObject } from "@/server/towers/game/PowerBar";
-import { SpecialDiamondPlainObject } from "@/server/towers/game/SpecialDiamond";
-import { TowersPieceBlockPlainObject } from "@/server/towers/game/TowersPieceBlock";
+import { BoardBlockPlainObject } from "@/server/towers/game/board/board";
+import { PieceBlockPlainObject, PowerPieceBlockPlainObject } from "@/server/towers/game/pieces/piece-block";
+import { SpecialDiamondPlainObject } from "@/server/towers/game/pieces/special-diamond/special-diamond";
+import { TowersPieceBlockPlainObject } from "@/server/towers/game/pieces/towers/towers-piece-block";
+import { PowerBarPlainObject } from "@/server/towers/game/power-bar";
 
 // Base Types
 export type BlockLetter = "Y" | "O" | "U" | "P" | "I" | "!" | "ME" | "MI" | "SD" | typeof EMPTY_CELL;

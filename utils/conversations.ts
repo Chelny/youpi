@@ -1,5 +1,5 @@
-import { ConversationPlainObject } from "@/server/youpi/classes/Conversation";
-import { ConversationParticipantPlainObject } from "@/server/youpi/classes/ConversationParticipant";
+import { ConversationPlainObject } from "@/server/youpi/modules/conversation/conversation.entity";
+import { ConversationParticipantPlainObject } from "@/server/youpi/modules/conversation-participant/conversation-participant.entity";
 
 export const getUnreadConversationsCount = (conversation: ConversationPlainObject, userId?: string): number => {
   const currentParticipant: ConversationParticipantPlainObject | undefined = conversation.participants.find(

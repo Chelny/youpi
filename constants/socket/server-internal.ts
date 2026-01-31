@@ -36,11 +36,11 @@ export const ServerInternalEvents = {
 
   // Game
   GAME_CONTROL_KEYS_UPDATE: "server:game:control-keys:update",
-  GAME_TABLE_SEATS: "server:game:table-seats",
   GAME_STATE: "server:game:state",
   GAME_COUNTDOWN: "server:game:countdown",
   GAME_TIMER: "server:game:timer",
-  GAME_UPDATE: "server:game:update",
+  GAME_BOARD: "server:game:board:update",
+  GAME_CLEAR_BOARDS: "server:game:boards:clear",
   GAME_OVER: "server:game:over",
   GAME_POWER_USE: "server:game:power:use",
   GAME_HOO_SEND_BLOCKS: "server:game:hoo-send-blocks",

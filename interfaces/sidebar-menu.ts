@@ -1,4 +1,4 @@
-import { NotificationPlainObject } from "@/server/towers/classes/Notification";
+import { NotificationPlainObject } from "@/server/towers/modules/notification/notification.entity";
 
 export interface SidebarMenuBaseItem {
   id: string

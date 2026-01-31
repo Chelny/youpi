@@ -9,7 +9,8 @@ import { ROUTE_TOWERS } from "@/constants/routes";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { useGame } from "@/context/GameContext";
 import { useSocket } from "@/context/SocketContext";
-import { NotificationPlainObject } from "@/server/towers/classes/Notification";
+import { SocketListener } from "@/lib/socket/socket-listener";
+import { NotificationPlainObject } from "@/server/towers/modules/notification/notification.entity";
 
 const Room = dynamic(() => import("@/components/game/room/Room"));
 const Table = dynamic(() => import("@/components/game/table/Table"));
@@ -34,6 +35,8 @@ export default function TowersPageContent(): ReactNode {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
 
+    const socketListener: SocketListener = new SocketListener(socket);
+
     const handleUpdateNotification = ({ notification }: { notification: NotificationPlainObject }): void => {
       if (notification.type === NotificationType.TABLE_BOOTED && !!notification.bootedFromTable) {
         removeJoinedTable(notification.bootedFromTable.tableId);
@@ -46,11 +49,7 @@ export default function TowersPageContent(): ReactNode {
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.TABLE_BOOTED_NOTIFICATION, handleUpdateNotification);
-    };
-
-    const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.TABLE_BOOTED_NOTIFICATION, handleUpdateNotification);
+      socketListener.on(ServerToClientEvents.TABLE_BOOTED_NOTIFICATION, handleUpdateNotification);
     };
 
     const onConnect = (): void => {
@@ -60,12 +59,11 @@ export default function TowersPageContent(): ReactNode {
     if (socket.connected) {
       onConnect();
     } else {
-      socket.once("connect", onConnect);
+      socketListener.on("connect", onConnect);
     }
 
     return () => {
-      socket.off("connect", onConnect);
-      detachListeners();
+      socketListener.dispose();
     };
   }, [isConnected, activeTableId]);
 

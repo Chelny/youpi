@@ -5,7 +5,7 @@ import { handleApiError, handleUnauthorizedApiError } from "@/lib/api-error";
 import { auth, Session } from "@/lib/auth";
 import { getCurrentLocale } from "@/lib/locale";
 import prisma from "@/lib/prisma";
-import { UserSettingsManager } from "@/server/youpi/managers/UserSettingsManager";
+import { UserSettingsManager } from "@/server/youpi/modules/user-settings/user-settings.manager";
 import { dynamicActivate } from "@/translations/languages";
 
 export async function GET(

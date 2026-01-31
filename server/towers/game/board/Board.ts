@@ -1,23 +1,26 @@
 import { BOARD_COLS, BOARD_ROWS, COLOR_MATCH_DIRECTIONS, EMPTY_CELL, HIDDEN_ROWS_COUNT } from "@/constants/game";
 import { logger } from "@/lib/logger";
-import { ColorMatchDetector } from "@/server/towers/game/board/ColorMatchDetector";
-import { HooDetector } from "@/server/towers/game/board/HooDetector";
-import { MedusaPieceBlock } from "@/server/towers/game/MedusaPieceBlock";
-import { MidasPieceBlock } from "@/server/towers/game/MidasPieceBlock";
-import { Piece } from "@/server/towers/game/Piece";
+import { ColorMatchDetector } from "@/server/towers/game/board/color-match-detector";
+import { HooDetector } from "@/server/towers/game/board/hoo-detector";
+import { MedusaPieceBlock } from "@/server/towers/game/pieces/medusa/medusa-piece-block";
+import { MidasPieceBlock } from "@/server/towers/game/pieces/midas/midas-piece-block";
+import { Piece } from "@/server/towers/game/pieces/piece";
 import {
   PieceBlock,
   PieceBlockLetter,
   PieceBlockPosition,
   PowerPieceBlockPlainObject,
   TowersBlockLetter,
-} from "@/server/towers/game/PieceBlock";
+} from "@/server/towers/game/pieces/piece-block";
 import {
   isTowersPieceBlockLetter,
   TowersPieceBlock,
   TowersPieceBlockPlainObject,
-} from "@/server/towers/game/TowersPieceBlock";
-import { PowerBlock, TowersPieceBlockPowerManager } from "@/server/towers/game/TowersPieceBlockPowerManager";
+} from "@/server/towers/game/pieces/towers/towers-piece-block";
+import {
+  PowerBlock,
+  TowersPieceBlockPowerManager,
+} from "@/server/towers/game/pieces/towers/towers-piece-block-power-manager";
 import {
   Block,
   isEmptyCell,

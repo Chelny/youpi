@@ -1,8 +1,8 @@
 import { InstantMessageType } from "db/browser";
-import { Conversation } from "@/server/youpi/classes/Conversation";
-import { ConversationParticipant } from "@/server/youpi/classes/ConversationParticipant";
-import { InstantMessage } from "@/server/youpi/classes/InstantMessage";
-import { User } from "@/server/youpi/classes/User";
+import { Conversation } from "@/server/youpi/modules/conversation/conversation.entity";
+import { ConversationParticipant } from "@/server/youpi/modules/conversation-participant/conversation-participant.entity";
+import { InstantMessage } from "@/server/youpi/modules/instant-message/instant-message.entity";
+import { User } from "@/server/youpi/modules/user/user.entity";
 
 const userChelny = new User({ id: "ulksi62tgp6rbeou94jyazsp", username: "chelny", userSettings: null });
 const userBob = new User({ id: "u2", username: "Bob", userSettings: null });

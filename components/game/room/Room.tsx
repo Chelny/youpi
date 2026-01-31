@@ -18,12 +18,13 @@ import { useGame } from "@/context/GameContext";
 import { useSocket } from "@/context/SocketContext";
 import { SocketCallback } from "@/interfaces/socket";
 import { fetcher } from "@/lib/fetcher";
-import { RoomLitePlainObject, RoomPlainObject } from "@/server/towers/classes/Room";
-import { RoomChatMessagePlainObject } from "@/server/towers/classes/RoomChatMessage";
-import { RoomPlayerPlainObject } from "@/server/towers/classes/RoomPlayer";
-import { TablePlainObject } from "@/server/towers/classes/Table";
-import { TablePlayerPlainObject } from "@/server/towers/classes/TablePlayer";
-import { TableSeatPlainObject } from "@/server/towers/classes/TableSeat";
+import { SocketListener } from "@/lib/socket/socket-listener";
+import { RoomLitePlainObject, RoomPlainObject } from "@/server/towers/modules/room/room.entity";
+import { RoomChatMessagePlainObject } from "@/server/towers/modules/room-chat-message/room-chat-message.entity";
+import { RoomPlayerPlainObject } from "@/server/towers/modules/room-player/room-player.entity";
+import { TablePlainObject } from "@/server/towers/modules/table/table.entity";
+import { TablePlayerPlainObject } from "@/server/towers/modules/table-player/table-player.entity";
+import { TableSeatPlainObject } from "@/server/towers/modules/table-seat/table-seat.entity";
 
 const RoomHeader = dynamic(() => import("@/components/game/room/RoomHeader"), {
   loading: () => <RoomHeaderSkeleton />,
@@ -101,6 +102,8 @@ export default function Room(): ReactNode {
   useEffect(() => {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
+
+    const socketListener: SocketListener = new SocketListener(socket);
 
     const emitInitialData = (): void => {
       socket.emit(ClientToServerEvents.ROOM_JOIN, { roomId }, (response: SocketCallback<RoomPlainObject>) => {
@@ -223,25 +226,14 @@ export default function Room(): ReactNode {
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.ROOM_PLAYER_JOINED, handlePlayerJoinRoom);
-      socket.on(ServerToClientEvents.ROOM_PLAYER_LEFT, handlePlayerLeaveRoom);
-      socket.on(ServerToClientEvents.ROOM_MESSAGE_SENT, handleUpdateChatMessages);
-      socket.on(ServerToClientEvents.TABLE_UPDATED, handleUpdateTable);
-      socket.on(ServerToClientEvents.TABLE_PLAYER_JOINED, handlePlayerJoinTable);
-      socket.on(ServerToClientEvents.TABLE_PLAYER_LEFT, handlePlayerLeaveTable);
-      socket.on(ServerToClientEvents.TABLE_SEAT_UPDATED, handleUpdateTableSeat);
-      socket.on(ServerToClientEvents.TABLE_DELETED, handleDeleteTable);
-    };
-
-    const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.ROOM_PLAYER_JOINED, handlePlayerJoinRoom);
-      socket.off(ServerToClientEvents.ROOM_PLAYER_LEFT, handlePlayerLeaveRoom);
-      socket.off(ServerToClientEvents.ROOM_MESSAGE_SENT, handleUpdateChatMessages);
-      socket.off(ServerToClientEvents.TABLE_UPDATED, handleUpdateTable);
-      socket.off(ServerToClientEvents.TABLE_PLAYER_JOINED, handlePlayerJoinTable);
-      socket.off(ServerToClientEvents.TABLE_PLAYER_LEFT, handlePlayerLeaveTable);
-      socket.off(ServerToClientEvents.TABLE_SEAT_UPDATED, handleUpdateTableSeat);
-      socket.off(ServerToClientEvents.TABLE_DELETED, handleDeleteTable);
+      socketListener.on(ServerToClientEvents.ROOM_PLAYER_JOINED, handlePlayerJoinRoom);
+      socketListener.on(ServerToClientEvents.ROOM_PLAYER_LEFT, handlePlayerLeaveRoom);
+      socketListener.on(ServerToClientEvents.ROOM_MESSAGE_SENT, handleUpdateChatMessages);
+      socketListener.on(ServerToClientEvents.TABLE_UPDATED, handleUpdateTable);
+      socketListener.on(ServerToClientEvents.TABLE_PLAYER_JOINED, handlePlayerJoinTable);
+      socketListener.on(ServerToClientEvents.TABLE_PLAYER_LEFT, handlePlayerLeaveTable);
+      socketListener.on(ServerToClientEvents.TABLE_SEAT_UPDATED, handleUpdateTableSeat);
+      socketListener.on(ServerToClientEvents.TABLE_DELETED, handleDeleteTable);
     };
 
     const onConnect = (): void => {
@@ -252,12 +244,11 @@ export default function Room(): ReactNode {
     if (socket.connected) {
       onConnect();
     } else {
-      socket.once("connect", onConnect);
+      socketListener.on("connect", onConnect);
     }
 
     return () => {
-      socket.off("connect", onConnect);
-      detachListeners();
+      socketListener.dispose();
     };
   }, [isConnected, roomId]);
 

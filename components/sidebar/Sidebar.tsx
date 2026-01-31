@@ -15,7 +15,8 @@ import { GameRoomSummary, GameTableSummary, useGame } from "@/context/GameContex
 import { useSocket } from "@/context/SocketContext";
 import { SidebarMenuActionItem, SidebarMenuLinkItem } from "@/interfaces/sidebar-menu";
 import { SocketCallback } from "@/interfaces/socket";
-import { NotificationPlainObject } from "@/server/towers/classes/Notification";
+import { SocketListener } from "@/lib/socket/socket-listener";
+import { NotificationPlainObject } from "@/server/towers/modules/notification/notification.entity";
 
 export default function Sidebar(): ReactNode {
   const { i18n, t } = useLingui();
@@ -67,6 +68,8 @@ export default function Sidebar(): ReactNode {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
 
+    const socketListener: SocketListener = new SocketListener(socket);
+
     const emitInitialData = (): void => {
       socket.emit(ClientToServerEvents.NOTIFICATIONS, {}, (response: SocketCallback<NotificationPlainObject[]>) => {
         if (response.success && response.data) {
@@ -90,19 +93,11 @@ export default function Sidebar(): ReactNode {
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.TABLE_INVITATION_INVITED_NOTIFICATION, handleUpdateNotification);
-      socket.on(ServerToClientEvents.TABLE_INVITATION_DECLINED_NOTIFICATION, handleUpdateNotification);
-      socket.on(ServerToClientEvents.TABLE_BOOTED_NOTIFICATION, handleUpdateNotification);
-      socket.on(ServerToClientEvents.NOTIFICATION_MARK_AS_READ, handleUpdateNotification);
-      socket.on(ServerToClientEvents.NOTIFICATION_DELETED, handleDeleteNotification);
-    };
-
-    const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.TABLE_INVITATION_INVITED_NOTIFICATION, handleUpdateNotification);
-      socket.off(ServerToClientEvents.TABLE_INVITATION_DECLINED_NOTIFICATION, handleUpdateNotification);
-      socket.off(ServerToClientEvents.TABLE_BOOTED_NOTIFICATION, handleUpdateNotification);
-      socket.off(ServerToClientEvents.NOTIFICATION_MARK_AS_READ, handleUpdateNotification);
-      socket.off(ServerToClientEvents.NOTIFICATION_DELETED, handleDeleteNotification);
+      socketListener.on(ServerToClientEvents.TABLE_INVITATION_INVITED_NOTIFICATION, handleUpdateNotification);
+      socketListener.on(ServerToClientEvents.TABLE_INVITATION_DECLINED_NOTIFICATION, handleUpdateNotification);
+      socketListener.on(ServerToClientEvents.TABLE_BOOTED_NOTIFICATION, handleUpdateNotification);
+      socketListener.on(ServerToClientEvents.NOTIFICATION_MARK_AS_READ, handleUpdateNotification);
+      socketListener.on(ServerToClientEvents.NOTIFICATION_DELETED, handleDeleteNotification);
     };
 
     const onConnect = (): void => {
@@ -113,12 +108,11 @@ export default function Sidebar(): ReactNode {
     if (socket.connected) {
       onConnect();
     } else {
-      socket.once("connect", onConnect);
+      socketListener.on("connect", onConnect);
     }
 
     return () => {
-      socket.off("connect", onConnect);
-      detachListeners();
+      socketListener.dispose();
     };
   }, [isConnected]);
 

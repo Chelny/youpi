@@ -3,7 +3,7 @@ import clsx from "clsx/lite";
 import DefenseBlock from "@/components/towers/DefenseBlock";
 import RegularBlock from "@/components/towers/RegularBlock";
 import SpecialDiamondBlock from "@/components/towers/SpecialDiamondBlock";
-import { PowerBarItemPlainObject, PowerBarPlainObject } from "@/server/towers/game/PowerBar";
+import { PowerBarItemPlainObject, PowerBarPlainObject } from "@/server/towers/game/power-bar";
 import { getClassNameForBlock, getClassNameForBlockPowerType } from "@/utils/block-class-names";
 import { isSpecialDiamond } from "@/utils/block-guards";
 

@@ -16,7 +16,8 @@ import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { useModal } from "@/context/ModalContext";
 import { useSocket } from "@/context/SocketContext";
 import { SocketCallback } from "@/interfaces/socket";
-import { PlayerPlainObject } from "@/server/towers/classes/Player";
+import { SocketListener } from "@/lib/socket/socket-listener";
+import { PlayerPlainObject } from "@/server/towers/modules/player/player.entity";
 import { getDateFnsLocale } from "@/translations/languages";
 
 type PlayerInformationModalProps = {
@@ -87,6 +88,8 @@ export default function PlayerInformationModal({
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
 
+    const socketListener: SocketListener = new SocketListener(socket);
+
     const emitInitialData = (): void => {
       socket.emit(
         ClientToServerEvents.USER_RELATIONSHIP_MUTE_CHECK,
@@ -108,13 +111,8 @@ export default function PlayerInformationModal({
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.USER_RELATIONSHIP_MUTED, handleMuteUser);
-      socket.on(ServerToClientEvents.USER_RELATIONSHIP_UNMUTED, handleUnmuteUser);
-    };
-
-    const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.USER_RELATIONSHIP_MUTED, handleMuteUser);
-      socket.off(ServerToClientEvents.USER_RELATIONSHIP_UNMUTED, handleUnmuteUser);
+      socketListener.on(ServerToClientEvents.USER_RELATIONSHIP_MUTED, handleMuteUser);
+      socketListener.on(ServerToClientEvents.USER_RELATIONSHIP_UNMUTED, handleUnmuteUser);
     };
 
     const onConnect = (): void => {
@@ -125,12 +123,11 @@ export default function PlayerInformationModal({
     if (socket.connected) {
       onConnect();
     } else {
-      socket.once("connect", onConnect);
+      socketListener.on("connect", onConnect);
     }
 
     return () => {
-      socket.off("connect", onConnect);
-      detachListeners();
+      socketListener.dispose();
     };
   }, [isConnected, selectedPlayer?.id]);
 

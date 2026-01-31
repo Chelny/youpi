@@ -10,8 +10,11 @@ import { FKey, fKeyMessages } from "@/constants/f-key-messages";
 import { CHAT_MESSSAGE_MAX_LENGTH } from "@/constants/game";
 import { useSocket } from "@/context/SocketContext";
 import { filterProfanity } from "@/server/profanity/filter";
-import { RoomChatMessagePlainObject } from "@/server/towers/classes/RoomChatMessage";
-import { TableChatMessagePlainObject, TableChatMessageVariables } from "@/server/towers/classes/TableChatMessage";
+import { RoomChatMessagePlainObject } from "@/server/towers/modules/room-chat-message/room-chat-message.entity";
+import {
+  TableChatMessagePlainObject,
+  TableChatMessageVariables,
+} from "@/server/towers/modules/table-chat-message/table-chat-message.entity";
 
 type ChatMessage = RoomChatMessagePlainObject | TableChatMessagePlainObject;
 

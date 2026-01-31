@@ -9,7 +9,7 @@ import Modal from "@/components/ui/Modal";
 import { ClientToServerEvents } from "@/constants/socket/client-to-server";
 import { useSocket } from "@/context/SocketContext";
 import { SocketCallback } from "@/interfaces/socket";
-import { TableInvitationPlainObject } from "@/server/towers/classes/TableInvitation";
+import { TableInvitationPlainObject } from "@/server/towers/modules/table-invitation/table-invitation.entity";
 
 type TableInvitationModalProps = {
   tableInvitation: TableInvitationPlainObject

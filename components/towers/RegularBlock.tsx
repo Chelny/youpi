@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { PieceBlockLetter } from "@/server/towers/game/PieceBlock";
+import { PieceBlockLetter } from "@/server/towers/game/pieces/piece-block";
 
 type RegularBlockProps = {
   letter?: PieceBlockLetter

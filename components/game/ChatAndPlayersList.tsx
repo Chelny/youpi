@@ -9,10 +9,10 @@ import { InputImperativeHandle } from "@/components/ui/Input";
 import { ClientToServerEvents } from "@/constants/socket/client-to-server";
 import { useSocket } from "@/context/SocketContext";
 import { SocketCallback } from "@/interfaces/socket";
-import { RoomChatMessagePlainObject } from "@/server/towers/classes/RoomChatMessage";
-import { RoomPlayerPlainObject } from "@/server/towers/classes/RoomPlayer";
-import { TableChatMessagePlainObject } from "@/server/towers/classes/TableChatMessage";
-import { TablePlayerPlainObject } from "@/server/towers/classes/TablePlayer";
+import { RoomChatMessagePlainObject } from "@/server/towers/modules/room-chat-message/room-chat-message.entity";
+import { RoomPlayerPlainObject } from "@/server/towers/modules/room-player/room-player.entity";
+import { TableChatMessagePlainObject } from "@/server/towers/modules/table-chat-message/table-chat-message.entity";
+import { TablePlayerPlainObject } from "@/server/towers/modules/table-player/table-player.entity";
 
 const ServerMessage = dynamic(() => import("@/components/game/ServerMessage"), {
   ssr: false,

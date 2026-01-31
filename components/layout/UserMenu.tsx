@@ -19,6 +19,7 @@ import { useModal } from "@/context/ModalContext";
 import { useSocket } from "@/context/SocketContext";
 import { SocketCallback } from "@/interfaces/socket";
 import { authClient } from "@/lib/auth-client";
+import { SocketListener } from "@/lib/socket/socket-listener";
 
 export default function UserMenu(): ReactNode {
   const { openModal } = useModal();
@@ -67,6 +68,8 @@ export default function UserMenu(): ReactNode {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
 
+    const socketListener: SocketListener = new SocketListener(socket);
+
     const emitInitialData = (): void => {
       socket.emit(ClientToServerEvents.CONVERSATIONS_UNREAD, {}, (response: SocketCallback<number>) => {
         if (response.success && response.data) {
@@ -84,11 +87,7 @@ export default function UserMenu(): ReactNode {
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.CONVERSATIONS_UNREAD, handleUpdateUnreadConversations);
-    };
-
-    const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.CONVERSATIONS_UNREAD, handleUpdateUnreadConversations);
+      socketListener.on(ServerToClientEvents.CONVERSATIONS_UNREAD, handleUpdateUnreadConversations);
     };
 
     const onConnect = (): void => {
@@ -99,12 +98,11 @@ export default function UserMenu(): ReactNode {
     if (socket.connected) {
       onConnect();
     } else {
-      socket.once("connect", onConnect);
+      socketListener.on("connect", onConnect);
     }
 
     return () => {
-      socket.off("connect", onConnect);
-      detachListeners();
+      socketListener.dispose();
     };
   }, [isConnected]);
 

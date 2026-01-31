@@ -5,11 +5,14 @@ import PlayerBoardSkeleton from "@/components/skeleton/PlayerBoardSkeleton";
 import PlayerBoard from "@/components/towers/PlayerBoard";
 import { useSocket } from "@/context/SocketContext";
 import { ServerTowersSeat, ServerTowersTeam } from "@/interfaces/table-seats";
-import { TableLitePlainObject } from "@/server/towers/classes/Table";
-import { TableInvitationPlainObject } from "@/server/towers/classes/TableInvitation";
-import { TablePlayerPlainObject } from "@/server/towers/classes/TablePlayer";
-import { TableSeatPlainObject } from "@/server/towers/classes/TableSeat";
-import { PowerBarItemPlainObject } from "@/server/towers/game/PowerBar";
+import { BoardPlainObject } from "@/server/towers/game/board/board";
+import { NextPiecesPlainObject } from "@/server/towers/game/next-pieces";
+import { PiecePlainObject } from "@/server/towers/game/pieces/piece";
+import { PowerBarItemPlainObject, PowerBarPlainObject } from "@/server/towers/game/power-bar";
+import { TableLitePlainObject } from "@/server/towers/modules/table/table.entity";
+import { TableInvitationPlainObject } from "@/server/towers/modules/table-invitation/table-invitation.entity";
+import { TablePlayerPlainObject } from "@/server/towers/modules/table-player/table-player.entity";
+import { TableSeatPlainObject } from "@/server/towers/modules/table-seat/table-seat.entity";
 import { Language, languages } from "@/translations/languages";
 import { groupAndStructureSeats } from "@/utils/get-structured-teams";
 
@@ -23,6 +26,15 @@ type TableSeatsProps = {
   players: TablePlayerPlainObject[]
   invitations: TableInvitationPlainObject[]
   currentTablePlayer?: TablePlayerPlainObject
+  gameStateBySeat: Record<
+    number,
+    {
+      board: BoardPlainObject | null
+      nextPieces: NextPiecesPlainObject | null
+      powerBar: PowerBarPlainObject | null
+      currentPiece: PiecePlainObject | null
+    }
+  >
   seatNumber: number | null
   gameState: GameState
   onSit: (seatNumber: number) => void
@@ -41,6 +53,7 @@ export function TableSeats({
   players,
   invitations,
   currentTablePlayer,
+  gameStateBySeat,
   seatNumber,
   gameState,
   onSit,
@@ -79,7 +92,7 @@ export function TableSeats({
     return groupAndStructureSeats(seats, seatNumber);
   }, [seats, seatNumber]);
 
-  const renderedSeats: ServerTowersTeam[] = uiSeats.length ? uiSeats : SKELETON_UI_SEATS;
+  const renderedSeats: ServerTowersTeam[] = uiSeats.length > 0 ? uiSeats : SKELETON_UI_SEATS;
   const isPlayerBoardVisible: boolean = uiSeats.length > 0 && isTableHydrated;
   const currentLanguage: Language | undefined = languages.find(
     (language: Language) => language.locale === session?.user.language,
@@ -130,12 +143,15 @@ export function TableSeats({
                   roomId={roomId}
                   tableId={tableId}
                   seat={seat}
-                  isOpponentBoard={index !== 0}
+                  isOpponentBoard={isOpponentBoard}
+                  isReversed={isReversed}
                   gameState={gameState}
                   isSitAccessGranted={isSitAccessGranted}
                   seatedTeamsCount={seatedTeamsCount}
                   isPlayerSeated={isPlayerSeated}
-                  tablePlayerForSeat={tablePlayerForSeat}
+                  isPlayerReady={!!tablePlayerForSeat?.isReady}
+                  isPlayerPlaying={!!tablePlayerForSeat?.isPlaying}
+                  gameStateForSeat={gameStateBySeat[seat.seatNumber]}
                   isRatingsVisible={!isSocialRoom}
                   onSit={onSit}
                   onStand={onStand}

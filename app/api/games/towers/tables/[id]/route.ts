@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { handleApiError, handleUnauthorizedApiError } from "@/lib/api-error";
 import { auth, Session } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { TablePlainObject } from "@/server/towers/classes/Table";
-import { TableFactory } from "@/server/towers/factories/TableFactory";
+import { TablePlainObject } from "@/server/towers/modules/table/table.entity";
+import { TableFactory } from "@/server/towers/modules/table/table.factory";
 import { getTowersTableIncludes, TowersTableWithRelations } from "@/types/prisma";
 
 export async function GET(

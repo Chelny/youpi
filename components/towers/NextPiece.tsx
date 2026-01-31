@@ -3,7 +3,7 @@ import clsx from "clsx/lite";
 import DefenseBlock from "@/components/towers/DefenseBlock";
 import RegularBlock from "@/components/towers/RegularBlock";
 import { NextPieceBlock } from "@/interfaces/towers";
-import { PiecePlainObject } from "@/server/towers/game/Piece";
+import { PiecePlainObject } from "@/server/towers/game/pieces/piece";
 import { getClassNameForBlock, getClassNameForBlockPowerType } from "@/utils/block-class-names";
 import { isTowersPieceBlock } from "@/utils/block-guards";
 

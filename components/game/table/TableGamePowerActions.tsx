@@ -5,8 +5,9 @@ import { Socket } from "socket.io-client";
 import { ClientToServerEvents } from "@/constants/socket/client-to-server";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { useSocket } from "@/context/SocketContext";
-import { TablePlayerPlainObject } from "@/server/towers/classes/TablePlayer";
-import { PowerBarItemPlainObject } from "@/server/towers/game/PowerBar";
+import { SocketListener } from "@/lib/socket/socket-listener";
+import { PowerBarItemPlainObject } from "@/server/towers/game/power-bar";
+import { TablePlayerPlainObject } from "@/server/towers/modules/table-player/table-player.entity";
 
 type TableGamePowerActionsProps = {
   tableId: string
@@ -53,6 +54,8 @@ export function TableGamePowerActions({
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
 
+    const socketListener: SocketListener = new SocketListener(socket);
+
     const handlePowerFire = ({
       powerItem,
       source,
@@ -76,11 +79,7 @@ export function TableGamePowerActions({
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.GAME_POWER_USE, handlePowerFire);
-    };
-
-    const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.GAME_POWER_USE, handlePowerFire);
+      socketListener.on(ServerToClientEvents.GAME_POWER_USE, handlePowerFire);
     };
 
     const onConnect = (): void => {
@@ -90,12 +89,11 @@ export function TableGamePowerActions({
     if (socket.connected) {
       onConnect();
     } else {
-      socket.once("connect", onConnect);
+      socketListener.on("connect", onConnect);
     }
 
     return () => {
-      socket.off("connect", onConnect);
-      detachListeners();
+      socketListener.dispose();
     };
   }, [isConnected, tableId]);
 

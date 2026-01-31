@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { handleApiError, handleUnauthorizedApiError } from "@/lib/api-error";
 import { auth, Session } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { RoomFactory } from "@/server/towers/factories/RoomFactory";
+import { RoomFactory } from "@/server/towers/modules/room/room.factory";
 import { getTowersRoomIncludes, TowersRoomWithRelations } from "@/types/prisma";
 
 export async function GET(

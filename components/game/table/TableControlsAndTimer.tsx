@@ -6,7 +6,8 @@ import Timer from "@/components/game/table/Timer";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { useSocket } from "@/context/SocketContext";
 import { getReadableKeyLabel } from "@/lib/keyboard/get-readable-key-label";
-import { PlayerControlKeysPlainObject } from "@/server/towers/classes/PlayerControlKeys";
+import { SocketListener } from "@/lib/socket/socket-listener";
+import { PlayerControlKeysPlainObject } from "@/server/towers/modules/player-control-keys/player-control-keys.entity";
 
 type TableControlsAndTimerProps = {
   controlKeys: PlayerControlKeysPlainObject | null
@@ -21,16 +22,14 @@ export function TableControlsAndTimer({ controlKeys }: TableControlsAndTimerProp
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
 
+    const socketListener: SocketListener = new SocketListener(socket);
+
     const handleTimer = ({ timer }: { timer: number }): void => {
       setTimer(timer);
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.GAME_TIMER_UPDATED, handleTimer);
-    };
-
-    const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.GAME_TIMER_UPDATED, handleTimer);
+      socketListener.on(ServerToClientEvents.GAME_TIMER_UPDATED, handleTimer);
     };
 
     const onConnect = (): void => {
@@ -40,12 +39,11 @@ export function TableControlsAndTimer({ controlKeys }: TableControlsAndTimerProp
     if (socket.connected) {
       onConnect();
     } else {
-      socket.once("connect", onConnect);
+      socketListener.on("connect", onConnect);
     }
 
     return () => {
-      socket.off("connect", onConnect);
-      detachListeners();
+      socketListener.dispose();
     };
   }, [isConnected]);
 

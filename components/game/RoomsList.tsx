@@ -12,6 +12,7 @@ import { ROUTE_TOWERS } from "@/constants/routes";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { useSocket } from "@/context/SocketContext";
 import { fetcher } from "@/lib/fetcher";
+import { SocketListener } from "@/lib/socket/socket-listener";
 import { TowersRoomsListWithCount } from "@/types/prisma";
 import { getRoomLevelText } from "@/utils/room";
 
@@ -41,16 +42,14 @@ export default function RoomsList(): ReactNode {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
 
+    const socketListener: SocketListener = new SocketListener(socket);
+
     const handleUpdateRoomslist = async (): Promise<void> => {
       await loadRooms();
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.ROOMS_LIST_UPDATED, handleUpdateRoomslist);
-    };
-
-    const detachListeners = (): void => {
-      socket.on(ServerToClientEvents.ROOMS_LIST_UPDATED, handleUpdateRoomslist);
+      socketListener.on(ServerToClientEvents.ROOMS_LIST_UPDATED, handleUpdateRoomslist);
     };
 
     const onConnect = (): void => {
@@ -60,12 +59,11 @@ export default function RoomsList(): ReactNode {
     if (socket.connected) {
       onConnect();
     } else {
-      socket.once("connect", onConnect);
+      socketListener.on("connect", onConnect);
     }
 
     return () => {
-      socket.off("connect", onConnect);
-      detachListeners();
+      socketListener.dispose();
     };
   }, [isConnected, socketRef]);
 

@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import GridRow from "@/components/towers/GridRow";
-import { BlockToRemove, BoardGridRowPlainObject, BoardPlainObject } from "@/server/towers/game/board/Board";
-import { PiecePlainObject } from "@/server/towers/game/Piece";
+import { BlockToRemove, BoardGridRowPlainObject, BoardPlainObject } from "@/server/towers/game/board/board";
+import { PiecePlainObject } from "@/server/towers/game/pieces/piece";
 
 type GridProps = {
   isOpponentBoard?: boolean

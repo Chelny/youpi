@@ -22,14 +22,14 @@ import { useModal } from "@/context/ModalContext";
 import { useSocket } from "@/context/SocketContext";
 import { useKeyboardActions } from "@/hooks/useKeyboardActions";
 import { ServerTowersSeat } from "@/interfaces/table-seats";
-import { PlayerPlainObject } from "@/server/towers/classes/Player";
-import { PlayerControlKeysPlainObject } from "@/server/towers/classes/PlayerControlKeys";
-import { TablePlayerPlainObject } from "@/server/towers/classes/TablePlayer";
-import { BlockToRemove, BoardPlainObject } from "@/server/towers/game/board/Board";
-import { NextPiecesPlainObject } from "@/server/towers/game/NextPieces";
-import { PiecePlainObject } from "@/server/towers/game/Piece";
-import { PowerBarItemPlainObject, PowerBarPlainObject } from "@/server/towers/game/PowerBar";
-import { TowersPieceBlockPlainObject } from "@/server/towers/game/TowersPieceBlock";
+import { SocketListener } from "@/lib/socket/socket-listener";
+import { BlockToRemove, BoardPlainObject } from "@/server/towers/game/board/board";
+import { NextPiecesPlainObject } from "@/server/towers/game/next-pieces";
+import { PiecePlainObject } from "@/server/towers/game/pieces/piece";
+import { TowersPieceBlockPlainObject } from "@/server/towers/game/pieces/towers/towers-piece-block";
+import { PowerBarItemPlainObject, PowerBarPlainObject } from "@/server/towers/game/power-bar";
+import { PlayerPlainObject } from "@/server/towers/modules/player/player.entity";
+import { PlayerControlKeysPlainObject } from "@/server/towers/modules/player-control-keys/player-control-keys.entity";
 import { TEST_MODE } from "@/server/towers/utils/test";
 import { Language, languages } from "@/translations/languages";
 
@@ -38,11 +38,19 @@ type PlayerBoardProps = {
   tableId: string
   seat: ServerTowersSeat
   isOpponentBoard: boolean
+  isReversed: boolean
   gameState?: GameState
   isSitAccessGranted: boolean
   seatedTeamsCount: number
   isPlayerSeated: boolean
-  tablePlayerForSeat?: TablePlayerPlainObject
+  isPlayerReady: boolean
+  isPlayerPlaying: boolean
+  gameStateForSeat?: {
+    board: BoardPlainObject | null
+    nextPieces: NextPiecesPlainObject | null
+    powerBar: PowerBarPlainObject | null
+    currentPiece: PiecePlainObject | null
+  }
   isRatingsVisible: boolean
   onSit: (seatNumber: number) => void
   onStand: () => void
@@ -57,11 +65,14 @@ export default memo(function PlayerBoard({
   tableId,
   seat,
   isOpponentBoard,
+  isReversed,
   gameState,
   isSitAccessGranted,
   seatedTeamsCount,
   isPlayerSeated,
-  tablePlayerForSeat,
+  isPlayerReady: isReady,
+  isPlayerPlaying: isPlaying,
+  gameStateForSeat,
   isRatingsVisible,
   onSit,
   onStand,
@@ -73,16 +84,9 @@ export default memo(function PlayerBoard({
   const { openModal } = useModal();
   const boardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const controlKeys: PlayerControlKeysPlainObject | undefined = seat.occupiedByPlayer?.controlKeys;
-  const isReversed: boolean = seat.seatNumber % 2 === 0;
-  const [nextPieces, setNextPieces] = useState<NextPiecesPlainObject | null>(null);
-  const [powerBar, setPowerBar] = useState<PowerBarPlainObject | null>(null);
-  const [board, setBoard] = useState<BoardPlainObject | null>(null);
-  const [currentPiece, setCurrentPiece] = useState<PiecePlainObject | null>(null);
   const [blocksToRemove, setBlocksToRemove] = useState<BlockToRemove[]>([]);
   const typedRef = useRef<string>("");
   const typingTimerRef = useRef<NodeJS.Timeout>(null);
-  const isReady: boolean = !!tablePlayerForSeat?.isReady;
-  const isPlaying: boolean = !!tablePlayerForSeat?.isPlaying;
   const isSeatAvailable: boolean =
     (gameState === GameState.WAITING && !seat.occupiedByPlayer && !isPlayerSeated) ||
     (gameState === GameState.PLAYING && !seat.occupiedByPlayer && !isPlayerSeated);
@@ -102,6 +106,11 @@ export default memo(function PlayerBoard({
     seatedTeamsCount < (TEST_MODE ? MIN_ACTIVE_TEAMS_REQUIRED_TEST : MIN_ACTIVE_TEAMS_REQUIRED);
   const isPlayerWaitingForNextGame: boolean =
     gameState === GameState.PLAYING && !!seat.occupiedByPlayer && !isCurrentUserSeat && !isReady && !isPlaying;
+  const board: BoardPlainObject | null = gameStateForSeat?.board ?? null;
+  const nextPieces: NextPiecesPlainObject | null = isCurrentUserSeat ? (gameStateForSeat?.nextPieces ?? null) : null;
+  const powerBar: PowerBarPlainObject | null = isCurrentUserSeat ? (gameStateForSeat?.powerBar ?? null) : null;
+  const currentPiece: PiecePlainObject | null =
+    isCurrentUserSeat && isPlaying ? (gameStateForSeat?.currentPiece ?? null) : null;
   const currentLanguage: Language | undefined = languages.find(
     (language: Language) => language.locale === session?.user.language,
   );
@@ -111,12 +120,6 @@ export default memo(function PlayerBoard({
     onSpace: () => seat.occupiedByPlayer && handleOpenPlayerInfoModal(seat.occupiedByPlayer),
     onKeyI: () => seat.occupiedByPlayer && handleOpenPlayerInfoModal(seat.occupiedByPlayer),
   });
-
-  useEffect(() => {
-    setNextPieces(seat.nextPieces);
-    setPowerBar(seat.powerBar);
-    setBoard(seat.board);
-  }, [seat]);
 
   useEffect(() => {
     // Set focus on correct seat when game starts
@@ -226,31 +229,7 @@ export default memo(function PlayerBoard({
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
 
-    const handleGameUpdate = ({
-      seatNumber: incomingSeatNumber,
-      nextPieces,
-      powerBar,
-      board,
-      currentPiece,
-    }: {
-      seatNumber: number
-      nextPieces: NextPiecesPlainObject
-      powerBar: PowerBarPlainObject
-      board: BoardPlainObject
-      currentPiece: PiecePlainObject
-    }): void => {
-      // This board is tied to one seat only (props.seat), so if it's for this seat, update
-      if (incomingSeatNumber !== seat.seatNumber) return;
-
-      setBoard(board);
-
-      // Only update current piece, next pieces, and power bar if it's the current player's board
-      if (isCurrentUserSeat) {
-        setNextPieces(nextPieces);
-        setPowerBar(powerBar);
-        setCurrentPiece(currentPiece);
-      }
-    };
+    const socketListener: SocketListener = new SocketListener(socket);
 
     const handleHooSendBlocks = ({
       teamNumber,
@@ -281,15 +260,8 @@ export default memo(function PlayerBoard({
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.GAME_UPDATED, handleGameUpdate);
-      socket.on(ServerToClientEvents.GAME_HOO_SEND_BLOCKS, handleHooSendBlocks);
-      socket.on(ServerToClientEvents.GAME_BLOCKS_MARKED_FOR_REMOVAL, handleBlocksMarkedForRemoval);
-    };
-
-    const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.GAME_UPDATED, handleGameUpdate);
-      socket.off(ServerToClientEvents.GAME_HOO_SEND_BLOCKS, handleHooSendBlocks);
-      socket.off(ServerToClientEvents.GAME_BLOCKS_MARKED_FOR_REMOVAL, handleBlocksMarkedForRemoval);
+      socketListener.on(ServerToClientEvents.GAME_HOO_SEND_BLOCKS, handleHooSendBlocks);
+      socketListener.on(ServerToClientEvents.GAME_BLOCKS_MARKED_FOR_REMOVAL, handleBlocksMarkedForRemoval);
     };
 
     const onConnect = (): void => {
@@ -299,14 +271,13 @@ export default memo(function PlayerBoard({
     if (socket.connected) {
       onConnect();
     } else {
-      socket.once("connect", onConnect);
+      socketListener.on("connect", onConnect);
     }
 
     return () => {
-      socket.off("connect", onConnect);
-      detachListeners();
+      socketListener.dispose();
     };
-  }, [isConnected, tableId, seat?.seatNumber, seat?.teamNumber, isCurrentUserSeat]);
+  }, [isConnected, tableId, seat.seatNumber, seat.teamNumber, isCurrentUserSeat]);
 
   const handleOpenPlayerInfoModal = (selectedPlayer: PlayerPlainObject): void => {
     openModal(PlayerInformationModal, { roomId, selectedPlayer, isRatingsVisible });

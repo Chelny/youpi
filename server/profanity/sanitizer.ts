@@ -3,13 +3,13 @@ import {
   FRENCH_FEMININE_PATTERNS,
   FRENCH_PLURAL_PATTERNS,
   FrenchFemininePatterns,
-} from "@/server/profanity/utils/frenchVariations";
+} from "@/server/profanity/utils/french-variations";
 import {
   convertSymbolsInString,
   initLeetConverter,
   MULTI_CHAR_SYMBOLS,
   SYMBOL_TO_POSSIBLE_LETTERS,
-} from "@/server/profanity/utils/leetConverter";
+} from "@/server/profanity/utils/leet-converter";
 import { SupportedLocales } from "@/translations/languages";
 
 initLeetConverter();

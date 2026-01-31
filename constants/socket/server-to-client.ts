@@ -38,11 +38,11 @@ export const ServerToClientEvents = {
 
   // Game
   GAME_CONTROL_KEYS_UPDATED: "stc:game:control-keys:updated",
-  GAME_TABLE_SEATS_UPDATED: "stc:game:table-seats:updated",
   GAME_STATE_UPDATED: "stc:game:state:updated",
   GAME_COUNTDOWN_UPDATED: "stc:game:countdown:updated",
   GAME_TIMER_UPDATED: "stc:game:timer:updated",
-  GAME_UPDATED: "stc:game:updated",
+  GAME_BOARD_UPDATED: "stc:game:board:updated",
+  GAME_CLEAR_BOARDS_UPDATED: "stc:game:boards:clear:updated",
   GAME_OVER: "stc:game:over",
   GAME_POWER_USE: "stc:game:power:use",
   GAME_HOO_SEND_BLOCKS: "stc:game:hoo-send-blocks",

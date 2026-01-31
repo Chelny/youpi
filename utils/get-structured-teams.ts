@@ -1,5 +1,5 @@
 import { ServerTowersSeat, ServerTowersTeam } from "@/interfaces/table-seats";
-import { TableSeatPlainObject } from "@/server/towers/classes/TableSeat";
+import { TableSeatPlainObject } from "@/server/towers/modules/table-seat/table-seat.entity";
 
 /**
  * Groups table seats into teams and optionally reorders them from the perspective of a player.
@@ -62,7 +62,7 @@ export const groupAndStructureSeats = (
 
       // Swap targetNumber between seats for proper orientation
       for (let i = 0; i < teams[0].seats.length; i++) {
-        const tmp = teams[0].seats[i].targetNumber;
+        const tmp: number = teams[0].seats[i].targetNumber;
         teams[0].seats[i].targetNumber = teams[index].seats[i].targetNumber;
         teams[index].seats[i].targetNumber = tmp;
       }

@@ -3,8 +3,8 @@
 import { ReactNode } from "react";
 import { Trans } from "@lingui/react/macro";
 import Banner from "@/components/Banner";
-import { RoomLitePlainObject } from "@/server/towers/classes/Room";
-import { TableLitePlainObject } from "@/server/towers/classes/Table";
+import { RoomLitePlainObject } from "@/server/towers/modules/room/room.entity";
+import { TableLitePlainObject } from "@/server/towers/modules/table/table.entity";
 
 type TableHeaderProps = {
   room?: RoomLitePlainObject

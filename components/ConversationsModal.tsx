@@ -18,9 +18,10 @@ import { useConversations } from "@/context/ConversationsContext";
 import { useSocket } from "@/context/SocketContext";
 import { useContextMenu } from "@/hooks/useContextMenu";
 import { SocketCallback } from "@/interfaces/socket";
-import { ConversationPlainObject } from "@/server/youpi/classes/Conversation";
-import { ConversationParticipantPlainObject } from "@/server/youpi/classes/ConversationParticipant";
-import { InstantMessagePlainObject } from "@/server/youpi/classes/InstantMessage";
+import { SocketListener } from "@/lib/socket/socket-listener";
+import { ConversationPlainObject } from "@/server/youpi/modules/conversation/conversation.entity";
+import { ConversationParticipantPlainObject } from "@/server/youpi/modules/conversation-participant/conversation-participant.entity";
+import { InstantMessagePlainObject } from "@/server/youpi/modules/instant-message/instant-message.entity";
 import { getDateFnsLocale } from "@/translations/languages";
 import { getUnreadConversationsCount } from "@/utils/conversations";
 
@@ -164,6 +165,8 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
   useEffect(() => {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
+
+    const socketListener: SocketListener = new SocketListener(socket);
 
     const emitInitialData = (): void => {
       socket.emit(ClientToServerEvents.CONVERSATIONS, {}, (response: SocketCallback<ConversationPlainObject[]>) => {
@@ -312,21 +315,12 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
     };
 
     const attachListeners = (): void => {
-      socket.on(ServerToClientEvents.CONVERSATION_MARK_AS_READ, handleMarkConversationAsRead);
-      socket.on(ServerToClientEvents.CONVERSATION_MUTED, handleMuteConversation);
-      socket.on(ServerToClientEvents.CONVERSATION_UNMUTED, handleUnmuteConversation);
-      socket.on(ServerToClientEvents.CONVERSATION_REMOVED, handleRemoveConversation);
-      socket.on(ServerToClientEvents.CONVERSATION_RESTORED, handleRestoreConversation);
-      socket.on(ServerToClientEvents.CONVERSATION_MESSAGE_SENT, handleUpdateConversation);
-    };
-
-    const detachListeners = (): void => {
-      socket.off(ServerToClientEvents.CONVERSATION_MARK_AS_READ, handleMarkConversationAsRead);
-      socket.off(ServerToClientEvents.CONVERSATION_MUTED, handleMuteConversation);
-      socket.off(ServerToClientEvents.CONVERSATION_UNMUTED, handleUnmuteConversation);
-      socket.off(ServerToClientEvents.CONVERSATION_REMOVED, handleRemoveConversation);
-      socket.off(ServerToClientEvents.CONVERSATION_RESTORED, handleRestoreConversation);
-      socket.off(ServerToClientEvents.CONVERSATION_MESSAGE_SENT, handleUpdateConversation);
+      socketListener.on(ServerToClientEvents.CONVERSATION_MARK_AS_READ, handleMarkConversationAsRead);
+      socketListener.on(ServerToClientEvents.CONVERSATION_MUTED, handleMuteConversation);
+      socketListener.on(ServerToClientEvents.CONVERSATION_UNMUTED, handleUnmuteConversation);
+      socketListener.on(ServerToClientEvents.CONVERSATION_REMOVED, handleRemoveConversation);
+      socketListener.on(ServerToClientEvents.CONVERSATION_RESTORED, handleRestoreConversation);
+      socketListener.on(ServerToClientEvents.CONVERSATION_MESSAGE_SENT, handleUpdateConversation);
     };
 
     const onConnect = (): void => {
@@ -337,12 +331,11 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
     if (socket.connected) {
       onConnect();
     } else {
-      socket.once("connect", onConnect);
+      socketListener.on("connect", onConnect);
     }
 
     return () => {
-      socket.off("connect", onConnect);
-      detachListeners();
+      socketListener.dispose();
     };
   }, [isConnected, session?.user.id]);
 

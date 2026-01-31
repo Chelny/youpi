@@ -3,8 +3,8 @@ import clsx from "clsx/lite";
 import GridCell from "@/components/towers/GridCell";
 import { EMPTY_CELL, HIDDEN_ROWS_COUNT } from "@/constants/game";
 import { BoardBlock, BoardRow, PieceBlock } from "@/interfaces/towers";
-import { BlockToRemove } from "@/server/towers/game/board/Board";
-import { PiecePlainObject } from "@/server/towers/game/Piece";
+import { BlockToRemove } from "@/server/towers/game/board/board";
+import { PiecePlainObject } from "@/server/towers/game/pieces/piece";
 
 type GridRowProps = {
   rowIndex: number

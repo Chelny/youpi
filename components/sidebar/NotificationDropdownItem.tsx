@@ -11,7 +11,7 @@ import { ROUTE_TOWERS } from "@/constants/routes";
 import { ClientToServerEvents } from "@/constants/socket/client-to-server";
 import { useModal } from "@/context/ModalContext";
 import { useSocket } from "@/context/SocketContext";
-import { NotificationPlainObject } from "@/server/towers/classes/Notification";
+import { NotificationPlainObject } from "@/server/towers/modules/notification/notification.entity";
 
 type NotificationDropdownItemProps = {
   notification: NotificationPlainObject

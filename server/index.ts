@@ -9,12 +9,12 @@ import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { logger } from "@/lib/logger";
 import { initRedisPublisher } from "@/server/redis/publish";
 import { towersServerToClientEvents } from "@/server/towers/events/server-to-client";
-import { RoomManager } from "@/server/towers/managers/RoomManager";
-import { TowersSocketHandler } from "@/server/towers/TowersSocketHandler";
-import { User } from "@/server/youpi/classes/User";
+import { RoomManager } from "@/server/towers/modules/room/room.manager";
+import { TowersSocketHandler } from "@/server/towers/towers-socket.handler";
 import { youpiServerToClientEvents } from "@/server/youpi/events/server-to-client";
-import { UserManager } from "@/server/youpi/managers/UserManager";
-import { YoupiSocketHandler } from "@/server/youpi/YoupiSocketHandler";
+import { User } from "@/server/youpi/modules/user/user.entity";
+import { UserManager } from "@/server/youpi/modules/user/user.manager";
+import { YoupiSocketHandler } from "@/server/youpi/youpi-socket.handler";
 
 class AppServer {
   private readonly dev: boolean = process.env.NODE_ENV !== "production";

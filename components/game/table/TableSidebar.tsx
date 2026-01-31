@@ -18,7 +18,7 @@ import { useSocket } from "@/context/SocketContext";
 import { TablePanelView } from "@/enums/table-panel-view";
 import { SocketCallback } from "@/interfaces/socket";
 import { logger } from "@/lib/logger";
-import { TableLitePlainObject } from "@/server/towers/classes/Table";
+import { TableLitePlainObject } from "@/server/towers/modules/table/table.entity";
 
 const changeTableOptionsSchema = Type.Object({
   tableType: Type.Union([

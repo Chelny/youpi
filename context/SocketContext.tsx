@@ -17,6 +17,7 @@ import { ROUTE_HOME } from "@/constants/routes";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { Session } from "@/lib/auth-client";
 import { logger } from "@/lib/logger";
+import { SocketListener } from "@/lib/socket/socket-listener";
 
 type UserAvatarsMap = Record<string, string>;
 
@@ -67,6 +68,8 @@ export const SocketProvider = ({ children, session }: PropsWithChildren<{ sessio
 
     socketRef.current = socket;
 
+    const socketListener: SocketListener = new SocketListener(socket);
+
     // **************************************************
     // * Socket IO Events
     // **************************************************
@@ -112,15 +115,15 @@ export const SocketProvider = ({ children, session }: PropsWithChildren<{ sessio
       router.push(ROUTE_HOME.PATH);
     };
 
-    socket.on("connect", handleConnect);
-    socket.on("connect_error", handleConnectError);
-    socket.on("reconnect", handleReconnect);
-    socket.on("reconnect_attempt", handleReconnectAttempt);
-    socket.on("reconnect_error", handleReconnectError);
-    socket.on("reconnect_failed", handleReconnectFailed);
-    socket.on("disconnect", handleDisconnect);
-    socket.on("error", handleError);
-    socket.on(ServerToClientEvents.SIGN_OUT_SUCCESS, handleSignOutSuccess);
+    socketListener.on("connect", handleConnect);
+    socketListener.on("connect_error", handleConnectError);
+    socketListener.on("reconnect", handleReconnect);
+    socketListener.on("reconnect_attempt", handleReconnectAttempt);
+    socketListener.on("reconnect_error", handleReconnectError);
+    socketListener.on("reconnect_failed", handleReconnectFailed);
+    socketListener.on("disconnect", handleDisconnect);
+    socketListener.on("error", handleError);
+    socketListener.on(ServerToClientEvents.SIGN_OUT_SUCCESS, handleSignOutSuccess);
 
     // **************************************************
     // * Server Error Events
@@ -130,7 +133,7 @@ export const SocketProvider = ({ children, session }: PropsWithChildren<{ sessio
       logger.error(`Server error: ${message}.`);
     };
 
-    socket.on(ServerToClientEvents.SERVER_ERROR, handleServerError);
+    socketListener.on(ServerToClientEvents.SERVER_ERROR, handleServerError);
 
     // **************************************************
     // * Network Events
@@ -144,34 +147,23 @@ export const SocketProvider = ({ children, session }: PropsWithChildren<{ sessio
       logger.info(`${userId} is offline`);
     };
 
-    socket.on(ServerToClientEvents.USER_ONLINE, handleUserOnline);
-    socket.on(ServerToClientEvents.USER_OFFLINE, handleUserOffline);
+    socketListener.on(ServerToClientEvents.USER_ONLINE, handleUserOnline);
+    socketListener.on(ServerToClientEvents.USER_OFFLINE, handleUserOffline);
 
     // **************************************************
     // * Cleanups
     // **************************************************
 
     return () => {
-      socket.off("connect", handleConnect);
-      socket.off("connect_error", handleConnectError);
-      socket.off("reconnect", handleReconnect);
-      socket.off("reconnect_attempt", handleReconnectAttempt);
-      socket.off("reconnect_error", handleReconnectError);
-      socket.off("reconnect_failed", handleReconnectFailed);
-      socket.off("disconnect", handleDisconnect);
-      socket.off("error", handleError);
-
-      socket.off(ServerToClientEvents.SIGN_OUT_SUCCESS, handleSignOutSuccess);
-      socket.off(ServerToClientEvents.SERVER_ERROR, handleServerError);
-
-      socket.off(ServerToClientEvents.USER_ONLINE, handleUserOnline);
-      socket.off(ServerToClientEvents.USER_OFFLINE, handleUserOffline);
+      socketListener.dispose();
     };
   }, [session]);
 
   useEffect(() => {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
+
+    const socketListener: SocketListener = new SocketListener(socket);
 
     const handlePingEcho = (_: unknown, callback: (response: boolean) => void): void => {
       callback(true);
@@ -181,12 +173,11 @@ export const SocketProvider = ({ children, session }: PropsWithChildren<{ sessio
       setUserAvatar(userId, avatarId);
     };
 
-    socket.on(ServerToClientEvents.PING_ECHO, handlePingEcho);
-    socket.on(ServerToClientEvents.USER_SETTINGS_AVATAR, handleAvatarUpdate);
+    socketListener.on(ServerToClientEvents.PING_ECHO, handlePingEcho);
+    socketListener.on(ServerToClientEvents.USER_SETTINGS_AVATAR, handleAvatarUpdate);
 
     return () => {
-      socket.off(ServerToClientEvents.PING_ECHO, handlePingEcho);
-      socket.off(ServerToClientEvents.USER_SETTINGS_AVATAR, handleAvatarUpdate);
+      socketListener.dispose();
     };
   }, [isConnected, session?.user.id]);
 

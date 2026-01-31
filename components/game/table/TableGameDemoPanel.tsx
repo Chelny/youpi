@@ -10,7 +10,7 @@ import RegularBlock from "@/components/towers/RegularBlock";
 import Button from "@/components/ui/Button";
 import { BOARD_COLS } from "@/constants/game";
 import { TablePanelView } from "@/enums/table-panel-view";
-import { TowersBlockLetter } from "@/server/towers/game/PieceBlock";
+import { TowersBlockLetter } from "@/server/towers/game/pieces/piece-block";
 import { padBoardToMaxCells, splitIntoColumns } from "@/utils/array";
 
 interface PieceBlockPosition {

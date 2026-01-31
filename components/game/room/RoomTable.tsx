@@ -11,9 +11,9 @@ import { ROUTE_TOWERS } from "@/constants/routes";
 import { ClientToServerEvents } from "@/constants/socket/client-to-server";
 import { useSocket } from "@/context/SocketContext";
 import { SocketCallback } from "@/interfaces/socket";
-import { RoomPlayerPlainObject } from "@/server/towers/classes/RoomPlayer";
-import { TablePlainObject } from "@/server/towers/classes/Table";
-import { TablePlayerPlainObject } from "@/server/towers/classes/TablePlayer";
+import { RoomPlayerPlainObject } from "@/server/towers/modules/room-player/room-player.entity";
+import { TablePlainObject } from "@/server/towers/modules/table/table.entity";
+import { TablePlayerPlainObject } from "@/server/towers/modules/table-player/table-player.entity";
 
 type RoomTableProps = {
   roomId: string
