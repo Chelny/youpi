@@ -34,7 +34,7 @@ export const languages: Language[] = [
   },
   ...(process.env.NODE_ENV !== "production"
     ? [
-        // Pseudo locale for testing
+        // Pseudo locale for testing RTL direction
         {
           locale: "pseudo-LOCALE",
           getLabel: () => msg`Pseudo`,
@@ -46,7 +46,7 @@ export const languages: Language[] = [
 ];
 
 export const dynamicActivate = async (locale: string): Promise<void> => {
-  const { messages } = await import(`@/translations/locales/${locale}/messages.po`);
+  const { messages } = await import(`@/translations/locales/${locale}/messages`);
   i18n.load(locale, messages);
   i18n.activate(locale);
 };

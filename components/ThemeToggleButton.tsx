@@ -60,6 +60,7 @@ export default function ThemeToggleButton(): ReactNode {
       className={clsx(
         "flex items-center gap-3 w-full p-2 rounded-md",
         "disabled:opacity-50 disabled:cursor-not-allowed",
+        "hover:bg-white/10",
         isLoading && "hidden",
       )}
       title={t({ message: "Theme" })}

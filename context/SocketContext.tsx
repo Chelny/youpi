@@ -140,11 +140,11 @@ export const SocketProvider = ({ children, session }: PropsWithChildren<{ sessio
     // **************************************************
 
     const handleUserOnline = ({ userId }: { userId: string }): void => {
-      logger.info(`${userId} is online`);
+      logger.debug(`${userId} is online`);
     };
 
     const handleUserOffline = ({ userId }: { userId: string }): void => {
-      logger.info(`${userId} is offline`);
+      logger.debug(`${userId} is offline`);
     };
 
     socketListener.on(ServerToClientEvents.USER_ONLINE, handleUserOnline);

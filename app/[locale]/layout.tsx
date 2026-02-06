@@ -12,7 +12,7 @@ import { allMessages, getI18nInstance } from "@/app/app-router-i18n";
 import { initLingui } from "@/app/init-lingui";
 import TestModeBanner from "@/components/TestModeBanner";
 import { APP_CONFIG, APP_STORAGE_KEYS } from "@/constants/app";
-import { ConversationsProvider } from "@/context/ConversationsContext";
+import { ConversationProvider } from "@/context/ConversationContext";
 import { GameProvider } from "@/context/GameContext";
 import { ModalProvider } from "@/context/ModalContext";
 import { SocketProvider } from "@/context/SocketContext";
@@ -47,15 +47,7 @@ export async function generateMetadata({ params }: RootLayoutProps): Promise<Met
     },
     description: i18n._(msg`A modern recreation of the classic online block-stacking puzzle game`),
     applicationName: APP_CONFIG.NAME,
-    keywords: [
-      "game",
-      "Tetris",
-      "arcade",
-      "puzzle game",
-      "block stacking game",
-      "online multiplayer puzzle",
-      "ytowers",
-    ],
+    keywords: ["game", "Tetris", "arcade", "online", "multiplayer", "ytowers"],
     creator: "Chelny Duplan",
     icons: {
       icon: { rel: "icon", url: "/favicon.svg", sizes: "image/svg+xml" },
@@ -89,9 +81,9 @@ export default async function RootLayout({ children, params }: Readonly<RootLayo
             <SocketProvider session={session}>
               <GameProvider>
                 <ToastProvider>
-                  <ConversationsProvider>
+                  <ConversationProvider>
                     <ModalProvider>{children}</ModalProvider>
-                  </ConversationsProvider>
+                  </ConversationProvider>
                 </ToastProvider>
               </GameProvider>
             </SocketProvider>

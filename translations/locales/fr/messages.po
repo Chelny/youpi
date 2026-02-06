@@ -39,17 +39,17 @@ msgid "© {copyrightYear} {appName}, All Rights Reserved"
 msgstr "© {copyrightYear} {appName}, Tous droits réservés"
 
 #. js-lingui-explicit-id
-#: components/ConversationsModal.tsx:376
+#: components/ConversationsModal.tsx:224
 msgid "{username} is online."
 msgstr "{username} est en ligne."
 
 #. js-lingui-explicit-id
-#: components/ConversationsModal.tsx:380
+#: components/ConversationsModal.tsx:228
 msgid "{username} is offline."
 msgstr "{username} est hors ligne."
 
 #. js-lingui-explicit-id
-#: components/ConversationsModal.tsx:431
+#: components/ConversationsModal.tsx:280
 msgid "Instant message with {username} started {time}"
 msgstr "Message instantané avec {username} commencé {time}"
 
@@ -66,7 +66,7 @@ msgid "Expand {label}"
 msgstr "Développer {label}"
 
 #. js-lingui-explicit-id
-#: components/sidebar/Sidebar.tsx:43
+#: components/sidebar/Sidebar.tsx:44
 msgid "Table #{tableNumber}"
 msgstr "Table n°{tableNumber}"
 
@@ -94,72 +94,72 @@ msgid "You have been booted from table #{tableNumber} by {host}."
 msgstr "Vous avez été expulsé(e) de la table n°{tableNumber} par {host}."
 
 #. js-lingui-explicit-id
-#: components/game/Chat.tsx:59
+#: components/game/Chat.tsx:62
 msgid "Cipher key: {plainChar} => {cipherChar}"
 msgstr "Clé de chiffrement : {plainChar} => {cipherChar}"
 
 #. js-lingui-explicit-id
-#: components/game/Chat.tsx:65
+#: components/game/Chat.tsx:68
 msgid "{username}: {message}"
 msgstr "{username} : {message}"
 
 #. js-lingui-explicit-id
-#: components/game/Chat.tsx:70
+#: components/game/Chat.tsx:73
 msgid "{username}’s old rating: {oldRating}; new rating: {newRating}"
 msgstr "Ancien classement de {username} : {oldRating}; nouveau classement : {newRating}"
 
 #. js-lingui-explicit-id
-#: components/game/Chat.tsx:82
+#: components/game/Chat.tsx:85
 msgid "{username} is a hero of {appName}!"
 msgstr "{username} est un héros de {appName} !"
 
 #. js-lingui-explicit-id
-#: components/game/Chat.tsx:86
+#: components/game/Chat.tsx:89
 msgid "You are the host of the table. This gives you the power to invite to [or boot people from] your table. You may also limit other player’s access to your table by selecting its \"Table Type\"."
 msgstr "Vous êtes l'hôte de la table. Cela vous donne le pouvoir d'inviter [ou d'expulser des personnes] de votre table. Vous pouvez également limiter l'accès des autres joueurs à votre table en sélectionnant son \"Type de Table\"."
 
 #. js-lingui-explicit-id
-#: components/game/Chat.tsx:94
+#: components/game/Chat.tsx:97
 msgid "Only people you have invited may play now."
 msgstr "Seules les personnes que vous avez invitées peuvent jouer maintenant."
 
 #. js-lingui-explicit-id
-#: components/game/Chat.tsx:97
+#: components/game/Chat.tsx:100
 msgid "Only people you have invited may play or watch your table now."
 msgstr "Seules les personnes que vous avez invitées peuvent jouer ou regarder votre table maintenant."
 
 #. js-lingui-explicit-id
-#: components/game/Chat.tsx:100
+#: components/game/Chat.tsx:103
 msgid "Anyone may play or watch your table now."
 msgstr "Tout le monde peut jouer ou regarder votre table maintenant."
 
 #. js-lingui-explicit-id
-#: components/game/Chat.tsx:105
+#: components/game/Chat.tsx:108
 msgid "{tableHostUsername} has booted {username} from the table."
 msgstr "{tableHostUsername} a expulsé {username} de la table."
 
 #. js-lingui-explicit-id
-#: components/game/Chat.tsx:109
+#: components/game/Chat.tsx:112
 msgid "You have been granted access to play by the host."
 msgstr "Vous avez reçu l'autorisation de jouer de la part de l'hôte."
 
 #. js-lingui-explicit-id
-#: components/game/Chat.tsx:113
+#: components/game/Chat.tsx:116
 msgid "You granted {username} access to play."
 msgstr "Vous avez accordé à {username} l'autorisation de jouer."
 
 #. js-lingui-explicit-id
-#: components/game/Chat.tsx:117
+#: components/game/Chat.tsx:120
 msgid "{username} has joined the table."
 msgstr "{username} a rejoint la table."
 
 #. js-lingui-explicit-id
-#: components/game/Chat.tsx:121
+#: components/game/Chat.tsx:124
 msgid "{username} has accepted the invitation to the table."
 msgstr "{username} a accepté l'invitation à la table."
 
 #. js-lingui-explicit-id
-#: components/game/Chat.tsx:125
+#: components/game/Chat.tsx:128
 msgid "{username} has left the table."
 msgstr "{username} a quitté la table."
 
@@ -436,95 +436,95 @@ msgstr "{inviterInfo} vous a invité à la table n°{tableNumber}."
 msgid "{message} Please try again or <0>contact our support team</0> if the issue persists."
 msgstr "{message} Veuillez réessayer ou <0>contactez notre équipe de soutien</0> si le problème persiste."
 
-#: components/game/PlayerInformationModal.tsx:247
+#: components/game/PlayerInformationModal.tsx:251
 msgid "{myNetDelay, plural, zero {My net delay: {myNetDelay} seconds.} one {My net delay: {myNetDelay} second.} other {My net delay: {myNetDelay} seconds.}}"
 msgstr "{myNetDelay, plural, zero {Mon délai réseau : {myNetDelay} secondes.} one {Mon délai réseau : {myNetDelay} seconde.} other {Mon délai réseau : {myNetDelay} secondes.}}"
 
-#: components/game/table/TableGamePowerActions.tsx:229
+#: components/game/table/TableGamePowerActions.tsx:227
 msgid "{powerLevel, select, minor {{sourceUsername} minorly defused {targetUsername}} mega {{sourceUsername} mega defused {targetUsername}} other {{sourceUsername} defused {targetUsername}}}"
 msgstr "{powerLevel, select, minor {{sourceUsername} a légèrement désamorcé {targetUsername}} mega {{sourceUsername} a puissamment désamorcé {targetUsername}} other {{sourceUsername} a désamorcé {targetUsername}}}"
 
-#: components/game/table/TableGamePowerActions.tsx:214
+#: components/game/table/TableGamePowerActions.tsx:212
 msgid "{powerLevel, select, minor {{sourceUsername} minorly dithered {targetUsername}} mega {{sourceUsername} mega dithered {targetUsername}} other {{sourceUsername} dithered {targetUsername}}}"
 msgstr "{powerLevel, select, minor {{sourceUsername} a légèrement brouillé {targetUsername}} mega {{sourceUsername} a puissamment brouillé {targetUsername}} other {{sourceUsername} a brouillé {targetUsername}}}"
 
-#: components/game/table/TableGamePowerActions.tsx:126
+#: components/game/table/TableGamePowerActions.tsx:124
 msgid "{powerLevel, select, minor {You can add a stone} normal {You can add 2 stones} mega {You can add 3 stones} other {You can add stones}}"
 msgstr "{powerLevel, select, minor {Vous pouvez ajouter une pierre} normal {Vous pouvez ajouter 2 pierres} mega {Vous pouvez ajouter 3 pierres} other {Vous pouvez ajouter des pierres}}"
 
-#: components/game/table/TableGamePowerActions.tsx:167
+#: components/game/table/TableGamePowerActions.tsx:165
 msgid "{powerLevel, select, minor {You can drop a stone} normal {You can drop 2 stones} mega {You can drop 3 stones} other {You can drop stones}}"
 msgstr "{powerLevel, select, minor {Vous pouvez déposer une pierre} normal {Vous pouvez déposer 2 pierres} mega {Vous pouvez déposer 3 pierres} other {Vous pouvez déposer des pierres}}"
 
-#: components/game/table/TableGamePowerActions.tsx:163
+#: components/game/table/TableGamePowerActions.tsx:161
 msgid "{powerLevel, select, minor {You can minorly clump} mega {You can mega clump} other {You can clump}}"
 msgstr "{powerLevel, select, minor {Vous pouvez regrouper légèrement} mega {Vous pouvez regrouper fortement} other {Vous pouvez regrouper}}"
 
-#: components/game/table/TableGamePowerActions.tsx:136
+#: components/game/table/TableGamePowerActions.tsx:134
 msgid "{powerLevel, select, minor {You can minorly defuse} mega {You can mega defuse} other {You can defuse}}"
 msgstr "{powerLevel, select, minor {Vous pouvez désamorcer légèrement} mega {Vous pouvez désamorcer fortement} other {Vous pouvez désamorcer}}"
 
-#: components/game/table/TableGamePowerActions.tsx:117
+#: components/game/table/TableGamePowerActions.tsx:115
 msgid "{powerLevel, select, minor {You can minorly dither} mega {You can mega dither} other {You can dither}}"
 msgstr "{powerLevel, select, minor {Vous pouvez brouiller légèrement} mega {Vous pouvez brouiller fortement} other {Vous pouvez brouiller}}"
 
-#: components/game/table/TableGamePowerActions.tsx:147
+#: components/game/table/TableGamePowerActions.tsx:145
 msgid "{powerLevel, select, minor {You can minorly remove powers} mega {You can mega remove powers} other {You can remove powers}}"
 msgstr "{powerLevel, select, minor {Vous pouvez supprimer légèrement les pouvoirs} mega {Vous pouvez supprimer fortement les pouvoirs} other {Vous pouvez supprimer les pouvoirs}}"
 
-#: components/game/table/TableGamePowerActions.tsx:208
+#: components/game/table/TableGamePowerActions.tsx:206
 msgid "{sourceUsername} added a row to {targetUsername}"
 msgstr "{sourceUsername} a ajouté une rangée à {targetUsername}"
 
-#: components/game/table/TableGamePowerActions.tsx:261
+#: components/game/table/TableGamePowerActions.tsx:259
 msgid "{sourceUsername} clumped {targetUsername}"
 msgstr "{sourceUsername} a regroupé les blocs de {targetUsername}"
 
-#: components/game/table/TableGamePowerActions.tsx:279
+#: components/game/table/TableGamePowerActions.tsx:277
 msgid "{sourceUsername} color blasted {targetUsername}"
 msgstr "{sourceUsername} a déclenché une explosion de couleur sur {targetUsername}"
 
-#: components/game/table/TableGamePowerActions.tsx:255
+#: components/game/table/TableGamePowerActions.tsx:253
 msgid "{sourceUsername} removed a row from {targetUsername}"
 msgstr "{sourceUsername} a supprimé une rangée de {targetUsername}"
 
-#: components/game/table/TableGamePowerActions.tsx:244
+#: components/game/table/TableGamePowerActions.tsx:242
 msgid "{sourceUsername} removed powers from {targetUsername}"
 msgstr "{sourceUsername} a supprimé les pouvoirs de {targetUsername}"
 
-#: components/game/table/TableGamePowerActions.tsx:291
+#: components/game/table/TableGamePowerActions.tsx:289
 msgid "{sourceUsername} sent a color plague to {targetUsername}"
 msgstr "{sourceUsername} a envoyé une peste colorée à {targetUsername}"
 
-#: components/game/table/TableGamePowerActions.tsx:238
+#: components/game/table/TableGamePowerActions.tsx:236
 msgid "{sourceUsername} sent a Medusa piece to {targetUsername}"
 msgstr "{sourceUsername} a envoyé une pièce Méduse à {targetUsername}"
 
-#: components/game/table/TableGamePowerActions.tsx:285
+#: components/game/table/TableGamePowerActions.tsx:283
 msgid "{sourceUsername} sent a Midas piece to {targetUsername}"
 msgstr "{sourceUsername} a envoyé une pièce Midas à {targetUsername}"
 
-#: components/game/table/TableGamePowerActions.tsx:223
+#: components/game/table/TableGamePowerActions.tsx:221
 msgid "{sourceUsername} stoned {targetUsername}"
 msgstr "{sourceUsername} a lancé des pierres à {targetUsername}"
 
-#: components/game/table/TableGamePowerActions.tsx:196
+#: components/game/table/TableGamePowerActions.tsx:194
 msgid "{sourceUsername} used a special cell on {targetUsername}"
 msgstr "{sourceUsername} a utilisé une cellule spéciale sur {targetUsername}"
 
-#: components/game/PlayerInformationModal.tsx:240
+#: components/game/PlayerInformationModal.tsx:244
 msgid "{targetNetDelay, plural, zero {{username}’s net delay: {targetNetDelay} seconds.} one {{username}’s net delay: {targetNetDelay} second.} other {{username}’s net delay: {targetNetDelay} seconds.}}"
 msgstr "{targetNetDelay, plural, zero {Délai réseau de {username} : {targetNetDelay} secondes.} one {Délai réseau de {username} : {targetNetDelay} seconde.} other {Délai réseau de {username} : {targetNetDelay} secondes.}}"
 
-#: components/game/RoomsList.tsx:126
+#: components/game/RoomsList.tsx:124
 msgid "{usersCount, plural, zero {no users} one {# user} other {# users}}"
 msgstr "{usersCount, plural, zero {aucun utilisateur} one {# utilisateur} other {# utilisateurs}}"
 
-#: components/game/table/TableGamePowerActions.tsx:269
+#: components/game/table/TableGamePowerActions.tsx:267
 msgid "{value, plural, one {{sourceUsername} dropped 1 stone for {targetUsername}} two {{sourceUsername} dropped 2 stones for {targetUsername}} =3 {{sourceUsername} dropped 3 stones for {targetUsername}} other {{sourceUsername} dropped stones for {targetUsername}}}"
 msgstr "{value, plural, one {{sourceUsername} a lâché 1 pierre pour {targetUsername}} two {{sourceUsername} a lâché 2 pierres pour {targetUsername}} =3 {{sourceUsername} a lâché 3 pierres pour {targetUsername}} other {{sourceUsername} a lâché des pierres pour {targetUsername}}}"
 
-#: components/game/table/TableGameOverOverlay.tsx:119
+#: components/game/table/TableGameOverOverlay.tsx:117
 msgid ""
 "{winnersCount, plural, one {Congratulations\n"
 "{firstWinner}} other {Congratulations\n"
@@ -604,7 +604,7 @@ msgstr "publicité"
 msgid "All"
 msgstr "Tout"
 
-#: components/ConversationsModal.tsx:581
+#: components/ConversationsModal.tsx:430
 msgid "Allow instant messages from my friends only."
 msgstr "Autoriser les messages instantanés uniquement de mes amis."
 
@@ -659,11 +659,11 @@ msgid "Blocked"
 msgstr "Bloqué(e)"
 
 #: components/game/table/TableSidebar.tsx:237
-#: components/game/table/TableBootUserModal.tsx:101
+#: components/game/table/TableBootUserModal.tsx:98
 msgid "Boot"
 msgstr "Expulser"
 
-#: components/game/table/TableBootUserModal.tsx:100
+#: components/game/table/TableBootUserModal.tsx:97
 msgid "Boot User"
 msgstr "Expulser l'utilisateur"
 
@@ -692,19 +692,19 @@ msgstr "Changer les touches"
 msgid "Change Password"
 msgstr "Modifier le mot de passe"
 
-#: app/[locale]/(protected)/account/settings/theme.form.tsx:99
+#: app/[locale]/(protected)/account/settings/theme.form.tsx:105
 msgid "Choose how the site looks and feels."
 msgstr "Choisissez l’apparence générale du site."
 
-#: app/[locale]/(protected)/account/settings/language.form.tsx:105
+#: app/[locale]/(protected)/account/settings/language.form.tsx:112
 msgid "Choose the language used across the site."
 msgstr "Choisissez la langue utilisée sur tout le site."
 
-#: components/ConversationsModal.tsx:438
+#: components/ConversationsModal.tsx:287
 #: components/ui/Modal.tsx:112
 #: components/ui/Modal.tsx:113
 #: components/ui/Calendar.tsx:385
-#: components/game/PlayerInformationModal.tsx:193
+#: components/game/PlayerInformationModal.tsx:197
 #: components/game/AlertModal.tsx:20
 msgid "Close"
 msgstr "Fermer"
@@ -713,8 +713,8 @@ msgstr "Fermer"
 msgid "Clump"
 msgstr "Grappe"
 
-#: components/sidebar/Sidebar.tsx:144
-#: components/sidebar/Sidebar.tsx:145
+#: components/sidebar/Sidebar.tsx:138
+#: components/sidebar/Sidebar.tsx:139
 msgid "Collapse sidebar"
 msgstr "Réduire la barre latérale"
 
@@ -756,8 +756,8 @@ msgstr "Connectez ou déconnectez les comptes sociaux utilisés pour vous connec
 msgid "Connected to the game as {username}"
 msgstr "Connecté(e) au jeu en tant que {username}"
 
-#: components/ConversationsModal.tsx:435
-#: components/layout/UserMenu.tsx:190
+#: components/ConversationsModal.tsx:284
+#: components/layout/UserMenu.tsx:145
 msgid "Conversations"
 msgstr "Conversations"
 
@@ -774,7 +774,7 @@ msgstr "Créer une table"
 msgid "Current Password"
 msgstr "Mot de passe actuel"
 
-#: components/game/table/TableControlsAndTimer.tsx:81
+#: components/game/table/TableControlsAndTimer.tsx:79
 msgid "Cycle Color:"
 msgstr "Changer la couleur :"
 
@@ -847,7 +847,7 @@ msgstr "Terminé"
 msgid "Double-click to change avatar"
 msgstr "Double-cliquez pour changer d'avatar"
 
-#: components/towers/PlayerBoard.tsx:361
+#: components/towers/PlayerBoard.tsx:353
 msgid "Double-click to view player information"
 msgstr "Double-cliquez pour voir les informations du joueur"
 
@@ -859,7 +859,7 @@ msgstr "Flèche bas"
 msgid "Drop Stones"
 msgstr "Pierres tombantes"
 
-#: components/game/table/TableControlsAndTimer.tsx:73
+#: components/game/table/TableControlsAndTimer.tsx:71
 msgid "Drop:"
 msgstr "Chuter :"
 
@@ -932,8 +932,8 @@ msgstr "Code d'erreur : <0>{errorCode}</0>"
 msgid "Exit Room"
 msgstr "Quitter la salle"
 
-#: components/sidebar/Sidebar.tsx:144
-#: components/sidebar/Sidebar.tsx:145
+#: components/sidebar/Sidebar.tsx:138
+#: components/sidebar/Sidebar.tsx:139
 msgid "Expand sidebar"
 msgstr "Élargir la barre latérale"
 
@@ -972,7 +972,7 @@ msgstr "Français"
 msgid "Friday"
 msgstr "Vendredi"
 
-#: components/game/RoomsList.tsx:139
+#: components/game/RoomsList.tsx:137
 msgid "Full"
 msgstr "Complet"
 
@@ -980,7 +980,7 @@ msgstr "Complet"
 msgid "Game option: {ratedOption}"
 msgstr "Option de jeu : {ratedOption}"
 
-#: components/game/table/TableGameOverOverlay.tsx:102
+#: components/game/table/TableGameOverOverlay.tsx:100
 msgid "Game Over"
 msgstr "Partie terminée"
 
@@ -988,7 +988,7 @@ msgstr "Partie terminée"
 msgid "Games"
 msgstr "Jeux"
 
-#: components/game/PlayerInformationModal.tsx:201
+#: components/game/PlayerInformationModal.tsx:205
 msgid "Games Completed: {gamesCompleted}"
 msgstr "Jeux terminés : {gamesCompleted}"
 
@@ -1038,15 +1038,15 @@ msgstr "Je ne peux pas parler avant la fin de la partie."
 msgid "I rule the world!"
 msgstr "Je domine le monde !"
 
-#: components/game/PlayerInformationModal.tsx:219
+#: components/game/PlayerInformationModal.tsx:223
 msgid "Idle time: {idleTime}."
 msgstr "Temps d'inactivité : {idleTime}."
 
-#: components/game/PlayerInformationModal.tsx:221
+#: components/game/PlayerInformationModal.tsx:225
 msgid "Idle time: <0>unavailable</0>"
 msgstr "Temps d'inactivité: <0>unavailable</0>"
 
-#: components/game/PlayerInformationModal.tsx:263
+#: components/game/PlayerInformationModal.tsx:267
 msgid "Ignore"
 msgstr "Ignorer"
 
@@ -1063,11 +1063,11 @@ msgid "Invitation Declined"
 msgstr "Invitation refusée"
 
 #: components/game/table/TableSidebar.tsx:230
-#: components/game/table/TableInviteUserModal.tsx:99
+#: components/game/table/TableInviteUserModal.tsx:96
 msgid "Invite"
 msgstr "Inviter"
 
-#: components/game/table/TableInviteUserModal.tsx:98
+#: components/game/table/TableInviteUserModal.tsx:95
 msgid "Invite User"
 msgstr "Inviter un utilisateur"
 
@@ -1083,17 +1083,17 @@ msgstr "Il semble que la page que vous recherchez n'existe pas ou a été dépla
 msgid "January"
 msgstr "Janvier"
 
-#: components/towers/PlayerBoard.tsx:434
-#: components/game/RoomsList.tsx:140
+#: components/towers/PlayerBoard.tsx:426
+#: components/game/RoomsList.tsx:138
 #: components/game/room/RoomTable.tsx:139
 msgid "Join"
 msgstr "Joindre"
 
-#: components/game/RoomsList.tsx:137
+#: components/game/RoomsList.tsx:135
 msgid "Joined"
 msgstr "Rejoint"
 
-#: components/sidebar/Sidebar.tsx:177
+#: components/sidebar/Sidebar.tsx:171
 msgid "Joined games"
 msgstr "Jeux rejoints"
 
@@ -1105,8 +1105,8 @@ msgstr "Juillet"
 msgid "June"
 msgstr "Juin"
 
-#: app/[locale]/(protected)/account/settings/language.form.tsx:104
-#: app/[locale]/(protected)/account/settings/language.form.tsx:113
+#: app/[locale]/(protected)/account/settings/language.form.tsx:111
+#: app/[locale]/(protected)/account/settings/language.form.tsx:120
 msgid "Language"
 msgstr "Langue"
 
@@ -1114,7 +1114,7 @@ msgstr "Langue"
 msgid "Left Arrow"
 msgstr "Flèche gauche"
 
-#: components/game/table/TableControlsAndTimer.tsx:57
+#: components/game/table/TableControlsAndTimer.tsx:55
 msgid "Left:"
 msgstr "Gauche :"
 
@@ -1143,7 +1143,7 @@ msgstr "Charger plus"
 msgid "Loading..."
 msgstr "Chargement..."
 
-#: components/game/PlayerInformationModal.tsx:203
+#: components/game/PlayerInformationModal.tsx:207
 msgid "Losses: {losses}"
 msgstr "Défaites: {losses}"
 
@@ -1159,7 +1159,7 @@ msgstr "Gérez les clés d'accès pour une connexion plus rapide et plus sécuri
 msgid "March"
 msgstr "Mars"
 
-#: components/ConversationsModal.tsx:51
+#: components/ConversationsModal.tsx:60
 msgid "Mark this conversation as read"
 msgstr "Marquer cette conversation comme lue"
 
@@ -1199,7 +1199,7 @@ msgstr "Déplacer vers la droite"
 msgid "Move Up"
 msgstr "Déplacer vers le haut"
 
-#: components/ConversationsModal.tsx:67
+#: components/ConversationsModal.tsx:73
 msgid "Mute this conversation"
 msgstr "Mettre cette conversation en sourdine"
 
@@ -1219,10 +1219,6 @@ msgstr "Nom"
 #: constants/f-key-messages.ts:13
 msgid "Need help partner?"
 msgstr "Besoin d'aide, partenaire ?"
-
-#: components/layout/UserMenu.tsx:195
-msgid "New"
-msgstr "Nouveau"
 
 #: app/[locale]/(protected)/account/profile/change-password.form.tsx:213
 msgid "New Password"
@@ -1244,7 +1240,7 @@ msgstr "Mois suivant"
 msgid "Next Year"
 msgstr "Prochain année"
 
-#: components/ConversationsModal.tsx:572
+#: components/ConversationsModal.tsx:421
 msgid "No conversations"
 msgstr "Aucune conversation"
 
@@ -1271,7 +1267,7 @@ msgid "Not Rated"
 msgstr "Non évalué"
 
 #: components/sidebar/SidebarMenuSubItem.tsx:172
-#: components/sidebar/Sidebar.tsx:54
+#: components/sidebar/Sidebar.tsx:55
 msgid "Notifications"
 msgstr "Notifications"
 
@@ -1422,7 +1418,7 @@ msgstr "Mettre la démo en pause"
 msgid "Personal Information"
 msgstr "Informations personnelles"
 
-#: components/game/PlayerInformationModal.tsx:235
+#: components/game/PlayerInformationModal.tsx:239
 msgid "Ping"
 msgstr "Envoyer un ping"
 
@@ -1430,7 +1426,7 @@ msgstr "Envoyer un ping"
 msgid "Play Now"
 msgstr "Jouer maintenant"
 
-#: components/game/PlayerInformationModal.tsx:192
+#: components/game/PlayerInformationModal.tsx:196
 msgid "Player information of {username}"
 msgstr "Informations du joueur {username}"
 
@@ -1454,7 +1450,7 @@ msgstr "Mois précédent"
 msgid "Previous Year"
 msgstr "Année précédente"
 
-#: components/sidebar/Sidebar.tsx:140
+#: components/sidebar/Sidebar.tsx:134
 msgid "Primary navigation"
 msgstr "Navigation principale"
 
@@ -1507,7 +1503,7 @@ msgstr "Jeu évalué"
 msgid "Rating"
 msgstr "Évaluation"
 
-#: components/game/PlayerInformationModal.tsx:200
+#: components/game/PlayerInformationModal.tsx:204
 msgid "Rating: {rating}"
 msgstr "Évaluation : {rating}"
 
@@ -1515,7 +1511,7 @@ msgstr "Évaluation : {rating}"
 msgid "Ratings"
 msgstr "Évaluations"
 
-#: components/towers/PlayerBoard.tsx:466
+#: components/towers/PlayerBoard.tsx:458
 msgid "Ready"
 msgstr "Prêt"
 
@@ -1548,7 +1544,7 @@ msgstr "Supprimer les pouvoirs"
 msgid "Remove Row"
 msgstr "Supprimer une rangée"
 
-#: components/ConversationsModal.tsx:87
+#: components/ConversationsModal.tsx:91
 msgid "Remove this conversation"
 msgstr "Retirer cette conversation"
 
@@ -1577,12 +1573,12 @@ msgstr "Révoquer toutes les autres sessions"
 msgid "Right Arrow"
 msgstr "Flèche droite"
 
-#: components/game/table/TableControlsAndTimer.tsx:65
+#: components/game/table/TableControlsAndTimer.tsx:63
 msgid "Right:"
 msgstr "Droite :"
 
-#: components/sidebar/Sidebar.tsx:167
-#: components/sidebar/Sidebar.tsx:171
+#: components/sidebar/Sidebar.tsx:161
+#: components/sidebar/Sidebar.tsx:165
 msgid "Rooms"
 msgstr "Salles"
 
@@ -1610,7 +1606,7 @@ msgstr "Rechercher par nom d’utilisateur..."
 msgid "Search users"
 msgstr "Rechercher des utilisateurs"
 
-#: components/ConversationsModal.tsx:571
+#: components/ConversationsModal.tsx:420
 msgid "Select a conversation"
 msgstr "Sélectionner une conversation"
 
@@ -1626,8 +1622,8 @@ msgstr "Sélectionner l'année"
 msgid "Select your profile avatar."
 msgstr "Sélectionnez votre avatar de profil."
 
-#: components/ConversationsModal.tsx:555
-#: components/game/PlayerInformationModal.tsx:212
+#: components/ConversationsModal.tsx:404
+#: components/game/PlayerInformationModal.tsx:216
 msgid "Send"
 msgstr "Envoyer"
 
@@ -1635,7 +1631,7 @@ msgstr "Envoyer"
 msgid "Send Email"
 msgstr "Envoyer le courriel"
 
-#: components/game/PlayerInformationModal.tsx:210
+#: components/game/PlayerInformationModal.tsx:214
 msgid "Send instant message"
 msgstr "Envoyer un message instantané"
 
@@ -1677,7 +1673,7 @@ msgstr "Se connecter avec courriel et mot de passe"
 msgid "Sign In with Magic Link"
 msgstr "Se connecter avec un lien magique"
 
-#: components/layout/UserMenu.tsx:204
+#: components/layout/UserMenu.tsx:159
 msgid "Sign out"
 msgstr "Se déconnecter"
 
@@ -1719,17 +1715,17 @@ msgstr "Espace"
 msgid "Space bar"
 msgstr "Barre d’espace"
 
-#: components/towers/PlayerBoard.tsx:440
+#: components/towers/PlayerBoard.tsx:432
 #: components/game/table/TableSidebar.tsx:199
 msgid "Stand"
 msgstr "Se lever"
 
-#: components/towers/PlayerBoard.tsx:450
+#: components/towers/PlayerBoard.tsx:442
 #: components/game/table/TableSidebar.tsx:180
 msgid "Start"
 msgstr "Commencer"
 
-#: components/game/PlayerInformationModal.tsx:204
+#: components/game/PlayerInformationModal.tsx:208
 msgid "Streak: {streak}"
 msgstr "Série : {streak}"
 
@@ -1830,7 +1826,7 @@ msgstr "Le courriel ou le mot de passe est invalide."
 msgid "The email you provided does not match the one associated with your account."
 msgstr "Le courriel que vous avez fourni ne correspond pas à celui associé à votre compte."
 
-#: app/[locale]/(protected)/account/settings/language.form.tsx:47
+#: app/[locale]/(protected)/account/settings/language.form.tsx:64
 msgid "The language is invalid."
 msgstr "La langue est invalide."
 
@@ -1895,11 +1891,11 @@ msgstr "Le mot de passe a été mis à jour!"
 msgid "The password is invalid."
 msgstr "Le mot de passe est invalide."
 
-#: app/[locale]/(protected)/account/settings/theme.form.tsx:88
+#: app/[locale]/(protected)/account/settings/theme.form.tsx:94
 msgid "The theme has been updated!"
 msgstr "Le thème a été mise à jour avec succès!"
 
-#: app/[locale]/(protected)/account/settings/theme.form.tsx:70
+#: app/[locale]/(protected)/account/settings/theme.form.tsx:76
 msgid "The theme is invalid."
 msgstr "Le thème est invalide."
 
@@ -1916,14 +1912,14 @@ msgstr "L'utilisateur existe déjà, mais le compte n'est pas lié au fournisseu
 msgid "The username is invalid."
 msgstr "Le nom d'utilisateur est invalide."
 
-#: app/[locale]/(protected)/account/settings/theme.form.tsx:98
-#: app/[locale]/(protected)/account/settings/theme.form.tsx:107
-#: components/ThemeToggleButton.tsx:65
+#: app/[locale]/(protected)/account/settings/theme.form.tsx:104
+#: app/[locale]/(protected)/account/settings/theme.form.tsx:113
 #: components/ThemeToggleButton.tsx:66
+#: components/ThemeToggleButton.tsx:67
 msgid "Theme"
 msgstr "Thème"
 
-#: components/ThemeToggleButton.tsx:72
+#: components/ThemeToggleButton.tsx:73
 msgid "Theme: {themeLabel}"
 msgstr "Thème: {themeLabel}"
 
@@ -1955,17 +1951,13 @@ msgstr "Dissocier"
 msgid "Unlink {label}"
 msgstr "Dissocier {label}"
 
-#: components/ConversationsModal.tsx:66
+#: components/ConversationsModal.tsx:72
 msgid "Unmute this conversation"
 msgstr "Réactiver cette conversation"
 
 #: lib/keyboard/keyboard-key-labels.ts:9
 msgid "Up Arrow"
 msgstr "Flèche haut"
-
-#: app/[locale]/(protected)/account/settings/language.form.tsx:129
-msgid "Update Language"
-msgstr "Mettre à jour la langue"
 
 #: app/[locale]/(protected)/account/profile/personal-information.form.tsx:161
 msgid "Update Profile"
@@ -1975,19 +1967,15 @@ msgstr "Mettre à jour le profil"
 msgid "Update the email address associated with your account."
 msgstr "Mettez à jour l'adresse électronique associé à votre compte."
 
-#: app/[locale]/(protected)/account/settings/theme.form.tsx:128
-msgid "Update Theme"
-msgstr "Mettre à jour le thème"
-
 #: app/[locale]/(protected)/account/profile/personal-information.form.tsx:116
 msgid "Update your personal details here."
 msgstr "Mettez à jour vos informations personnelles ici."
 
-#: components/game/table/TableControlsAndTimer.tsx:89
+#: components/game/table/TableControlsAndTimer.tsx:87
 msgid "Use Item:"
 msgstr "Utiliser l'objet :"
 
-#: components/layout/UserMenu.tsx:175
+#: components/layout/UserMenu.tsx:130
 msgid "User menu"
 msgstr "Menu utilisateur"
 
@@ -2006,8 +1994,8 @@ msgstr "Le nom d'utilisateur doit contenir entre 4 et 32 caractères et peut inc
 #: app/[locale]/(public)/(auth)/sign-in-with-magic-link/sign-in-with-magic-link.form.tsx:51
 #: app/[locale]/(public)/(auth)/reset-password/reset-password.form.tsx:67
 #: app/[locale]/(public)/(auth)/forgot-password/forgot-password.form.tsx:50
-#: app/[locale]/(protected)/account/settings/theme.form.tsx:81
-#: app/[locale]/(protected)/account/settings/language.form.tsx:58
+#: app/[locale]/(protected)/account/settings/theme.form.tsx:87
+#: app/[locale]/(protected)/account/settings/language.form.tsx:75
 #: app/[locale]/(protected)/account/profile/personal-information.form.tsx:70
 #: app/[locale]/(protected)/account/profile/passkeys.form.tsx:64
 #: app/[locale]/(protected)/account/profile/change-password.form.tsx:80
@@ -2017,15 +2005,15 @@ msgstr "Le nom d'utilisateur doit contenir entre 4 et 32 caractères et peut inc
 msgid "Validation errors occurred."
 msgstr "Des erreurs de validation se sont produites."
 
-#: components/towers/PlayerBoard.tsx:467
+#: components/towers/PlayerBoard.tsx:459
 msgid "Waiting for more players"
 msgstr "En attendant plus de joueurs"
 
-#: components/towers/PlayerBoard.tsx:468
+#: components/towers/PlayerBoard.tsx:460
 msgid "Waiting for the next game"
 msgstr "En attente de la prochaine partie"
 
-#: components/game/PlayerInformationModal.tsx:271
+#: components/game/PlayerInformationModal.tsx:275
 #: components/game/room/RoomTable.tsx:111
 msgid "Watch"
 msgstr "Regarder"
@@ -2050,7 +2038,7 @@ msgstr "Mercredi"
 msgid "Who is Watching"
 msgstr "Qui regarde"
 
-#: components/game/PlayerInformationModal.tsx:202
+#: components/game/PlayerInformationModal.tsx:206
 msgid "Wins: {wins}"
 msgstr "Victoires : {wins}"
 
@@ -2062,7 +2050,7 @@ msgstr "Travaille en équipe, partenaire."
 msgid "Would you like to join?"
 msgstr "Voudriez-vous rejoindre ?"
 
-#: components/game/Chat.tsx:166
+#: components/game/Chat.tsx:169
 msgid "Write something..."
 msgstr "Écrivez quelque chose..."
 
@@ -2078,31 +2066,31 @@ msgstr "Vous"
 msgid "You are not logged in"
 msgstr "Vous n'êtes pas connecté"
 
-#: components/game/table/TableGamePowerActions.tsx:114
+#: components/game/table/TableGamePowerActions.tsx:112
 msgid "You can add a row"
 msgstr "Vous pouvez ajouter une rangée"
 
-#: components/game/table/TableGamePowerActions.tsx:176
+#: components/game/table/TableGamePowerActions.tsx:174
 msgid "You can color blast"
 msgstr "Vous pouvez déclencher une explosion de couleur"
 
-#: components/game/table/TableGamePowerActions.tsx:160
+#: components/game/table/TableGamePowerActions.tsx:158
 msgid "You can remove a row"
 msgstr "Vous pouvez supprimer une rangée"
 
-#: components/game/table/TableGamePowerActions.tsx:180
+#: components/game/table/TableGamePowerActions.tsx:178
 msgid "You can send a color plague"
 msgstr "Vous pouvez envoyer une peste de couleur"
 
-#: components/game/table/TableGamePowerActions.tsx:144
+#: components/game/table/TableGamePowerActions.tsx:142
 msgid "You can send a Medusa piece"
 msgstr "Vous pouvez envoyer une pièce de Méduse"
 
-#: components/game/table/TableGamePowerActions.tsx:178
+#: components/game/table/TableGamePowerActions.tsx:176
 msgid "You can send a Midas piece"
 msgstr "Vous pouvez envoyer une pièce de Midas"
 
-#: components/game/table/TableGamePowerActions.tsx:106
+#: components/game/table/TableGamePowerActions.tsx:104
 msgid "You can use a special cell"
 msgstr "Vous pouvez utiliser une cellule spéciale"
 
@@ -2110,11 +2098,11 @@ msgstr "Vous pouvez utiliser une cellule spéciale"
 msgid "You can't touch me."
 msgstr "Tu ne peux pas m'atteindre."
 
-#: components/sidebar/Sidebar.tsx:136
+#: components/sidebar/Sidebar.tsx:130
 msgid "You have new notifications."
 msgstr "Vous avez de nouvelles notifications."
 
-#: components/game/table/TableGameOverOverlay.tsx:107
+#: components/game/table/TableGameOverOverlay.tsx:105
 msgid "You lose!"
 msgstr "Vous avez perdu !"
 
@@ -2137,7 +2125,7 @@ msgstr "Vous devez évaluer ce jeu."
 msgid "You must select a table type."
 msgstr "Vous devez sélectionner un type de table."
 
-#: components/game/table/TableGameOverOverlay.tsx:114
+#: components/game/table/TableGameOverOverlay.tsx:112
 msgid "You win!"
 msgstr "Vous avez gagné !"
 

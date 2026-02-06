@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { I18n } from "@lingui/core";
 import clsx from "clsx/lite";
 import { getI18nInstance } from "@/app/app-router-i18n";
-import LocaleSwitcher from "@/components/LanguageSwitcher";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import Anchor from "@/components/ui/Anchor";
@@ -17,7 +17,7 @@ export default async function LegalLayout({ params, children }: LegalLayoutProps
     <div className="grid grid-rows-[max-content_auto_max-content] h-dvh">
       <Header>
         <nav className="flex-1 flex flex-row justify-end items-center gap-2">
-          <LocaleSwitcher className="place-self-end" />
+          <LanguageSwitcher className="place-self-end" />
           <ul
             className={clsx(
               "hidden md:flex flex-row justify-end divide-x divide-white/50",

@@ -12,9 +12,8 @@ import Checkbox from "@/components/ui/Checkbox";
 import { ContextMenu, ContextMenuSection } from "@/components/ui/ContextMenu";
 import Input, { InputImperativeHandle } from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
-import { ClientToServerEvents } from "@/constants/socket/client-to-server";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
-import { useConversations } from "@/context/ConversationsContext";
+import { useConversation } from "@/context/ConversationContext";
 import { useSocket } from "@/context/SocketContext";
 import { useContextMenu } from "@/hooks/useContextMenu";
 import { SocketCallback } from "@/interfaces/socket";
@@ -26,23 +25,33 @@ import { getDateFnsLocale } from "@/translations/languages";
 import { getUnreadConversationsCount } from "@/utils/conversations";
 
 type ConversationsModalProps = {
-  conversationId?: string
+  conversationId: string
   onClose: () => void
 };
 
 export default function ConversationsModal({ conversationId, onClose }: ConversationsModalProps): ReactNode {
   const { i18n, t } = useLingui();
   const { socketRef, isConnected, session } = useSocket();
-  const { open: openConversationsModal, close: closeConversationsModal } = useConversations();
-  const [conversations, setConversations] = useState<ConversationPlainObject[]>([]);
-  const [currentConversation, setCurrentConversation] = useState<ConversationPlainObject>();
+  const {
+    conversations,
+    activeConversationId,
+    loadConversations,
+    openConversation,
+    closeConversation,
+    sendMessage,
+    markConversationAsRead,
+    muteConversation,
+    unmuteConversation,
+    removeConversation,
+    applyConversationUpdate,
+    applyConversationRemove,
+  } = useConversation();
   const [otherParticipant, setOtherParticipant] = useState<ConversationParticipantPlainObject>();
   const [conversationTime, setConversationTime] = useState<string>();
   const messageInputRef = useRef<InputImperativeHandle>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDialogElement>(null);
   const { menu, openMenu, closeMenu } = useContextMenu<ConversationPlainObject>(modalRef);
-  const currentConversationRef = useRef<ConversationPlainObject | undefined>(undefined);
 
   const menuSections: ContextMenuSection<ConversationPlainObject>[] = useMemo(
     () => [
@@ -51,10 +60,7 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
           {
             label: t({ message: "Mark this conversation as read" }),
             onClick: (conversation: ConversationPlainObject): void => {
-              socketRef.current?.emit(ClientToServerEvents.CONVERSATION_MARK_AS_READ, {
-                conversationId: conversation.id,
-                userId: session?.user.id,
-              });
+              markConversationAsRead(conversation.id);
             },
           },
           {
@@ -72,12 +78,8 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
                 conversation.participants.find(
                   (cp: ConversationParticipantPlainObject) => cp.userId === session?.user.id,
                 );
-              socketRef.current?.emit(
-                conversationParticipant?.mutedAt
-                  ? ClientToServerEvents.CONVERSATION_UNMUTE
-                  : ClientToServerEvents.CONVERSATION_MUTE,
-                { conversationId: conversation.id, userId: session?.user.id },
-              );
+
+              conversationParticipant?.mutedAt ? unmuteConversation(conversation.id) : muteConversation(conversation.id);
             },
           },
         ],
@@ -87,17 +89,19 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
           {
             label: t({ message: "Remove this conversation" }),
             onClick: (conversation: ConversationPlainObject): void => {
-              socketRef.current?.emit(ClientToServerEvents.CONVERSATION_REMOVE, {
-                conversationId: conversation.id,
-                userId: session?.user.id,
-              });
+              removeConversation(conversation.id);
             },
           },
         ],
       },
     ],
-    [socketRef, session?.user.id],
+    [session?.user.id],
   );
+
+  const currentConversation = useMemo(() => {
+    if (!activeConversationId) return undefined;
+    return conversations.get(activeConversationId);
+  }, [activeConversationId, conversations]);
 
   const translatedMessages = useMemo(() => {
     return currentConversation?.messages
@@ -117,13 +121,7 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
   }, [currentConversation]);
 
   useEffect(() => {
-    openConversationsModal();
-  }, []);
-
-  useEffect(() => {
     if (!currentConversation) return;
-
-    currentConversationRef.current = currentConversation;
 
     const otherParticipant: ConversationParticipantPlainObject | undefined = currentConversation.participants.find(
       (cp: ConversationParticipantPlainObject) => cp.userId !== session?.user.id,
@@ -141,16 +139,16 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
   }, [currentConversation?.messages.length]);
 
   useEffect(() => {
-    if (!currentConversation) return;
+    if (!activeConversationId) return;
 
     const handleVisibilityChange = (): void => {
       if (document.visibilityState === "visible") {
-        markConversationAsRead(currentConversation.id);
+        markConversationAsRead(activeConversationId);
       }
     };
 
     const handleFocus = (): void => {
-      markConversationAsRead(currentConversation.id);
+      markConversationAsRead(activeConversationId);
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -160,7 +158,7 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("focus", handleFocus);
     };
-  }, [currentConversation]);
+  }, [activeConversationId]);
 
   useEffect(() => {
     const socket: Socket | null = socketRef.current;
@@ -169,157 +167,24 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
     const socketListener: SocketListener = new SocketListener(socket);
 
     const emitInitialData = (): void => {
-      socket.emit(ClientToServerEvents.CONVERSATIONS, {}, (response: SocketCallback<ConversationPlainObject[]>) => {
-        if (response.success && response.data) {
-          setConversations(response.data);
-
-          if (conversationId) {
-            const conversation: ConversationPlainObject | undefined = response.data.find(
-              (c: ConversationPlainObject) => c.id === conversationId,
-            );
-
-            if (conversation) {
-              setCurrentConversation(conversation);
-            }
-          }
-        }
-      });
-    };
-
-    const handleMarkConversationAsRead = ({ conversationId }: { conversationId: string }): void => {
-      setConversations((prev: ConversationPlainObject[]) =>
-        prev.map((conversation: ConversationPlainObject) =>
-          conversation.id === conversationId
-            ? {
-                ...conversation,
-                participants: conversation.participants.map((cp: ConversationParticipantPlainObject) =>
-                  cp.userId === session?.user.id ? { ...cp, readAt: new Date().toISOString() } : cp,
-                ),
-              }
-            : conversation,
-        ),
-      );
-    };
-
-    const handleMuteConversation = ({ conversationId }: { conversationId: string }): void => {
-      setConversations((prev: ConversationPlainObject[]) =>
-        prev.map((c: ConversationPlainObject) =>
-          c.id === conversationId
-            ? {
-                ...c,
-                participants: c.participants.map((cp: ConversationParticipantPlainObject) =>
-                  cp.userId === session?.user.id ? { ...cp, mutedAt: new Date().toISOString() } : cp,
-                ),
-              }
-            : c,
-        ),
-      );
-
-      setCurrentConversation((prev: ConversationPlainObject | undefined) =>
-        prev?.id === conversationId
-          ? {
-              ...prev,
-              participants: prev.participants.map((cp: ConversationParticipantPlainObject) =>
-                cp.userId === session?.user.id ? { ...cp, mutedAt: new Date().toISOString() } : cp,
-              ),
-            }
-          : prev,
-      );
-    };
-
-    const handleUnmuteConversation = ({ conversationId }: { conversationId: string }): void => {
-      setConversations((prev: ConversationPlainObject[]) =>
-        prev.map((c: ConversationPlainObject) =>
-          c.id === conversationId
-            ? {
-                ...c,
-                participants: c.participants.map((cp: ConversationParticipantPlainObject) =>
-                  cp.userId === session?.user.id ? { ...cp, mutedAt: null } : cp,
-                ),
-              }
-            : c,
-        ),
-      );
-
-      setCurrentConversation((prev: ConversationPlainObject | undefined) =>
-        prev?.id === conversationId
-          ? {
-              ...prev,
-              participants: prev.participants.map((cp: ConversationParticipantPlainObject) =>
-                cp.userId === session?.user.id ? { ...cp, mutedAt: null } : cp,
-              ),
-            }
-          : prev,
-      );
-    };
-
-    const handleRemoveConversation = ({ conversationId }: { conversationId: string }): void => {
-      setConversations((prev: ConversationPlainObject[]) =>
-        prev.filter((c: ConversationPlainObject) => c.id !== conversationId),
-      );
-
-      setCurrentConversation((prev: ConversationPlainObject | undefined) =>
-        prev?.id === conversationId ? undefined : prev,
-      );
-    };
-
-    const handleRestoreConversation = ({ conversation }: { conversation: ConversationPlainObject }): void => {
-      setConversations((prev: ConversationPlainObject[]) => {
-        const isExist: boolean = prev.some((c: ConversationPlainObject) => c.id === conversation.id);
-        if (isExist) return prev;
-        return [...prev, conversation];
-      });
+      loadConversations();
+      openConversation(conversationId);
     };
 
     const handleUpdateConversation = ({ conversation }: { conversation: ConversationPlainObject }): void => {
-      setConversations((prev: ConversationPlainObject[]) => {
-        const existing: ConversationPlainObject | undefined = prev.find(
-          (c: ConversationPlainObject) => c.id === conversation.id,
-        );
+      applyConversationUpdate(conversation);
+    };
 
-        if (!existing) {
-          return [...prev, conversation];
-        }
-
-        const mergedInstantMessages: InstantMessagePlainObject[] = [
-          ...existing.messages,
-          ...conversation.messages.filter(
-            (im: InstantMessagePlainObject) =>
-              !existing.messages.some((m: InstantMessagePlainObject) => m.id === im.id),
-          ),
-        ];
-
-        const mergedConversation: ConversationPlainObject = {
-          ...existing,
-          ...conversation,
-          messages: mergedInstantMessages,
-        };
-
-        return prev.map((c: ConversationPlainObject) => (c.id === conversation.id ? mergedConversation : c));
-      });
-
-      setCurrentConversation((prev: ConversationPlainObject | undefined) =>
-        prev?.id === conversation.id
-          ? {
-              ...prev,
-              messages: [
-                ...prev.messages,
-                ...conversation.messages.filter(
-                  (im: InstantMessagePlainObject) =>
-                    !prev.messages.some((m: InstantMessagePlainObject) => m.id === im.id),
-                ),
-              ],
-            }
-          : prev,
-      );
+    const handleRemoveConversation = ({ conversationId }: { conversationId: string }): void => {
+      applyConversationRemove(conversationId);
     };
 
     const attachListeners = (): void => {
-      socketListener.on(ServerToClientEvents.CONVERSATION_MARK_AS_READ, handleMarkConversationAsRead);
-      socketListener.on(ServerToClientEvents.CONVERSATION_MUTED, handleMuteConversation);
-      socketListener.on(ServerToClientEvents.CONVERSATION_UNMUTED, handleUnmuteConversation);
+      socketListener.on(ServerToClientEvents.CONVERSATION_MARK_AS_READ, handleUpdateConversation);
+      socketListener.on(ServerToClientEvents.CONVERSATION_MUTED, handleUpdateConversation);
+      socketListener.on(ServerToClientEvents.CONVERSATION_UNMUTED, handleUpdateConversation);
       socketListener.on(ServerToClientEvents.CONVERSATION_REMOVED, handleRemoveConversation);
-      socketListener.on(ServerToClientEvents.CONVERSATION_RESTORED, handleRestoreConversation);
+      socketListener.on(ServerToClientEvents.CONVERSATION_RESTORED, handleUpdateConversation);
       socketListener.on(ServerToClientEvents.CONVERSATION_MESSAGE_SENT, handleUpdateConversation);
     };
 
@@ -338,15 +203,6 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
       socketListener.dispose();
     };
   }, [isConnected, session?.user.id]);
-
-  const markConversationAsRead = (conversationId: string): void => {
-    if (currentConversation?.id === conversationId && document.visibilityState === "visible" && document.hasFocus()) {
-      socketRef.current?.emit(ClientToServerEvents.CONVERSATION_MARK_AS_READ, {
-        conversationId,
-        userId: session?.user.id,
-      });
-    }
-  };
 
   const getLastMessageSnippet = (conversation: ConversationPlainObject): string => {
     const lastMessage: InstantMessagePlainObject = conversation.messages[conversation.messages.length - 1];
@@ -386,22 +242,23 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
 
   const handleSendMessage = async (): Promise<void> => {
     const text: string | undefined = messageInputRef.current?.value?.trim();
+    if (!text || !activeConversationId) return;
 
-    if (text !== "") {
-      socketRef.current?.emit(
-        ClientToServerEvents.CONVERSATION_MESSAGE_SEND,
-        { conversationId: currentConversation?.id, message: text },
-        (response: SocketCallback) => {
-          if (response.success) {
-            messageInputRef.current?.clear();
-          }
-        },
-      );
-    }
+    sendMessage(
+      {
+        conversationId: activeConversationId,
+        message: text,
+      },
+      (response: SocketCallback<string>) => {
+        if (response.success) {
+          messageInputRef.current?.clear();
+        }
+      },
+    );
   };
 
   const handleCloseModal = (): void => {
-    closeConversationsModal();
+    closeConversation();
     onClose();
   };
 
@@ -420,7 +277,7 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
     <Modal
       ref={modalRef}
       title={
-        currentConversation
+        activeConversationId
           ? i18n._("Instant message with {username} started {time}", {
               username: otherParticipant?.user?.username,
               time: conversationTime,
@@ -442,18 +299,18 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
         >
           <aside className="overflow-y-auto w-60">
             <ul className={clsx("divide-y divide-slate-600", "dark:divide-dark-card-border")}>
-              {conversations.map((conversation: ConversationPlainObject) => {
+              {Array.from(conversations.values()).map((conversation: ConversationPlainObject) => {
                 const currentParticipant: ConversationParticipantPlainObject | undefined =
                   conversation.participants.find(
                     (cp: ConversationParticipantPlainObject) => cp.userId === session?.user.id,
                   );
                 const otherParticipant: ConversationParticipantPlainObject | undefined = conversation.participants.find(
-                  (cp: ConversationParticipantPlainObject) => cp.user.id !== session?.user.id,
+                  (cp: ConversationParticipantPlainObject) => cp.userId !== session?.user.id,
                 );
                 const otherParticipantUsername: string | undefined = otherParticipant?.user.username;
                 const snippet: string = getLastMessageSnippet(conversation);
                 const unreadCount: number = getUnreadConversationsCount(conversation, session?.user.id);
-                const isCurrentConversation: boolean = currentConversation?.id === conversation.id;
+                const isCurrentConversation: boolean = activeConversationId === conversation.id;
                 const isWindowActive: boolean = document.visibilityState === "visible" && document.hasFocus();
                 const isShowBadge: boolean = unreadCount > 0 && (!isCurrentConversation || !isWindowActive);
 
@@ -462,9 +319,9 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
                     key={conversation.id}
                     className={clsx(
                       "flex flex-col gap-2 w-full p-2 cursor-pointer",
-                      currentConversation?.id === conversation.id && "bg-slate-100 dark:bg-slate-700",
+                      activeConversationId === conversation.id && "bg-slate-100 dark:bg-slate-700",
                     )}
-                    onClick={() => setCurrentConversation(conversation)}
+                    onClick={() => openConversation(conversation.id)}
                     onContextMenu={(event: MouseEvent) => handleContextMenu(event, conversation)}
                   >
                     <div className="flex justify-between items-center">
@@ -560,7 +417,7 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
               <div
                 className={clsx("flex justify-center items-center h-full text-gray-500", "dark:text-dark-text-muted")}
               >
-                {conversations.length > 0
+                {Array.from(conversations.values()).length > 0
                   ? t({ message: "Select a conversation" })
                   : t({ message: "No conversations" })}
               </div>

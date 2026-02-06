@@ -126,10 +126,10 @@ export class YoupiSocketHandler {
     }
   };
 
-  private handleGetUnreadConversations = async (
+  private handleGetUnreadConversations = (
     {},
     callback: <T>({ success, message, data }: SocketCallback<T>) => void,
-  ): Promise<void> => {
+  ): void => {
     try {
       const unreadConversationsCount: number = ConversationManager.getUnreadConversationsCount(this.user.id);
       callback({ success: true, data: unreadConversationsCount });
@@ -152,44 +152,20 @@ export class YoupiSocketHandler {
     }
   };
 
-  private handleMarkConversationAsRead = async ({
-    conversationId,
-    userId,
-  }: {
-    conversationId: string
-    userId: string
-  }): Promise<void> => {
-    await ConversationManager.markAsRead(conversationId, userId);
+  private handleMarkConversationAsRead = async ({ conversationId }: { conversationId: string }): Promise<void> => {
+    await ConversationManager.markAsRead(conversationId, this.user.id);
   };
 
-  private handleMuteConversation = async ({
-    conversationId,
-    userId,
-  }: {
-    conversationId: string
-    userId: string
-  }): Promise<void> => {
-    await ConversationManager.mute(conversationId, userId);
+  private handleMuteConversation = async ({ conversationId }: { conversationId: string }): Promise<void> => {
+    await ConversationManager.mute(conversationId, this.user.id);
   };
 
-  private handleUnmuteConversation = async ({
-    conversationId,
-    userId,
-  }: {
-    conversationId: string
-    userId: string
-  }): Promise<void> => {
-    await ConversationManager.unmute(conversationId, userId);
+  private handleUnmuteConversation = async ({ conversationId }: { conversationId: string }): Promise<void> => {
+    await ConversationManager.unmute(conversationId, this.user.id);
   };
 
-  private handleRemoveConversation = async ({
-    conversationId,
-    userId,
-  }: {
-    conversationId: string
-    userId: string
-  }): Promise<void> => {
-    await ConversationManager.remove(conversationId, userId);
+  private handleRemoveConversation = async ({ conversationId }: { conversationId: string }): Promise<void> => {
+    await ConversationManager.remove(conversationId, this.user.id);
   };
 
   private handleSendInstantMessage = (

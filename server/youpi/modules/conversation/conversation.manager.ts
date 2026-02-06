@@ -111,11 +111,14 @@ export class ConversationManager {
   public static async markAsRead(conversationId: string, userId: string): Promise<void> {
     ConversationParticipantManager.markConversationAsRead(conversationId, userId);
 
+    const conversation: Conversation | undefined = this.get(conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
     const unreadConversationsCount: number = ConversationManager.getUnreadConversationsCount(userId);
 
     await publishRedisEvent(ServerInternalEvents.CONVERSATION_MARK_AS_READ, {
       userId,
-      conversationId,
+      conversation: conversation.toPlainObject(),
       unreadConversationsCount,
     });
   }
@@ -123,11 +126,14 @@ export class ConversationManager {
   public static async mute(conversationId: string, userId: string): Promise<void> {
     ConversationParticipantManager.muteConversationForUser(conversationId, userId);
 
+    const conversation: Conversation | undefined = this.get(conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
     const unreadConversationsCount: number = ConversationManager.getUnreadConversationsCount(userId);
 
     await publishRedisEvent(ServerInternalEvents.CONVERSATION_MUTE, {
       userId,
-      conversationId,
+      conversation: conversation.toPlainObject(),
       unreadConversationsCount,
     });
   }
@@ -135,11 +141,14 @@ export class ConversationManager {
   public static async unmute(conversationId: string, userId: string): Promise<void> {
     ConversationParticipantManager.unmuteConversationForUser(conversationId, userId);
 
+    const conversation: Conversation | undefined = this.get(conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
     const unreadConversationsCount: number = ConversationManager.getUnreadConversationsCount(userId);
 
     await publishRedisEvent(ServerInternalEvents.CONVERSATION_UNMUTE, {
       userId,
-      conversationId,
+      conversation: conversation.toPlainObject(),
       unreadConversationsCount,
     });
   }

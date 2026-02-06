@@ -3,13 +3,12 @@ import { WebsiteTheme } from "db/enums";
 import { Mock, vi } from "vitest";
 import { ThemeForm } from "@/app/[locale]/(protected)/account/settings/theme.form";
 import { ModalProvider } from "@/context/ModalContext";
-import { mockFetch, mockFetchResponse } from "@/test/mocks/fetch";
-import { mockUseRouter } from "@/test/mocks/router";
+import { mockFetchResponse } from "@/test/mocks/fetch";
 import { mockSession } from "@/test/mocks/session";
 
 interface MockSettingsResponse {
-  data: { theme: WebsiteTheme }
   success: boolean
+  data: { theme: WebsiteTheme }
 }
 
 const mockMutate: Mock = vi.fn();
@@ -22,10 +21,6 @@ let mockSettingsResponse: MockSettingsResponse = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let mockError: any = null;
 let mockIsMutating: boolean = false;
-
-vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(() => mockUseRouter),
-}));
 
 vi.mock("next-themes", () => ({
   useTheme: vi.fn(() => ({
@@ -47,7 +42,6 @@ vi.mock("@/hooks/useUserSettings", () => ({
 
 describe("Theme Form", () => {
   beforeEach(() => {
-    HTMLElement.prototype.scrollIntoView = vi.fn();
     vi.clearAllMocks();
     mockSettingsResponse = {
       data: { theme: WebsiteTheme.SYSTEM },
@@ -57,10 +51,6 @@ describe("Theme Form", () => {
     mockIsMutating = false;
   });
 
-  afterEach(() => {
-    mockFetch.mockReset();
-  });
-
   it("should render the form with all elements", () => {
     render(
       <ModalProvider>
@@ -68,8 +58,8 @@ describe("Theme Form", () => {
       </ModalProvider>,
     );
 
+    expect(screen.getByTestId("settings_form_theme")).toBeInTheDocument();
     expect(screen.getByTestId("settings_select_theme")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Update Theme/i })).toBeInTheDocument();
     expect(screen.queryByText("The theme has been updated!")).not.toBeInTheDocument();
   });
 
@@ -81,7 +71,7 @@ describe("Theme Form", () => {
 
     mockUpdateSettings.mockResolvedValue(mockFetchResponse(mockResponse));
 
-    const { rerender } = render(
+    render(
       <ModalProvider>
         <ThemeForm session={mockSession} />
       </ModalProvider>,
@@ -89,24 +79,12 @@ describe("Theme Form", () => {
 
     fireEvent.click(screen.getByTestId("settings_select_theme"));
     fireEvent.click(screen.getByText(/Light/i));
-    fireEvent.click(screen.getByRole("button", { name: /Update Theme/i }));
 
     await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledTimes(1));
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({
       theme: WebsiteTheme.LIGHT,
     });
-
-    mockSettingsResponse = {
-      data: { theme: WebsiteTheme.LIGHT },
-      success: true,
-    };
-
-    rerender(
-      <ModalProvider>
-        <ThemeForm session={mockSession} />
-      </ModalProvider>,
-    );
 
     await waitFor(() => {
       expect(screen.getByText("The theme has been updated!")).toBeInTheDocument();
@@ -121,21 +99,16 @@ describe("Theme Form", () => {
       return Promise.reject(new Error(errorMessage));
     });
 
-    const { rerender } = render(
+    render(
       <ModalProvider>
         <ThemeForm session={mockSession} />
       </ModalProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Update Theme/i }));
+    fireEvent.click(screen.getByTestId("settings_select_theme"));
+    fireEvent.click(screen.getByText(/Light/i));
 
     await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledTimes(1));
-
-    rerender(
-      <ModalProvider>
-        <ThemeForm session={mockSession} />
-      </ModalProvider>,
-    );
 
     await waitFor(() => {
       expect(screen.getByText(errorMessage)).toBeInTheDocument();

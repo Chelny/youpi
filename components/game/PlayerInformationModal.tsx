@@ -13,6 +13,7 @@ import Modal from "@/components/ui/Modal";
 import { ROUTE_TOWERS } from "@/constants/routes";
 import { ClientToServerEvents } from "@/constants/socket/client-to-server";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
+import { useConversation } from "@/context/ConversationContext";
 import { useModal } from "@/context/ModalContext";
 import { useSocket } from "@/context/SocketContext";
 import { SocketCallback } from "@/interfaces/socket";
@@ -37,6 +38,7 @@ export default function PlayerInformationModal({
   const { i18n, t } = useLingui();
   const router = useRouter();
   const { openModal } = useModal();
+  const { sendMessage } = useConversation();
   const [isCurrentUser, setIsCurrentUser] = useState<boolean>(false);
   const [message, setMessage] = useState<string | undefined>(undefined);
   const [targetNetDelay, setTargetNetDelay] = useState<number | null>(null);
@@ -132,9 +134,14 @@ export default function PlayerInformationModal({
   }, [isConnected, selectedPlayer?.id]);
 
   const handleSendMessage = (): void => {
-    socketRef.current?.emit(
-      ClientToServerEvents.CONVERSATION_MESSAGE_SEND,
-      { recipientId: selectedPlayer?.id, message },
+    const text: string | undefined = message?.trim();
+    if (!text) return;
+
+    sendMessage(
+      {
+        recipientId: selectedPlayer?.id,
+        message: text,
+      },
       (response: SocketCallback<string>) => {
         if (response.success && response.data) {
           onCancel?.();

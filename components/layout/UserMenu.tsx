@@ -2,29 +2,26 @@
 
 import { ReactNode, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
 import clsx from "clsx/lite";
 import { BsChatLeftDots } from "react-icons/bs";
 import { PiSignOut } from "react-icons/pi";
 import { RiUserLine } from "react-icons/ri";
-import { Socket } from "socket.io-client";
 import ConversationsModal from "@/components/ConversationsModal";
 import Anchor from "@/components/ui/Anchor";
 import { Avatar, AVATARS } from "@/constants/avatars";
 import { ROUTE_ACCOUNT, ROUTE_PROFILE } from "@/constants/routes";
 import { ClientToServerEvents } from "@/constants/socket/client-to-server";
-import { ServerToClientEvents } from "@/constants/socket/server-to-client";
-import { useConversations } from "@/context/ConversationsContext";
+import { useConversation } from "@/context/ConversationContext";
 import { useModal } from "@/context/ModalContext";
 import { useSocket } from "@/context/SocketContext";
-import { SocketCallback } from "@/interfaces/socket";
 import { authClient } from "@/lib/auth-client";
-import { SocketListener } from "@/lib/socket/socket-listener";
 
 export default function UserMenu(): ReactNode {
   const { openModal } = useModal();
-  const { socketRef, isConnected, session, userAvatars } = useSocket();
+  const { socketRef, session, userAvatars } = useSocket();
   const { i18n, t } = useLingui();
+  const { unreadConversationsCount } = useConversation();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -34,8 +31,6 @@ export default function UserMenu(): ReactNode {
   const avatarId: string | undefined =
     (userId ? userAvatars[userId] : undefined) ?? session?.user.userSettings?.avatarId;
   const selectedAvatar: Avatar = AVATARS.find((avatar: Avatar) => avatar.id === avatarId) ?? AVATARS[0];
-  const [isShowUnreadConversationsBadge, setIsShowUnreadConversationsBadge] = useState<boolean>(false);
-  const { isOpen: isConversationsModalOpen } = useConversations();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -63,48 +58,6 @@ export default function UserMenu(): ReactNode {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
-
-  useEffect(() => {
-    const socket: Socket | null = socketRef.current;
-    if (!isConnected || !socket) return;
-
-    const socketListener: SocketListener = new SocketListener(socket);
-
-    const emitInitialData = (): void => {
-      socket.emit(ClientToServerEvents.CONVERSATIONS_UNREAD, {}, (response: SocketCallback<number>) => {
-        if (response.success && response.data) {
-          setIsShowUnreadConversationsBadge(response.data > 0);
-        }
-      });
-    };
-
-    const handleUpdateUnreadConversations = ({
-      unreadConversationsCount,
-    }: {
-      unreadConversationsCount: number
-    }): void => {
-      setIsShowUnreadConversationsBadge(unreadConversationsCount > 0);
-    };
-
-    const attachListeners = (): void => {
-      socketListener.on(ServerToClientEvents.CONVERSATIONS_UNREAD, handleUpdateUnreadConversations);
-    };
-
-    const onConnect = (): void => {
-      attachListeners();
-      emitInitialData();
-    };
-
-    if (socket.connected) {
-      onConnect();
-    } else {
-      socketListener.on("connect", onConnect);
-    }
-
-    return () => {
-      socketListener.dispose();
-    };
-  }, [isConnected]);
 
   const handleOpenConversations = (): void => {
     setIsOpen(false);
@@ -145,19 +98,17 @@ export default function UserMenu(): ReactNode {
           }
         }}
       >
-        <div className="relative">
-          <div className="grid place-items-center rounded-full overflow-hidden" style={{ width: 40, height: 40 }}>
-            <Image
-              src={selectedAvatar.src}
-              width={40}
-              height={40}
-              alt={selectedAvatar.description}
-              className="rtl:-scale-x-100"
-              priority
-            />
-          </div>
-          {isShowUnreadConversationsBadge && (
-            <span className="absolute -top-0.5 -end-0.5 w-2.5 h-2.5 ring-2 ring-gray-900 rounded-full bg-red-500" />
+        <div className="relative w-10 h-10 rtl:-scale-x-100">
+          <Image src={selectedAvatar.src} width={40} height={40} alt={selectedAvatar.description} priority />
+          {unreadConversationsCount > 0 && (
+            <span
+              className={clsx(
+                "absolute -top-1.5 -right-1.5 left-auto px-1.5 py-0.5 rounded-full bg-red-500 text-xs font-medium text-white",
+                "rtl:-scale-x-100",
+              )}
+            >
+              {unreadConversationsCount > 99 ? "99+" : unreadConversationsCount}
+            </span>
           )}
         </div>
 
@@ -188,9 +139,9 @@ export default function UserMenu(): ReactNode {
             label={t({ message: "Conversations" })}
             Icon={BsChatLeftDots}
             rightSlot={
-              isShowUnreadConversationsBadge ? (
-                <span className="text-xs rounded-full bg-red-500/20 border border-red-500/30 px-2 py-0.5">
-                  <Trans>New</Trans>
+              unreadConversationsCount > 0 ? (
+                <span className="px-1.5 py-0.5 border border-red-500/30 rounded-full bg-red-500/20 text-xs">
+                  {unreadConversationsCount > 99 ? "99+" : unreadConversationsCount}
                 </span>
               ) : null
             }
@@ -268,9 +219,7 @@ function MenuButton({
       }}
     >
       <MenuRow danger={danger}>
-        <div className="text-white/90">
-          <Icon className="h-5 w-5 rtl:-scale-y-100 rtl:-rotate-180" aria-hidden="true" />
-        </div>
+        <Icon className="h-5 w-5 text-white/90 rtl:-scale-y-100 rtl:-rotate-180" aria-hidden="true" />
         <span className="flex-1">{label}</span>
         {rightSlot}
       </MenuRow>

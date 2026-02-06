@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, ReactNode, useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useLingui as LinguiServer } from "@lingui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Value, ValueError } from "@sinclair/typebox/value";
 import {
@@ -11,7 +12,6 @@ import {
 } from "@/app/[locale]/(protected)/account/settings/language.schema";
 import AccountSectionHeader from "@/components/AccountSectionHeader";
 import AlertMessage from "@/components/ui/AlertMessage";
-import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import { INITIAL_FORM_STATE } from "@/constants/api";
 import { APP_STORAGE_KEYS } from "@/constants/app";
@@ -26,9 +26,26 @@ type LanguageFormProps = {
 export function LanguageForm({ session }: LanguageFormProps): ReactNode {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [formState, setFormState] = useState<ApiResponse>(INITIAL_FORM_STATE);
-  const { i18n, t } = useLingui();
-  const router = useRouter();
+  const { t } = useLingui();
+  const { i18n } = LinguiServer();
   const pathname: string = usePathname();
+  const formRef = useRef<HTMLFormElement>(null);
+  const [language, setLanguage] = useState<string>(session?.user.language ?? DEFAULT_LOCALE);
+
+  useEffect(() => {
+    const savedState: string | null = localStorage.getItem(APP_STORAGE_KEYS.SETTINGS_FORM_STATE);
+
+    if (savedState) {
+      setFormState(JSON.parse(savedState));
+      localStorage.removeItem(APP_STORAGE_KEYS.SETTINGS_FORM_STATE);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (language !== session?.user.language) {
+      formRef.current?.requestSubmit();
+    }
+  }, [language]);
 
   const handleUpdateLanguage = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -70,7 +87,6 @@ export function LanguageForm({ session }: LanguageFormProps): ReactNode {
         .then(async (response: Response) => {
           const data: ApiResponse = await response.json();
           setIsLoading(false);
-          setFormState(data);
 
           if (payload.language !== session?.user.language) {
             // Show form success message after page reload from language change
@@ -79,32 +95,29 @@ export function LanguageForm({ session }: LanguageFormProps): ReactNode {
             // Dynamically change language
             const pathNameWithoutLocale: string[] = pathname?.split("/")?.slice(2) ?? [];
             const newPath: string = `/${payload.language}/${pathNameWithoutLocale.join("/")}`;
-            router.push(newPath);
+            window.location.href = newPath;
           }
         })
         .catch(async (error) => {
           const data: ApiResponse = await error.json();
           setIsLoading(false);
-          setFormState(data);
+          localStorage.setItem(APP_STORAGE_KEYS.SETTINGS_FORM_STATE, JSON.stringify(data));
         });
     }
   };
-
-  useEffect(() => {
-    const savedState: string | null = localStorage.getItem(APP_STORAGE_KEYS.SETTINGS_FORM_STATE);
-
-    if (savedState) {
-      setFormState(JSON.parse(savedState));
-      localStorage.removeItem(APP_STORAGE_KEYS.SETTINGS_FORM_STATE);
-    }
-  }, []);
 
   return (
     <AccountSectionHeader
       title={<Trans>Language</Trans>}
       description={<Trans>Choose the language used across the site.</Trans>}
     >
-      <form className="grid w-full" noValidate onSubmit={handleUpdateLanguage}>
+      <form
+        ref={formRef}
+        className="grid w-full"
+        noValidate
+        data-testid="settings_form_language"
+        onSubmit={handleUpdateLanguage}
+      >
         {formState?.message && (
           <AlertMessage type={formState.success ? "success" : "error"}>{formState.message}</AlertMessage>
         )}
@@ -115,6 +128,10 @@ export function LanguageForm({ session }: LanguageFormProps): ReactNode {
           required
           disabled={isLoading}
           dataTestId="settings_select_language"
+          onChange={(value: string) => {
+            if (!value) return;
+            setLanguage(value);
+          }}
         >
           {languages.map((language: Language) => (
             <Select.Option key={language.locale} value={language.locale}>
@@ -125,9 +142,6 @@ export function LanguageForm({ session }: LanguageFormProps): ReactNode {
             </Select.Option>
           ))}
         </Select>
-        <Button type="submit" className="max-md:w-full md:place-self-end" disabled={isLoading}>
-          <Trans>Update Language</Trans>
-        </Button>
       </form>
     </AccountSectionHeader>
   );

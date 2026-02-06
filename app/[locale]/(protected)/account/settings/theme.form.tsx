@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, ReactNode, useEffect, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Value, ValueError } from "@sinclair/typebox/value";
 import { WebsiteTheme } from "db/enums";
@@ -14,7 +14,6 @@ import {
 } from "@/app/[locale]/(protected)/account/settings/theme.schema";
 import AccountSectionHeader from "@/components/AccountSectionHeader";
 import AlertMessage from "@/components/ui/AlertMessage";
-import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import { INITIAL_FORM_STATE } from "@/constants/api";
 import { useUserSettings } from "@/hooks/useUserSettings";
@@ -33,6 +32,7 @@ export function ThemeForm({ session }: ThemeFormProps): ReactNode {
     settingsResponse?.data?.theme ?? session?.user.userSettings?.theme ?? WebsiteTheme.SYSTEM;
   const [themeValue, setThemeValue] = useState<WebsiteTheme>(currentTheme);
   const { setTheme } = useTheme();
+  const formRef = useRef<HTMLFormElement>(null);
 
   const labelMap: Record<WebsiteTheme, { icon: IconType; label: string }> = {
     [WebsiteTheme.LIGHT]: {
@@ -52,6 +52,12 @@ export function ThemeForm({ session }: ThemeFormProps): ReactNode {
   useEffect(() => {
     setThemeValue(currentTheme);
   }, [currentTheme]);
+
+  useEffect(() => {
+    if (themeValue !== currentTheme) {
+      formRef.current?.requestSubmit();
+    }
+  }, [themeValue]);
 
   const handleUpdateTheme = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -98,7 +104,13 @@ export function ThemeForm({ session }: ThemeFormProps): ReactNode {
       title={<Trans>Theme</Trans>}
       description={<Trans>Choose how the site looks and feels.</Trans>}
     >
-      <form className="grid w-full" noValidate onSubmit={handleUpdateTheme}>
+      <form
+        ref={formRef}
+        className="grid w-full"
+        noValidate
+        data-testid="settings_form_theme"
+        onSubmit={handleUpdateTheme}
+      >
         {formState?.message && (
           <AlertMessage type={formState.success ? "success" : "error"}>{formState.message}</AlertMessage>
         )}
@@ -124,9 +136,6 @@ export function ThemeForm({ session }: ThemeFormProps): ReactNode {
             );
           })}
         </Select>
-        <Button type="submit" className="max-md:w-full md:place-self-end" disabled={isLoading}>
-          <Trans>Update Theme</Trans>
-        </Button>
       </form>
     </AccountSectionHeader>
   );
