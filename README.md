@@ -22,7 +22,7 @@
   <h1 align="center" style="border-bottom: none;">Youpi!</h1>
 
   <p align="center">
-    <del>View Demo</del>
+    <del>View website</del>
     ·
     <a href="https://github.com/Chelny/youpi/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     ·
@@ -49,7 +49,7 @@
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
-    <li><a href="#screenshots">Screenshots</a></li>
+    <li><a href="#screenshots-and-video">Screenshots and video</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -147,13 +147,15 @@ This project is inspired by Yahoo! Towers but is an independent work. It is not 
 
 <p align="end">(<a href="#readme-top">back to top</a>)</p>
 
-## Screenshots
+## Screenshots and Video
 
 | | | |
 | :--: | :--: | :--: |
 | [<img src="public/images/readme/youpi-sign-in-page.webp" alt="Sign In" width="400">](public/images/readme/youpi-sign-in-page.webp) | [<img src="public/images/readme/towers-rooms.webp" alt="Rooms List" width="400">](public/images/readme/towers-rooms.webp) | [<img src="public/images/readme/towers-social-room.webp" alt="Social Room" width="400">](public/images/readme/towers-social-room.webp) |
 | [<img src="public/images/readme/towers-social-room-demo.webp" alt="Demo" width="400">](public/images/readme/towers-social-room-demo.webp) | [<img src="public/images/readme/towers-social-room-table-countdown.webp" alt="Countdown" width="400">](public/images/readme/towers-social-room-table-countdown.webp) | [<img src="public/images/readme/towers-social-room-table-hoo.webp" alt="Hoo" width="400">](public/images/readme/towers-social-room-table-hoo.webp) |
 | [<img src="public/images/readme/towers-social-room-table-game-over.webp" alt="Game Over" width="400">](public/images/readme/towers-social-room-table-game-over.webp) | [<img src="public/images/readme/towers-intermediate-room.webp" alt="Intermediate Room" width="400">](public/images/readme/towers-intermediate-room.webp) | [<img src="public/images/readme/towers-intermediate-room-table-waiting.webp" alt="Intermediate Waiting" width="400">](public/images/readme/towers-intermediate-room-table-waiting.webp)
+
+You can view the video of the Towers game [here](public/videos/readme-demo.mp4). The project is not fully working with the database and the game contain bugs.
 
 <p align="end">(<a href="#readme-top">back to top</a>)</p>
 
