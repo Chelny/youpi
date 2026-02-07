@@ -234,6 +234,10 @@ export default function Table(): ReactNode {
         tableType: table.tableType,
         isRated: table.isRated,
       });
+      setPlayers(table.players || []);
+      setChatMessages(table.chatMessages || []);
+      setSeats(table.seats || []);
+      setInvitations(table.invitations || []);
     };
 
     const handleUpdateTableSeat = ({
