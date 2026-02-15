@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { handleApiError, handleUnauthorizedApiError } from "@/lib/api-error";
 import { auth, Session } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { Room, RoomPlainObject } from "@/server/towers/modules/room/room.entity";
 import { RoomFactory } from "@/server/towers/modules/room/room.factory";
+import { RoomManager } from "@/server/towers/modules/room/room.manager";
 import { getTowersRoomIncludes, TowersRoomWithRelations } from "@/types/prisma";
 
 export async function GET(
@@ -17,18 +19,15 @@ export async function GET(
   if (!session) return handleUnauthorizedApiError();
 
   try {
-    const room: TowersRoomWithRelations = await prisma.towersRoom.findUniqueOrThrow({
+    const dbRoom: TowersRoomWithRelations = await prisma.towersRoom.findUniqueOrThrow({
       where: { id },
       include: getTowersRoomIncludes(),
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: RoomFactory.convertToPlainObject(room, session.user.id),
-      },
-      { status: 200 },
-    );
+    const room: Room = RoomFactory.createRoomWithRelations(dbRoom);
+    const data: RoomPlainObject = await RoomManager.roomViewForPlayer(room, session.user.id);
+
+    return NextResponse.json({ success: true, data }, { status: 200 });
   } catch (error) {
     return handleApiError(error);
   }

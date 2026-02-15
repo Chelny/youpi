@@ -122,15 +122,6 @@ export type TowersRoomWithRelations = Prisma.TowersRoomGetPayload<{
   include: ReturnType<typeof getTowersRoomIncludes>
 }>;
 
-export const towersRoomsListIncludes: Prisma.TowersRoomInclude = {
-  players: { include: getTowersRoomPlayerIncludes() },
-  _count: { select: { players: true } },
-};
-
-export type TowersRoomsListWithCount = Prisma.TowersRoomGetPayload<{
-  include: typeof towersRoomsListIncludes
-}>;
-
 // ======================================
 // ROOM CHAT MESSAGE
 // ======================================
@@ -154,7 +145,6 @@ export const getTowersTableIncludes = () => ({
   players: { include: getTowersTablePlayerIncludes() },
   chatMessages: { include: getTowersTableChatMessageIncludes() },
   invitations: { include: getTowersTableInvitationIncludes() },
-  // boots: { include: getTowersTableBootIncludes() },
   game: true,
 });
 
@@ -164,20 +154,19 @@ export type TowersTableWithRelations = Prisma.TowersTableGetPayload<{
 
 export const getTowersTableLiteIncludes = () => ({
   room: true,
-  hostPlayer: { include: { user: true } },
-  players: { include: getTowersTablePlayerLiteIncludes() },
+  hostPlayer: { include: getTowersPlayerLiteIncludes() },
 });
 
-// export type TowersTableLiteWithRelations = Prisma.TowersTableGetPayload<{
-//   include: ReturnType<typeof getTowersTableLiteIncludes>
-// }>
+export type TowersTableLiteWithRelations = Prisma.TowersTableGetPayload<{
+  include: ReturnType<typeof getTowersTableLiteIncludes>
+}>;
 
 // ======================================
 // TABLE SEAT
 // ======================================
 
 export const getTowersTableSeatIncludes = () => ({
-  table: true,
+  table: { include: getTowersTableLiteIncludes() },
   occupiedByPlayer: { include: getTowersPlayerLiteIncludes() },
 });
 
@@ -190,21 +179,13 @@ export type TowersTableSeatWithRelations = Prisma.TowersTableSeatGetPayload<{
 // ======================================
 
 export const getTowersTablePlayerIncludes = () => ({
-  table: true,
+  table: { include: getTowersTableLiteIncludes() },
   player: { include: getTowersPlayerLiteIncludes() },
 });
 
 export type TowersTablePlayerWithRelations = Prisma.TowersTablePlayerGetPayload<{
   include: ReturnType<typeof getTowersTablePlayerIncludes>
 }>;
-
-export const getTowersTablePlayerLiteIncludes = () => ({
-  player: { include: getTowersPlayerLiteIncludes() },
-});
-
-// export type TowersTablePlayerLiteWithRelations = Prisma.TowersTablePlayerGetPayload<{
-//   include: ReturnType<typeof getTowersTablePlayerLiteIncludes>
-// }>
 
 // ======================================
 // TABLE CHAT MESSAGE
@@ -223,8 +204,9 @@ export type TowersTableChatMessageWithRelations = Prisma.TowersTableChatMessageG
 // ======================================
 
 export const getTowersTableInvitationIncludes = () => ({
+  room: true,
   table: { include: getTowersTableLiteIncludes() },
-  inviterPlayer: { include: { ...getTowersPlayerLiteIncludes(), stats: true } },
+  inviterPlayer: { include: getTowersPlayerLiteIncludes() },
   inviteePlayer: { include: getTowersPlayerLiteIncludes() },
 });
 
@@ -236,26 +218,26 @@ export type TowersTableInvitationWithRelations = Prisma.TowersTableInvitationGet
 // TABLE BOOT
 // ======================================
 
-// export const getTowersTableBootIncludes = () => ({
-//   table: { include: getTowersTableLiteIncludes() },
-//   booterPlayer: { include: getTowersPlayerLiteIncludes() },
-//   bootedPlayer: { include: getTowersPlayerLiteIncludes() },
-// });
+export const getTowersTableBootIncludes = () => ({
+  table: { include: getTowersTableLiteIncludes() },
+  booterPlayer: { include: getTowersPlayerLiteIncludes() },
+  bootedPlayer: { include: getTowersPlayerLiteIncludes() },
+});
 
-// export type TowersTableBootWithRelations = Prisma.TowersTableBootGetPayload<{
-//   include: ReturnType<typeof getTowersTableBootIncludes>
-// }>
+export type TowersTableBootWithRelations = Prisma.TowersTableBootGetPayload<{
+  include: ReturnType<typeof getTowersTableBootIncludes>
+}>;
 
 // ======================================
 // NOTIFICATION
 // ======================================
 
-// export const getTowersNotificationIncludes = () => ({
-//   player: { include: getTowersPlayerLiteIncludes() },
-//   tableInvitation: { include: getTowersTableInvitationIncludes() },
-//   bootedFromTable: { include: getTowersTableBootIncludes() },
-// });
+export const getTowersNotificationIncludes = () => ({
+  player: { include: getTowersPlayerLiteIncludes() },
+  tableInvitation: { include: getTowersTableInvitationIncludes() },
+  bootedFromTable: { include: getTowersTableBootIncludes() },
+});
 
-// export type TowersNotificationWithRelations = Prisma.TowersNotificationGetPayload<{
-//   include: ReturnType<typeof getTowersNotificationIncludes>
-// }>
+export type TowersNotificationWithRelations = Prisma.TowersNotificationGetPayload<{
+  include: ReturnType<typeof getTowersNotificationIncludes>
+}>;

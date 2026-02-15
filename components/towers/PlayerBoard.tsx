@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, ReactNode, useEffect, useRef, useState } from "react";
+import { memo, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import clsx from "clsx/lite";
 import { GameState } from "db/browser";
@@ -39,6 +39,7 @@ type PlayerBoardProps = {
   seat: ServerTowersSeat
   isOpponentBoard: boolean
   isReversed: boolean
+  controlKeys: PlayerControlKeysPlainObject | null
   gameState?: GameState
   isSitAccessGranted: boolean
   seatedTeamsCount: number
@@ -66,6 +67,7 @@ export default memo(function PlayerBoard({
   seat,
   isOpponentBoard,
   isReversed,
+  controlKeys,
   gameState,
   isSitAccessGranted,
   seatedTeamsCount,
@@ -83,7 +85,6 @@ export default memo(function PlayerBoard({
   const { t } = useLingui();
   const { openModal } = useModal();
   const boardRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const controlKeys: PlayerControlKeysPlainObject | undefined = seat.occupiedByPlayer?.controlKeys;
   const [blocksToRemove, setBlocksToRemove] = useState<BlockToRemove[]>([]);
   const typedRef = useRef<string>("");
   const typingTimerRef = useRef<NodeJS.Timeout>(null);
@@ -120,6 +121,75 @@ export default memo(function PlayerBoard({
     onSpace: () => seat.occupiedByPlayer && handleOpenPlayerInfoModal(seat.occupiedByPlayer),
     onKeyI: () => seat.occupiedByPlayer && handleOpenPlayerInfoModal(seat.occupiedByPlayer),
   });
+
+  const handleOpenPlayerInfoModal = (selectedPlayer: PlayerPlainObject): void => {
+    openModal(PlayerInformationModal, { roomId, selectedPlayer, isRatingsVisible });
+  };
+
+  const mapKeyCodeToChar = (
+    seatNumber: number,
+    controlKeys: PlayerControlKeysPlainObject | null,
+  ): string | undefined => {
+    let code: string | undefined;
+
+    switch (seatNumber) {
+      case 1:
+        code = controlKeys?.useItemOnPlayer1 ?? "1";
+        break;
+      case 2:
+        code = controlKeys?.useItemOnPlayer2 ?? "2";
+        break;
+      case 3:
+        code = controlKeys?.useItemOnPlayer3 ?? "3";
+        break;
+      case 4:
+        code = controlKeys?.useItemOnPlayer4 ?? "4";
+        break;
+      case 5:
+        code = controlKeys?.useItemOnPlayer5 ?? "5";
+        break;
+      case 6:
+        code = controlKeys?.useItemOnPlayer6 ?? "6";
+        break;
+      case 7:
+        code = controlKeys?.useItemOnPlayer7 ?? "7";
+        break;
+      case 8:
+        code = controlKeys?.useItemOnPlayer8 ?? "8";
+        break;
+      default:
+        code = undefined;
+    }
+
+    if (!code) return undefined;
+
+    // Strip Key/Digit prefix
+    if (code.startsWith("Key")) return code.slice(3);
+    if (code.startsWith("Digit")) return code.slice(5);
+    return code;
+  };
+
+  const handleMovePiece = (direction: "left" | "right"): void => {
+    socketRef.current?.emit(ClientToServerEvents.GAME_PIECE_MOVE, { tableId, direction });
+  };
+
+  const handleCyclePiece = (): void => {
+    socketRef.current?.emit(ClientToServerEvents.GAME_PIECE_CYCLE, { tableId });
+  };
+
+  const handleDropPiece = (): void => {
+    socketRef.current?.emit(ClientToServerEvents.GAME_PIECE_DROP, { tableId });
+  };
+
+  const handleStopDropPiece = (): void => {
+    socketRef.current?.emit(ClientToServerEvents.GAME_PIECE_DROP_STOP, { tableId });
+  };
+
+  const handleUsePowerItem = (targetSeatNumber?: number): void => {
+    socketRef.current?.emit(ClientToServerEvents.GAME_POWER_USE, { tableId, targetSeatNumber });
+  };
+
+  const seatKeyLabel = useMemo(() => mapKeyCodeToChar(seat.seatNumber, controlKeys), [seat.seatNumber, controlKeys]);
 
   useEffect(() => {
     // Set focus on correct seat when game starts
@@ -279,30 +349,6 @@ export default memo(function PlayerBoard({
     };
   }, [isConnected, tableId, seat.seatNumber, seat.teamNumber, isCurrentUserSeat]);
 
-  const handleOpenPlayerInfoModal = (selectedPlayer: PlayerPlainObject): void => {
-    openModal(PlayerInformationModal, { roomId, selectedPlayer, isRatingsVisible });
-  };
-
-  const handleMovePiece = (direction: "left" | "right"): void => {
-    socketRef.current?.emit(ClientToServerEvents.GAME_PIECE_MOVE, { tableId, direction });
-  };
-
-  const handleCyclePiece = (): void => {
-    socketRef.current?.emit(ClientToServerEvents.GAME_PIECE_CYCLE, { tableId });
-  };
-
-  const handleDropPiece = (): void => {
-    socketRef.current?.emit(ClientToServerEvents.GAME_PIECE_DROP, { tableId });
-  };
-
-  const handleStopDropPiece = (): void => {
-    socketRef.current?.emit(ClientToServerEvents.GAME_PIECE_DROP_STOP, { tableId });
-  };
-
-  const handleUsePowerItem = (targetSeatNumber?: number): void => {
-    socketRef.current?.emit(ClientToServerEvents.GAME_POWER_USE, { tableId, targetSeatNumber });
-  };
-
   return (
     <div className={clsx("flex flex-col", isOpponentBoard && "w-player-board-opponent-width")}>
       <div
@@ -395,8 +441,7 @@ export default memo(function PlayerBoard({
             "dark:before:text-slate-700",
           )}
           tabIndex={0}
-          data-seat-number={seat.targetNumber}
-          // data-demo="Demo"
+          data-seat-number={seatKeyLabel}
           data-testid="player-board_container_grid"
         >
           <div

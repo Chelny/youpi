@@ -32,6 +32,23 @@ export default function UserMenu(): ReactNode {
     (userId ? userAvatars[userId] : undefined) ?? session?.user.userSettings?.avatarId;
   const selectedAvatar: Avatar = AVATARS.find((avatar: Avatar) => avatar.id === avatarId) ?? AVATARS[0];
 
+  const handleOpenConversations = (): void => {
+    setIsOpen(false);
+    openModal(ConversationsModal);
+  };
+
+  const handleSignOut = async (): Promise<void> => {
+    setIsOpen(false);
+
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          socketRef.current?.emit(ClientToServerEvents.SIGN_OUT);
+        },
+      },
+    });
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -58,23 +75,6 @@ export default function UserMenu(): ReactNode {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
-
-  const handleOpenConversations = (): void => {
-    setIsOpen(false);
-    openModal(ConversationsModal);
-  };
-
-  const handleSignOut = async (): Promise<void> => {
-    setIsOpen(false);
-
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          socketRef.current?.emit(ClientToServerEvents.SIGN_OUT);
-        },
-      },
-    });
-  };
 
   return (
     <div className="relative">

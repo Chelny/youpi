@@ -6,26 +6,25 @@ import {
 } from "@/server/towers/modules/room-chat-message/room-chat-message.entity";
 import { RoomPlayer, RoomPlayerPlainObject } from "@/server/towers/modules/room-player/room-player.entity";
 import { Table, TablePlainObject } from "@/server/towers/modules/table/table.entity";
-import { UserRelationshipManager } from "@/server/youpi/modules/user-relationship/user-relationship.manager";
 
 export interface RoomProps {
   id: string
   name: string
   level: RoomLevel
   sortOrder: number
-  isFull: boolean
 }
 
 export interface RoomPlainObject {
   readonly id: string
   readonly name: string
   readonly level: RoomLevel
+  readonly isFull: boolean
   readonly players: RoomPlayerPlainObject[]
   readonly chatMessages: RoomChatMessagePlainObject[]
   readonly tables: TablePlainObject[]
 }
 
-export type RoomLitePlainObject = Pick<RoomPlainObject, "id" | "name" | "level">;
+export type RoomLitePlainObject = Pick<RoomPlainObject, "id" | "name" | "level" | "isFull">;
 
 export class Room {
   public readonly id: string;
@@ -42,7 +41,7 @@ export class Room {
     this.name = props.name;
     this.level = props.level;
     this.sortOrder = props.sortOrder;
-    this.isFull = props.isFull;
+    this.isFull = false;
   }
 
   public get players(): RoomPlayer[] {
@@ -58,10 +57,18 @@ export class Room {
     return this.players.length;
   }
 
+  public isPlayerInRoom(playerId: string): boolean {
+    return this.players.some((rp: RoomPlayer) => rp.playerId === playerId);
+  }
+
   public addPlayer(roomPlayer: RoomPlayer): void {
     if (!this.players.some((rp: RoomPlayer) => rp.playerId === roomPlayer.playerId)) {
       this.players.push(roomPlayer);
     }
+  }
+
+  public getPlayer(playerId: string): RoomPlayer | undefined {
+    return this.players.find((rp: RoomPlayer) => rp.playerId === playerId);
   }
 
   public setPlayerTableNumber(playerId: string, tableNumber: number | null): void {
@@ -82,8 +89,8 @@ export class Room {
     }
   }
 
-  public removePlayer(roomPlayer: RoomPlayer): void {
-    this.players = this.players.filter((rp: RoomPlayer) => rp.playerId !== roomPlayer.playerId);
+  public removePlayer(id: string): void {
+    this.players = this.players.filter((rp: RoomPlayer) => rp.playerId !== id);
   }
 
   public addChatMessage(message: RoomChatMessage): void {
@@ -107,22 +114,13 @@ export class Room {
     this.tables = this.tables.filter((t: Table) => t.id !== table.id);
   }
 
-  public messagesFor(playerId: string): RoomChatMessage[] {
+  public async messagesFor(playerId: string, mutedUserIds: string[]): Promise<RoomChatMessage[]> {
     const roomPlayer: RoomPlayer | undefined = this.players.find((rp: RoomPlayer) => rp.playerId === playerId);
     if (!roomPlayer) return [];
 
-    return this.chatMessages.filter(async (rcm: RoomChatMessage) => {
-      if (rcm.createdAt < roomPlayer.createdAt) {
-        return false;
-      }
-
-      const mutedUserIds: string[] = await UserRelationshipManager.mutedUserIdsFor(playerId);
-
-      if (mutedUserIds.includes(rcm.player.id)) {
-        return false;
-      }
-
-      return true;
+    return this.chatMessages.filter((rcm: RoomChatMessage) => {
+      if (mutedUserIds.includes(rcm.player.id)) return false;
+      return rcm.createdAt >= roomPlayer.createdAt;
     });
   }
 
@@ -131,6 +129,7 @@ export class Room {
       id: this.id,
       name: this.name,
       level: this.level,
+      isFull: this.isFull,
     };
   }
 

@@ -103,7 +103,7 @@ export class UserRelationshipService {
     });
   }
 
-  public static async deleteByUsers(sourceUserId: string, targetUserId: string): Promise<void> {
+  public static async deleteManyByUsers(sourceUserId: string, targetUserId: string): Promise<void> {
     await prisma.userRelationship.deleteMany({
       where: { sourceUserId, targetUserId },
     });

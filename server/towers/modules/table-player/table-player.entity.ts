@@ -1,5 +1,6 @@
 import type { Table, TableLitePlainObject } from "@/server/towers/modules/table/table.entity";
 import { Player, PlayerPlainObject } from "@/server/towers/modules/player/player.entity";
+import { TableSeat } from "@/server/towers/modules/table-seat/table-seat.entity";
 
 export interface TablePlayerProps {
   id: string
@@ -69,20 +70,19 @@ export class TablePlayer {
   }
 
   public get seatNumber(): number | null {
-    return this._seatNumber;
+    return (
+      this._seatNumber ??
+      this.table.seats.find((ts: TableSeat) => ts.occupiedByPlayer?.id === this.playerId)?.seatNumber ??
+      null
+    );
   }
 
   public set seatNumber(seatNumber: number | null) {
     this._seatNumber = seatNumber;
-
-    if (seatNumber === null) {
-      this._isReady = false;
-      this._isPlaying = false;
-    }
   }
 
   public get isReady(): boolean {
-    return this._isReady;
+    return this.seatNumber !== null && this._isReady;
   }
 
   public set isReady(isReady: boolean) {
@@ -90,7 +90,7 @@ export class TablePlayer {
   }
 
   public get isPlaying(): boolean {
-    return this._isPlaying;
+    return this.seatNumber !== null && this._isPlaying;
   }
 
   public set isPlaying(isPlaying: boolean) {

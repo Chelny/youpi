@@ -47,44 +47,6 @@ export const ConversationProvider = ({ children }: { children: React.ReactNode }
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const conversationsRef = useRef(conversations);
 
-  useEffect(() => {
-    conversationsRef.current = conversations;
-  }, [conversations]);
-
-  useEffect(() => {
-    const socket: Socket | null = socketRef.current;
-    if (!isConnected || !socket) return;
-
-    const socketListener: SocketListener = new SocketListener(socket);
-
-    const emitInitialData = (): void => {
-      getUnreadConversationsCount();
-    };
-
-    const handleUnreadUpdate = ({ unreadConversationsCount }: { unreadConversationsCount: number }): void => {
-      setUnreadConversationsCount(unreadConversationsCount);
-    };
-
-    const attachListeners = (): void => {
-      socketListener.on(ServerToClientEvents.CONVERSATIONS_UNREAD, handleUnreadUpdate);
-    };
-
-    const onConnect = (): void => {
-      attachListeners();
-      emitInitialData();
-    };
-
-    if (socket.connected) {
-      onConnect();
-    } else {
-      socketListener.on("connect", onConnect);
-    }
-
-    return () => {
-      socketListener.dispose();
-    };
-  }, [isConnected]);
-
   const loadConversations = useCallback((): void => {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
@@ -212,6 +174,44 @@ export const ConversationProvider = ({ children }: { children: React.ReactNode }
 
     setActiveConversationId((prev: string | null) => (prev === conversationId ? null : prev));
   }, []);
+
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
+
+  useEffect(() => {
+    const socket: Socket | null = socketRef.current;
+    if (!isConnected || !socket) return;
+
+    const socketListener: SocketListener = new SocketListener(socket);
+
+    const emitInitialData = (): void => {
+      getUnreadConversationsCount();
+    };
+
+    const handleUnreadUpdate = ({ unreadConversationsCount }: { unreadConversationsCount: number }): void => {
+      setUnreadConversationsCount(unreadConversationsCount);
+    };
+
+    const attachListeners = (): void => {
+      socketListener.on(ServerToClientEvents.CONVERSATIONS_UNREAD, handleUnreadUpdate);
+    };
+
+    const onConnect = (): void => {
+      attachListeners();
+      emitInitialData();
+    };
+
+    if (socket.connected) {
+      onConnect();
+    } else {
+      socketListener.on("connect", onConnect);
+    }
+
+    return () => {
+      socketListener.dispose();
+    };
+  }, [isConnected]);
 
   return (
     <ConversationContext.Provider

@@ -35,6 +35,18 @@ export default function TableInviteUserModal({
   const [playersToInvite, setPlayersToInvite] = useState<RoomPlayerPlainObject[]>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
 
+  const handleUserToInvite = (): void => {
+    socketRef.current?.emit(
+      ClientToServerEvents.TABLE_INVITE_USER,
+      { tableId, inviterId: session?.user.id, inviteeId: selectedPlayerId },
+      (response: SocketCallback) => {
+        if (response.success) {
+          onCancel?.();
+        }
+      },
+    );
+  };
+
   useEffect(() => {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
@@ -77,18 +89,6 @@ export default function TableInviteUserModal({
       socketListener.dispose();
     };
   }, [isConnected, tableId]);
-
-  const handleUserToInvite = (): void => {
-    socketRef.current?.emit(
-      ClientToServerEvents.TABLE_INVITE_USER,
-      { tableId, inviterId: session?.user.id, inviteeId: selectedPlayerId },
-      (response: SocketCallback) => {
-        if (response.success) {
-          onCancel?.();
-        }
-      },
-    );
-  };
 
   return (
     <Modal

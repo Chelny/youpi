@@ -7,6 +7,7 @@ export const MIN_GAME_VIEWPORT_HEIGHT = 920;
 
 export const ROOM_MAX_USERS_CAPACITY = 300;
 export const CHAT_MESSSAGE_MAX_LENGTH = 300;
+export const CHAT_MESSSAGES_LIMIT = 500;
 
 /**************************************************
  * Table

@@ -1,67 +1,70 @@
-import { createId } from "@paralleldrive/cuid2";
 import { Player } from "@/server/towers/modules/player/player.entity";
 import { PlayerManager } from "@/server/towers/modules/player/player.manager.ts";
-import { RoomPlayer, RoomPlayerProps } from "@/server/towers/modules/room-player/room-player.entity";
+import { Room } from "@/server/towers/modules/room/room.entity";
+import { RoomPlayer } from "@/server/towers/modules/room-player/room-player.entity";
+import { RoomPlayerFactory } from "@/server/towers/modules/room-player/room-player.factory";
+import { RoomPlayerService } from "@/server/towers/modules/room-player/room-player.service";
+import { TowersRoomPlayerWithRelations } from "@/types/prisma";
 
 export class RoomPlayerManager {
-  private static roomPlayers: Map<string, RoomPlayer> = new Map<string, RoomPlayer>();
-
-  // ---------- Basic CRUD ------------------------------
+  private static cache: Map<string, RoomPlayer> = new Map<string, RoomPlayer>();
 
   private static getKey(roomId: string, playerId: string): string {
     return `${roomId}:${playerId}`;
   }
 
-  public static get(roomId: string, playerId: string): RoomPlayer | undefined {
-    const key: string = this.getKey(roomId, playerId);
-    return this.roomPlayers.get(key);
-  }
+  public static async findByRoomId(room: Room, playerId: string): Promise<RoomPlayer> {
+    const key: string = this.getKey(room.id, playerId);
 
-  public static all(): RoomPlayer[] {
-    return [...this.roomPlayers.values()];
-  }
+    const cached: RoomPlayer | undefined = this.cache.get(key);
+    if (cached) return cached;
 
-  public static create(props: Omit<RoomPlayerProps, "id">): RoomPlayer {
-    const key: string = this.getKey(props.room.id, props.player.id);
-    let roomPlayer: RoomPlayer | undefined = this.roomPlayers.get(key);
-    if (roomPlayer) return roomPlayer;
+    const dbRoomPlayer: TowersRoomPlayerWithRelations | null = await RoomPlayerService.findByRoomId(room.id, playerId);
+    if (!dbRoomPlayer) throw new Error("Room Player not found");
 
-    roomPlayer = new RoomPlayer({ id: createId(), ...props });
-    this.roomPlayers.set(key, roomPlayer);
-    PlayerManager.updateLastActiveAt(props.player.id);
+    const roomPlayer: RoomPlayer = RoomPlayerFactory.createRoomPlayer(dbRoomPlayer);
+    this.cache.set(key, roomPlayer);
 
     return roomPlayer;
   }
 
-  public static upsert(props: RoomPlayerProps, update: { tableNumber: number | null }): RoomPlayer {
-    const key: string = this.getKey(props.room.id, props.player.id);
-    const roomPlayer: RoomPlayer | undefined = this.roomPlayers.get(key);
+  public static async findAllByPlayerId(playerId: string): Promise<RoomPlayer[]> {
+    const dbRoomPlayers: TowersRoomPlayerWithRelations[] = await RoomPlayerService.findAllByPlayerId(playerId);
 
-    if (roomPlayer) {
-      roomPlayer.player = props.player;
-      roomPlayer.tableNumber = update.tableNumber;
-      roomPlayer.room.updatePlayer(roomPlayer);
-      PlayerManager.updateLastActiveAt(props.player.id);
+    return dbRoomPlayers.map((dbRoomPlayer: TowersRoomPlayerWithRelations) => {
+      const key: string = this.getKey(dbRoomPlayer.id, playerId);
+      const roomPlayer: RoomPlayer = RoomPlayerFactory.createRoomPlayer(dbRoomPlayer);
+      this.cache.set(key, roomPlayer);
       return roomPlayer;
-    }
-
-    return this.create(props);
+    });
   }
 
-  public static delete(roomId: string, player: Player): void {
-    const key: string = this.getKey(roomId, player.id);
-    this.roomPlayers.delete(key);
-    PlayerManager.updateLastActiveAt(player.id);
+  public static async joinRoom(room: Room, player: Player): Promise<RoomPlayer> {
+    const key: string = this.getKey(room.id, player.id);
+
+    const cached: RoomPlayer | undefined = this.cache.get(key);
+    if (cached) return cached;
+
+    const dbRoomPlayer: TowersRoomPlayerWithRelations = await RoomPlayerService.upsert(room.id, player.id);
+    const roomPlayer: RoomPlayer = RoomPlayerFactory.createRoomPlayer(dbRoomPlayer);
+
+    this.cache.set(key, roomPlayer);
+    room.addPlayer(roomPlayer);
+    await PlayerManager.updateLastActiveAt(player.id);
+
+    return roomPlayer;
   }
 
-  // ---------- Room Player Actions ------------------------------
+  public static async leaveRoom(room: Room, player: Player): Promise<void> {
+    const key: string = this.getKey(room.id, player.id);
 
-  public static isInRoom(roomId: string, playerId: string): boolean {
-    const key: string = this.getKey(roomId, playerId);
-    return this.roomPlayers.has(key);
-  }
+    const roomPlayer: RoomPlayer | undefined = this.cache.get(key);
+    if (!roomPlayer) return;
 
-  public static getRoomsForPlayer(playerId: string): RoomPlayer[] {
-    return this.all().filter((rp: RoomPlayer) => rp.playerId === playerId);
+    await RoomPlayerService.delete(room.id, player.id);
+
+    this.cache.delete(key);
+    room.removePlayer(roomPlayer.playerId);
+    await PlayerManager.updateLastActiveAt(player.id);
   }
 }

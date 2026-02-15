@@ -30,14 +30,14 @@ export default function Checkbox({
 }: CheckboxProps): ReactNode {
   const [checked, setChecked] = useState<boolean>(defaultChecked);
 
-  useEffect(() => {
-    setChecked(defaultChecked);
-  }, [defaultChecked]);
-
   const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
     setChecked(event.target.checked);
     onChange?.(event);
   };
+
+  useEffect(() => {
+    setChecked(defaultChecked);
+  }, [defaultChecked]);
 
   return (
     <div className={clsx("w-full", isNoBottomSpace ? "mb-0" : "mb-4")}>

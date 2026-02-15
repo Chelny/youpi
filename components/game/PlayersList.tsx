@@ -151,6 +151,37 @@ export default function PlayersList({
     });
   }, [players, orderBy, sortOrder]);
 
+  const handleSort = (key: "name" | "rating" | "table"): void => {
+    if (orderBy === key) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setOrderBy(key);
+      setSortOrder("asc");
+    }
+  };
+
+  const handlePlayersRowClick = (playerId: string | undefined): void => {
+    if (playerId) {
+      setSelectedPlayerId(playerId);
+      onSelectedPlayer?.(playerId);
+    }
+  };
+
+  const handleOpenPlayerInfoModal = (): void => {
+    openModal(PlayerInformationModal, {
+      roomId,
+      selectedPlayer: sortedPlayersList?.find((p: PlayerListItem) => p.playerId === selectedPlayerId)?.player,
+      isRatingsVisible,
+    });
+  };
+
+  const handleRowKeyDown = useKeyboardActions({
+    onEnter: () => handlePlayersRowClick(selectedPlayerId),
+    onSpace: () => handlePlayersRowClick(selectedPlayerId),
+    onKeyI: () => handleOpenPlayerInfoModal(),
+    onCtrlEnter: () => handleOpenPlayerInfoModal(),
+  });
+
   useEffect(() => {
     const checkTheme = (): void => {
       setIsRtl(document.documentElement.dir === "rtl");
@@ -174,37 +205,6 @@ export default function PlayersList({
 
     return () => observer.disconnect();
   }, []);
-
-  const handleSort = (key: "name" | "rating" | "table"): void => {
-    if (orderBy === key) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setOrderBy(key);
-      setSortOrder("asc");
-    }
-  };
-
-  const handlePlayersRowClick = (playerId: string | undefined): void => {
-    if (playerId) {
-      setSelectedPlayerId(playerId);
-      onSelectedPlayer?.(playerId);
-    }
-  };
-
-  const handleOpenPlayerInfoModal = (): void => {
-    openModal(PlayerInformationModal, {
-      roomId,
-      selectedPlayer: sortedPlayersList?.find((pli: PlayerListItem) => pli.playerId === selectedPlayerId)?.player,
-      isRatingsVisible,
-    });
-  };
-
-  const handleRowKeyDown = useKeyboardActions({
-    onEnter: () => handlePlayersRowClick(selectedPlayerId),
-    onSpace: () => handlePlayersRowClick(selectedPlayerId),
-    onKeyI: () => handleOpenPlayerInfoModal(),
-    onCtrlEnter: () => handleOpenPlayerInfoModal(),
-  });
 
   return (
     <div

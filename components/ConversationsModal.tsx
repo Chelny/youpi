@@ -120,6 +120,75 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
       });
   }, [currentConversation]);
 
+  const getLastMessageSnippet = (conversation: ConversationPlainObject): string => {
+    const lastMessage: InstantMessagePlainObject = conversation.messages[conversation.messages.length - 1];
+    if (!lastMessage) return "";
+    return `${lastMessage.user.username}: ${lastMessage.text ?? lastMessage.type}`;
+  };
+
+  const handleContextMenu = (event: MouseEvent, conversation: ConversationPlainObject): void => {
+    event.preventDefault();
+    openMenu(event, conversation);
+  };
+
+  const getInstantMessageAutomatedMessage = (type: InstantMessageType, textVariables: JsonValue | null): string => {
+    // @ts-ignore
+    const { username } = textVariables;
+    let message: string = "";
+
+    switch (type) {
+      case InstantMessageType.USER_ONLINE:
+        message = i18n._("{username} is online.", { username });
+        break;
+
+      case InstantMessageType.USER_OFFLINE:
+        message = i18n._("{username} is offline.", { username });
+        break;
+
+      default:
+        break;
+    }
+
+    return `*** ${message}`;
+  };
+
+  const scrollToBottom = (): void => {
+    conversationEndRef.current?.scrollIntoView({ behavior: "instant", block: "end" });
+  };
+
+  const handleSendMessage = async (): Promise<void> => {
+    const text: string | undefined = messageInputRef.current?.value?.trim();
+    if (!text || !activeConversationId) return;
+
+    sendMessage(
+      {
+        conversationId: activeConversationId,
+        message: text,
+      },
+      (response: SocketCallback<string>) => {
+        if (response.success) {
+          messageInputRef.current?.clear();
+        }
+      },
+    );
+  };
+
+  const handleCloseModal = (): void => {
+    closeConversation();
+    onClose();
+  };
+
+  const renderContextMenu = (): ReactNode => {
+    return (
+      <ContextMenu<ConversationPlainObject>
+        menu={menu}
+        sections={menuSections}
+        container={modalRef.current}
+        onCloseMenu={closeMenu}
+      />
+    );
+  };
+
   useEffect(() => {
     if (!currentConversation) return;
 
@@ -203,75 +272,6 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
       socketListener.dispose();
     };
   }, [isConnected, session?.user.id]);
-
-  const getLastMessageSnippet = (conversation: ConversationPlainObject): string => {
-    const lastMessage: InstantMessagePlainObject = conversation.messages[conversation.messages.length - 1];
-    if (!lastMessage) return "";
-    return `${lastMessage.user.username}: ${lastMessage.text ?? lastMessage.type}`;
-  };
-
-  const handleContextMenu = (event: MouseEvent, conversation: ConversationPlainObject): void => {
-    event.preventDefault();
-    openMenu(event, conversation);
-  };
-
-  const getInstantMessageAutomatedMessage = (type: InstantMessageType, textVariables: JsonValue | null): string => {
-    // @ts-ignore
-    const { username } = textVariables;
-    let message: string = "";
-
-    switch (type) {
-      case InstantMessageType.USER_ONLINE:
-        message = i18n._("{username} is online.", { username });
-        break;
-
-      case InstantMessageType.USER_OFFLINE:
-        message = i18n._("{username} is offline.", { username });
-        break;
-
-      default:
-        break;
-    }
-
-    return `*** ${message}`;
-  };
-
-  const scrollToBottom = (): void => {
-    conversationEndRef.current?.scrollIntoView({ behavior: "instant", block: "end" });
-  };
-
-  const handleSendMessage = async (): Promise<void> => {
-    const text: string | undefined = messageInputRef.current?.value?.trim();
-    if (!text || !activeConversationId) return;
-
-    sendMessage(
-      {
-        conversationId: activeConversationId,
-        message: text,
-      },
-      (response: SocketCallback<string>) => {
-        if (response.success) {
-          messageInputRef.current?.clear();
-        }
-      },
-    );
-  };
-
-  const handleCloseModal = (): void => {
-    closeConversation();
-    onClose();
-  };
-
-  const renderContextMenu = (): ReactNode => {
-    return (
-      <ContextMenu<ConversationPlainObject>
-        menu={menu}
-        sections={menuSections}
-        container={modalRef.current}
-        onCloseMenu={closeMenu}
-      />
-    );
-  };
 
   return (
     <Modal

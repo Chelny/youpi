@@ -15,10 +15,10 @@ import {
   PlayerControlKeysPlainObject,
 } from "@/server/towers/modules/player-control-keys/player-control-keys.entity";
 import { PlayerControlKeysManager } from "@/server/towers/modules/player-control-keys/player-control-keys.manager";
-import { Room, RoomPlainObject } from "@/server/towers/modules/room/room.entity";
+import { Room } from "@/server/towers/modules/room/room.entity";
 import { RoomManager } from "@/server/towers/modules/room/room.manager";
 import { RoomPlayer } from "@/server/towers/modules/room-player/room-player.entity";
-import { Table, TablePlainObject } from "@/server/towers/modules/table/table.entity";
+import { Table } from "@/server/towers/modules/table/table.entity";
 import { TableManager } from "@/server/towers/modules/table/table.manager";
 import { TableChatMessageVariables } from "@/server/towers/modules/table-chat-message/table-chat-message.entity";
 import { TableInvitationManager } from "@/server/towers/modules/table-invitation/table-invitation.manager";
@@ -101,50 +101,31 @@ export class TowersSocketHandler {
     { roomId }: { roomId: string },
     callback: ({ success, message }: SocketCallback) => void,
   ): Promise<void> => {
-    await PlayerManager.loadPlayerFromDb(this.user.id);
-    const room: Room | undefined = RoomManager.get(roomId);
+    await PlayerManager.findById(this.user.id);
+    const room: Room = await RoomManager.findById(roomId);
 
-    if (room) {
-      if (!RoomManager.canUserAccess(room, this.user.id)) {
-        callback({ success: false, message: "Room cannot be accessed." });
-      } else {
-        if (room.players.some((rp: RoomPlayer) => rp.playerId === this.user.id)) {
-          const data: RoomPlainObject = RoomManager.roomViewForPlayer(room, this.user.id);
-          callback({
-            success: true,
-            message: "You are already in the table.",
-            data, // TODO: Remove data when db logic will be implemented
-          });
-        } else {
-          await RoomManager.joinRoom(room, this.user, this.socket);
-          const data: RoomPlainObject = RoomManager.roomViewForPlayer(room, this.user.id);
-          callback({
-            success: true,
-            message: "You joined the room.",
-            data, // TODO: Remove data when db logic will be implemented
-          });
-        }
-      }
+    if (!(await RoomManager.canUserAccess(room, this.user.id))) {
+      callback({ success: false, message: "Room cannot be accessed." });
     } else {
-      callback({ success: false, message: "Room not found." });
+      await RoomManager.joinRoom(room, this.user, this.socket);
+      callback({
+        success: true,
+        message: "You joined the room.",
+      });
     }
   };
 
-  private handleLeaveRoom = (
+  private handleLeaveRoom = async (
     { roomId }: { roomId: string },
     callback: ({ success, message }: SocketCallback) => void,
-  ): void => {
-    const room: Room | undefined = RoomManager.get(roomId);
+  ): Promise<void> => {
+    const room: Room = await RoomManager.findById(roomId);
 
-    if (room) {
-      if (!room.players.some((rp: RoomPlayer) => rp.playerId === this.user.id)) {
-        callback({ success: true, message: "You are not in the room." });
-      } else {
-        RoomManager.leaveRoom(room, this.user, this.socket);
-        callback({ success: true, message: "You left the room." });
-      }
+    if (!room.isPlayerInRoom(this.user.id)) {
+      callback({ success: true, message: "You are not in the room." });
     } else {
-      callback({ success: false, message: "Room not found." });
+      await RoomManager.leaveRoom(room, this.user, this.socket);
+      callback({ success: true, message: "You left the room." });
     }
   };
 
@@ -164,66 +145,47 @@ export class TowersSocketHandler {
     { tableId, seatNumber }: { tableId: string; seatNumber: number },
     callback: ({ success, message }: SocketCallback) => void,
   ): Promise<void> => {
-    await PlayerManager.loadPlayerFromDb(this.user.id);
-    const table: Table | undefined = TableManager.get(tableId);
+    await PlayerManager.findById(this.user.id);
+    const table: Table = await TableManager.findById(tableId);
 
-    if (table) {
-      if (!TableManager.canUserAccess(table, this.user.id)) {
-        callback({ success: false, message: "Table cannot be accessed." });
-      } else {
-        if (table.players.some((tp: TablePlayer) => tp.playerId === this.user.id)) {
-          const data: TablePlainObject = TableManager.tableViewForPlayer(table, this.user.id);
-          callback({
-            success: true,
-            message: "You are already in the table.",
-            data, // TODO: Remove data when db logic will be implemented
-          });
-        } else {
-          await TableManager.joinTable(table, this.user, this.socket, seatNumber);
-          const data: TablePlainObject = TableManager.tableViewForPlayer(table, this.user.id);
-          callback({
-            success: true,
-            message: "You joined the table.",
-            data, // TODO: Remove data when db logic will be implemented
-          });
-        }
-      }
+    if (!(await TableManager.canUserAccess(table, this.user.id))) {
+      callback({ success: false, message: "Table cannot be accessed." });
     } else {
-      callback({ success: false, message: "Table not found." });
+      await TableManager.joinTable(table, this.user, this.socket, seatNumber);
+      callback({
+        success: true,
+        message: "You joined the table.",
+      });
     }
   };
 
-  private handleLeaveTable = (
+  private handleLeaveTable = async (
     { tableId }: { tableId: string },
     callback: ({ success, message }: SocketCallback) => void,
-  ): void => {
-    const table: Table | undefined = TableManager.get(tableId);
+  ): Promise<void> => {
+    const table: Table = await TableManager.findById(tableId);
 
-    if (table) {
-      if (!table.players.some((tp: TablePlayer) => tp.playerId === this.user.id)) {
-        callback({ success: true, message: "You are not in the table." });
-      } else {
-        TableManager.leaveTable(table, this.user, this.socket);
-        callback({ success: true, message: "You left the table." });
-      }
+    if (!table.isPlayerInTable(this.user.id)) {
+      callback({ success: true, message: "You are not in the table." });
     } else {
-      callback({ success: false, message: "Table not found." });
+      await TableManager.leaveTable(table, this.user, this.socket);
+      callback({ success: true, message: "You left the table." });
     }
   };
 
-  private handlePlayNow = (
+  private handlePlayNow = async (
     { roomId }: { roomId: string },
     callback: <T>({ success, message, data }: SocketCallback<T>) => void,
-  ): void => {
+  ): Promise<void> => {
     try {
-      const tableId: string = RoomManager.playNow(roomId, this.user, this.socket);
+      const tableId: string = await RoomManager.playNow(roomId, this.user, this.socket);
       callback({ success: true, message: "User joined a table.", data: { tableId } });
     } catch (error) {
       callback({ success: false, message: error instanceof Error ? error.message : "Error entering random table" });
     }
   };
 
-  private handleCreateTable = (
+  private handleCreateTable = async (
     {
       roomId,
       hostPlayerId,
@@ -231,9 +193,9 @@ export class TowersSocketHandler {
       isRated,
     }: { roomId: string; hostPlayerId: string; tableType: TableType; isRated: boolean },
     callback: <T>({ success, message, data }: SocketCallback<T>) => void,
-  ): void => {
+  ): Promise<void> => {
     try {
-      const table: Table | undefined = RoomManager.createTable(roomId, hostPlayerId, tableType, isRated);
+      const table: Table | undefined = await RoomManager.createTable(roomId, hostPlayerId, tableType, isRated);
       callback({ success: true, message: "Table created.", data: { tableId: table.id } });
     } catch (error) {
       callback({ success: false, message: error instanceof Error ? error.message : "Failed to create table." });
@@ -276,12 +238,12 @@ export class TowersSocketHandler {
     }
   };
 
-  private handlePlayersToInvite = (
+  private handlePlayersToInvite = async (
     { tableId }: { tableId: string },
     callback: ({ success }: SocketCallback) => void,
-  ): void => {
+  ): Promise<void> => {
     try {
-      const roomPlayers: RoomPlayer[] = TableManager.getPlayersToInvite(tableId);
+      const roomPlayers: RoomPlayer[] = await TableManager.getPlayersToInvite(tableId);
       callback({ success: true, data: roomPlayers.map((rp: RoomPlayer) => rp.toPlainObject()) });
     } catch (error) {
       callback({ success: false, message: error instanceof Error ? error.message : "Error loading players to invite" });
@@ -300,12 +262,15 @@ export class TowersSocketHandler {
     }
   };
 
-  private handleCheckAcceptedTableInvitation = (
+  private handleCheckAcceptedTableInvitation = async (
     { tableId, playerId }: { tableId: string; playerId: string },
     callback: ({ success }: SocketCallback) => void,
-  ): void => {
+  ): Promise<void> => {
     try {
-      const hasAcceptedInvitation: boolean = TableInvitationManager.hasAcceptedInvitationForTable(tableId, playerId);
+      const hasAcceptedInvitation: boolean = await TableInvitationManager.hasAcceptedInvitationForTable(
+        tableId,
+        playerId,
+      );
       callback({ success: true, data: hasAcceptedInvitation });
     } catch (error) {
       callback({ success: false, message: error instanceof Error ? error.message : "Error loading players to invite" });
@@ -337,28 +302,20 @@ export class TowersSocketHandler {
   };
 
   private handleBlockTableInvitations = async (): Promise<void> => {
-    try {
-      await TableInvitationManager.declineAll(this.user);
-    } catch (error) {
-      // TODO: Catch error
-    }
+    await TableInvitationManager.declineAll(this.user);
   };
 
-  private handleAllowTableInvitations = (): void => {
-    try {
-      UserManager.allowTableInvitations(this.user.id);
-    } catch (error) {
-      // TODO: Catch error
-    }
+  private handleAllowTableInvitations = async (): Promise<void> => {
+    await UserManager.allowTableInvitations(this.user.id);
   };
 
-  private handleCheckedBlockedTableInvitations = ({}, callback: ({ success }: SocketCallback) => void): void => {
+  private handleCheckedBlockedTableInvitations = async (
+    {},
+    callback: ({ success }: SocketCallback) => void,
+  ): Promise<void> => {
     try {
-      const user: User | undefined = UserManager.get(this.user.id);
-
-      if (user) {
-        callback({ success: true, data: user.declineTableInvitations });
-      }
+      const user: User = await UserManager.findById(this.user.id);
+      callback({ success: true, data: user.declineTableInvitations });
     } catch (error) {
       callback({
         success: false,
@@ -367,12 +324,12 @@ export class TowersSocketHandler {
     }
   };
 
-  private handlePlayersToBoot = (
+  private handlePlayersToBoot = async (
     { tableId }: { tableId: string },
     callback: ({ success }: SocketCallback) => void,
-  ): void => {
+  ): Promise<void> => {
     try {
-      const tablePlayers: TablePlayer[] = TableManager.getPlayersToBoot(tableId);
+      const tablePlayers: TablePlayer[] = await TableManager.getPlayersToBoot(tableId);
       callback({ success: true, data: tablePlayers.map((tp: TablePlayer) => tp.toPlainObject()) });
     } catch (error) {
       callback({ success: false, message: error instanceof Error ? error.message : "Error loading players to boot" });
@@ -407,11 +364,11 @@ export class TowersSocketHandler {
     await TableManager.setPlayerReady(this.io, tableId, this.user.id);
   };
 
-  private handleGetControlKeys = (
+  private handleGetControlKeys = async (
     { playerId }: { playerId: string },
     callback: ({ success, message, data }: SocketCallback) => void,
-  ): void => {
-    const controlKeys: PlayerControlKeys | undefined = PlayerControlKeysManager.getByPlayerId(playerId);
+  ): Promise<void> => {
+    const controlKeys: PlayerControlKeys | undefined = await PlayerControlKeysManager.findByPlayerId(playerId);
 
     if (controlKeys) {
       callback({ success: true, data: controlKeys.toPlainObject() });
@@ -425,8 +382,8 @@ export class TowersSocketHandler {
   }: {
     controlKeys: PlayerControlKeysPlainObject
   }): Promise<void> => {
-    await PlayerControlKeysManager.upsert(controlKeys);
-    PlayerManager.updateLastActiveAt(controlKeys.playerId);
+    await PlayerControlKeysManager.update(controlKeys.playerId, controlKeys);
+    await PlayerManager.updateLastActiveAt(controlKeys.playerId);
   };
 
   private handleWatchUserAtTable = (
@@ -450,42 +407,54 @@ export class TowersSocketHandler {
     }
   };
 
-  private handlePieceMove = ({ tableId, direction }: { tableId: string; direction: "left" | "right" }): void => {
-    const game: GameLoop | null = this.getMyGame(tableId);
+  private handlePieceMove = async ({
+    tableId,
+    direction,
+  }: {
+    tableId: string
+    direction: "left" | "right"
+  }): Promise<void> => {
+    const game: GameLoop | null = await this.getMyGame(tableId);
     if (!game) return;
 
     game.movePieceSide(direction);
   };
 
-  private handlePieceCycle = ({ tableId }: { tableId: string }): void => {
-    const game: GameLoop | null = this.getMyGame(tableId);
+  private handlePieceCycle = async ({ tableId }: { tableId: string }): Promise<void> => {
+    const game: GameLoop | null = await this.getMyGame(tableId);
     if (!game) return;
 
     game.cyclePieceBlocks();
   };
 
-  private handlePieceDropStart = ({ tableId }: { tableId: string }): void => {
-    const game: GameLoop | null = this.getMyGame(tableId);
+  private handlePieceDropStart = async ({ tableId }: { tableId: string }): Promise<void> => {
+    const game: GameLoop | null = await this.getMyGame(tableId);
     if (!game) return;
 
     game.movePieceDown();
   };
 
-  private handlePieceDropStop = ({ tableId }: { tableId: string }): void => {
-    const game: GameLoop | null = this.getMyGame(tableId);
+  private handlePieceDropStop = async ({ tableId }: { tableId: string }): Promise<void> => {
+    const game: GameLoop | null = await this.getMyGame(tableId);
     if (!game) return;
 
     game.stopMovingPieceDown();
   };
 
-  private handlePowerUse = ({ tableId, targetSeatNumber }: { tableId: string; targetSeatNumber?: number }): void => {
-    const game: GameLoop | null = this.getMyGame(tableId);
+  private handlePowerUse = async ({
+    tableId,
+    targetSeatNumber,
+  }: {
+    tableId: string
+    targetSeatNumber?: number
+  }): Promise<void> => {
+    const game: GameLoop | null = await this.getMyGame(tableId);
     if (!game) return;
 
     game.usePower(targetSeatNumber);
   };
 
-  private handleApplyHooBlocks = ({
+  private handleApplyHooBlocks = async ({
     tableId,
     teamNumber,
     blocks,
@@ -493,14 +462,14 @@ export class TowersSocketHandler {
     tableId: string
     teamNumber: number
     blocks: TowersPieceBlockPlainObject[]
-  }): void => {
-    const game: GameLoop | null = this.getMyGame(tableId);
+  }): Promise<void> => {
+    const game: GameLoop | null = await this.getMyGame(tableId);
     if (!game) return;
 
     game.applyHooBlocks(teamNumber, blocks);
   };
 
-  private handleApplyPower = ({
+  private handleApplyPower = async ({
     tableId,
     powerItem,
     source,
@@ -510,22 +479,25 @@ export class TowersSocketHandler {
     powerItem: PowerBarItemPlainObject
     source: TablePlayerPlainObject
     target: TablePlayerPlainObject
-  }): void => {
+  }): Promise<void> => {
     const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByPlayerId(tableId, source.playerId);
     if (!tableSeat || tableSeat.seatNumber == null) return;
 
     const targetSeatNumber: number | null = target.seatNumber;
     if (!targetSeatNumber) return;
 
-    const game: GameLoop | null = this.getGameBySeat(tableId, targetSeatNumber);
+    const game: GameLoop | null = await this.getGameBySeat(tableId, targetSeatNumber);
     if (!game) return;
 
     game.powerManager.applyPower(powerItem);
     game.queueSendGameState();
   };
 
-  private handleGetNotifications = ({}, callback: <T>({ success, message, data }: SocketCallback<T>) => void): void => {
-    const notification: Notification[] = NotificationManager.getAllByPlayerId(this.user.id);
+  private handleGetNotifications = async (
+    {},
+    callback: <T>({ success, message, data }: SocketCallback<T>) => void,
+  ): Promise<void> => {
+    const notification: Notification[] = await NotificationManager.findAllByPlayerId(this.user.id);
     callback({ success: true, data: notification.map((notification: Notification) => notification.toPlainObject()) });
   };
 
@@ -534,13 +506,13 @@ export class TowersSocketHandler {
   };
 
   private handleDeleteNotification = async ({ notificationId }: { notificationId: string }): Promise<void> => {
-    await NotificationManager.deleteNotification(notificationId, this.user.id);
+    await NotificationManager.delete(notificationId, this.user.id);
   };
 
   // ====== Helpers ===================================================
 
-  private getMyGame(tableId: string): GameLoop | null {
-    const table: Table | undefined = TableManager.get(tableId);
+  private async getMyGame(tableId: string): Promise<GameLoop | null> {
+    const table: Table = await TableManager.findById(tableId);
     if (!table?.game) return null;
 
     const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByPlayerId(tableId, this.user.id);
@@ -557,8 +529,8 @@ export class TowersSocketHandler {
     return game;
   }
 
-  private getGameBySeat(tableId: string, seatNumber: number): GameLoop | null {
-    const table: Table | undefined = TableManager.get(tableId);
+  private async getGameBySeat(tableId: string, seatNumber: number): Promise<GameLoop | null> {
+    const table: Table = await TableManager.findById(tableId);
     if (!table?.game) return null;
 
     const game: GameLoop | undefined = table.game.getPlayerGameBySeat(seatNumber);

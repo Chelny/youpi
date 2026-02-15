@@ -9,6 +9,7 @@ import { BoardPlainObject } from "@/server/towers/game/board/board";
 import { NextPiecesPlainObject } from "@/server/towers/game/next-pieces";
 import { PiecePlainObject } from "@/server/towers/game/pieces/piece";
 import { PowerBarItemPlainObject, PowerBarPlainObject } from "@/server/towers/game/power-bar";
+import { PlayerControlKeysPlainObject } from "@/server/towers/modules/player-control-keys/player-control-keys.entity";
 import { TableLitePlainObject } from "@/server/towers/modules/table/table.entity";
 import { TableInvitationPlainObject } from "@/server/towers/modules/table-invitation/table-invitation.entity";
 import { TablePlayerPlainObject } from "@/server/towers/modules/table-player/table-player.entity";
@@ -26,6 +27,7 @@ type TableSeatsProps = {
   players: TablePlayerPlainObject[]
   invitations: TableInvitationPlainObject[]
   currentTablePlayer?: TablePlayerPlainObject
+  controlKeys: PlayerControlKeysPlainObject | null
   gameStateBySeat: Record<
     number,
     {
@@ -53,6 +55,7 @@ export function TableSeats({
   players,
   invitations,
   currentTablePlayer,
+  controlKeys,
   gameStateBySeat,
   seatNumber,
   gameState,
@@ -145,6 +148,7 @@ export function TableSeats({
                   seat={seat}
                   isOpponentBoard={isOpponentBoard}
                   isReversed={isReversed}
+                  controlKeys={controlKeys}
                   gameState={gameState}
                   isSitAccessGranted={isSitAccessGranted}
                   seatedTeamsCount={seatedTeamsCount}

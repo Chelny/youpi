@@ -64,10 +64,7 @@ export function towersServerToClientEvents(redisSub: Redis, io: IoServer): void 
       }
       case ServerInternalEvents.ROOM_MESSAGE_SEND: {
         const { roomId, chatMessage } = data;
-
-        const room: Room | undefined = RoomManager.get(roomId);
-        if (!room) break;
-
+        const room: Room = await RoomManager.findById(roomId);
         const senderId: string = chatMessage.player.id;
 
         for (const rp of room.players) {
@@ -101,8 +98,7 @@ export function towersServerToClientEvents(redisSub: Redis, io: IoServer): void 
       case ServerInternalEvents.TABLE_MESSAGE_SEND: {
         const { tableId, chatMessage } = data;
 
-        const table: Table | undefined = TableManager.get(tableId);
-        if (!table) break;
+        const table: Table = await TableManager.findById(tableId);
 
         const senderId: string = chatMessage.player.id;
 

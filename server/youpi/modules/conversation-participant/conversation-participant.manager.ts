@@ -1,114 +1,112 @@
-import { createId } from "@paralleldrive/cuid2";
+import { ConversationParticipantCreateInput, ConversationParticipantUpdateInput } from "db/models";
 import { Conversation } from "@/server/youpi/modules/conversation/conversation.entity";
-import {
-  ConversationParticipant,
-  ConversationParticipantProps,
-} from "@/server/youpi/modules/conversation-participant/conversation-participant.entity";
+import { ConversationParticipant } from "@/server/youpi/modules/conversation-participant/conversation-participant.entity";
+import { ConversationParticipantFactory } from "@/server/youpi/modules/conversation-participant/conversation-participant.factory";
+import { ConversationParticipantService } from "@/server/youpi/modules/conversation-participant/conversation-participant.service";
+import { ConversationParticipantWithRelations } from "@/types/prisma";
 
 export class ConversationParticipantManager {
-  private static conversationParticipants: Map<string, ConversationParticipant> = new Map<
-    string,
-    ConversationParticipant
-  >();
+  private static cache: Map<string, ConversationParticipant> = new Map<string, ConversationParticipant>();
 
-  // ---------- Basic CRUD ------------------------------
+  public static async findByConversationId(conversationId: string, userId: string): Promise<ConversationParticipant> {
+    const dbConversationParticipant: ConversationParticipantWithRelations | null =
+      await ConversationParticipantService.findByConversationId(conversationId, userId);
+    if (!dbConversationParticipant) throw new Error("Conversation participant not found");
 
-  public static get(id: string): ConversationParticipant | undefined {
-    return this.conversationParticipants.get(id);
-  }
+    const conversationParticipant: ConversationParticipant =
+      ConversationParticipantFactory.createConversationParticipant(dbConversationParticipant);
+    this.cache.set(conversationParticipant.id, conversationParticipant);
 
-  public static all(): ConversationParticipant[] {
-    return [...this.conversationParticipants.values()];
-  }
-
-  public static create(props: Omit<ConversationParticipantProps, "id">): ConversationParticipant {
-    const conversationParticipant: ConversationParticipant = new ConversationParticipant({ id: createId(), ...props });
-    this.conversationParticipants.set(conversationParticipant.id, conversationParticipant);
     return conversationParticipant;
   }
 
-  public static update(props: ConversationParticipantProps): void {
-    const conversationParticipant: ConversationParticipant | undefined = this.get(props.id);
-    if (!conversationParticipant) return;
-    conversationParticipant.user = props.user;
-  }
-
-  public static delete(id: string): void {
-    this.conversationParticipants.delete(id);
-  }
-
-  // ---------- Conversation Participant Actions ------------------------------
-
-  public static getParticipantByConversationIdAndUserId(
+  public static async findOtherParticipantByConversationId(
     conversationId: string,
     userId: string,
-  ): ConversationParticipant | undefined {
-    return this.all().find(
-      (cp: ConversationParticipant) => cp.conversationId === conversationId && cp.userId === userId,
-    );
+  ): Promise<ConversationParticipant> {
+    const dbConversationParticipant: ConversationParticipantWithRelations | null =
+      await ConversationParticipantService.findOtherParticipantByConversationId(conversationId, userId);
+    if (!dbConversationParticipant) throw new Error("Conversation participant not found");
+
+    const conversationParticipant: ConversationParticipant =
+      ConversationParticipantFactory.createConversationParticipant(dbConversationParticipant);
+    this.cache.set(conversationParticipant.id, conversationParticipant);
+
+    return conversationParticipant;
   }
 
-  public static getOtherParticipant(conversationId: string, userId: string): ConversationParticipant | undefined {
-    return this.all().find(
-      (cp: ConversationParticipant) => cp.conversationId === conversationId && cp.userId !== userId,
-    );
+  public static async create(data: ConversationParticipantCreateInput): Promise<ConversationParticipant> {
+    const dbConversationParticipant: ConversationParticipantWithRelations =
+      await ConversationParticipantService.create(data);
+    const conversationParticipant: ConversationParticipant =
+      ConversationParticipantFactory.createConversationParticipant(dbConversationParticipant);
+    this.cache.set(conversationParticipant.id, conversationParticipant);
+    return conversationParticipant;
   }
 
-  public static markConversationAsRead(conversationId: string, userId: string): void {
-    const conversationParticipant: ConversationParticipant | undefined = this.all().find(
-      (cp: ConversationParticipant) => cp.conversationId === conversationId && cp.userId === userId,
-    );
-    if (!conversationParticipant) return undefined;
+  public static async update(userId: string, data: ConversationParticipantUpdateInput): Promise<void> {
+    const dbConversationParticipants: ConversationParticipantWithRelations[] =
+      await ConversationParticipantService.updateMany(userId, data);
 
+    dbConversationParticipants.map((dbConversationParticipant: ConversationParticipantWithRelations) => {
+      const conversationParticipant: ConversationParticipant =
+        ConversationParticipantFactory.createConversationParticipant(dbConversationParticipant);
+      this.cache.set(conversationParticipant.id, conversationParticipant);
+
+      // TODO: Send event to all user's conversations to update username
+
+      return conversationParticipant;
+    });
+  }
+
+  public static async getOtherParticipant(conversationId: string, userId: string): Promise<ConversationParticipant> {
+    return this.findOtherParticipantByConversationId(conversationId, userId);
+  }
+
+  public static async markConversationAsRead(conversationId: string, userId: string): Promise<void> {
+    const conversationParticipant: ConversationParticipant = await this.findByConversationId(conversationId, userId);
     conversationParticipant.markAsRead();
-    this.conversationParticipants.set(conversationParticipant.id, conversationParticipant);
+    this.cache.set(conversationParticipant.id, conversationParticipant);
   }
 
   public static async muteConversationForUser(conversationId: string, userId: string): Promise<void> {
-    const conversationParticipant: ConversationParticipant | undefined = this.all().find(
-      (cp: ConversationParticipant) => cp.conversationId === conversationId && cp.userId === userId,
-    );
-    if (!conversationParticipant) return undefined;
+    const conversationParticipant: ConversationParticipant = await this.findByConversationId(conversationId, userId);
 
     if (!conversationParticipant.mutedAt) {
       conversationParticipant.muteConversation();
-      this.conversationParticipants.set(conversationParticipant.id, conversationParticipant);
+      this.cache.set(conversationParticipant.id, conversationParticipant);
     }
   }
 
   public static async unmuteConversationForUser(conversationId: string, userId: string): Promise<void> {
-    const conversationParticipant = this.all().find(
-      (cp: ConversationParticipant) => cp.conversationId === conversationId && cp.userId === userId,
-    );
-    if (!conversationParticipant) return;
+    const conversationParticipant: ConversationParticipant = await this.findByConversationId(conversationId, userId);
 
     if (conversationParticipant.mutedAt) {
       conversationParticipant.unmuteConversation();
-      this.conversationParticipants.set(conversationParticipant.id, conversationParticipant);
+      this.cache.set(conversationParticipant.id, conversationParticipant);
     }
   }
 
   public static async removeConversationForUser(conversationId: string, userId: string): Promise<void> {
-    const conversationParticipant: ConversationParticipant | undefined = this.all().find(
-      (cp: ConversationParticipant) => cp.conversationId === conversationId && cp.userId === userId,
-    );
-    if (!conversationParticipant) return undefined;
+    const conversationParticipant: ConversationParticipant = await this.findByConversationId(conversationId, userId);
 
     if (!conversationParticipant.removedAt) {
       conversationParticipant.removeConversation();
-      this.conversationParticipants.set(conversationParticipant.id, conversationParticipant);
+      this.cache.set(conversationParticipant.id, conversationParticipant);
     }
   }
 
   public static async restoreConversationForUser(conversation: Conversation, userId: string): Promise<void> {
-    const conversationParticipant = this.all().find(
-      (cp: ConversationParticipant) => cp.conversationId === conversation.id && cp.userId === userId,
-    );
-    if (!conversationParticipant) return;
+    const conversationParticipant: ConversationParticipant = await this.findByConversationId(conversation.id, userId);
 
     if (conversationParticipant.removedAt) {
       conversationParticipant.restoreConversation();
-      this.conversationParticipants.set(conversationParticipant.id, conversationParticipant);
+      this.cache.set(conversationParticipant.id, conversationParticipant);
     }
+  }
+
+  public static async delete(id: string): Promise<void> {
+    await ConversationParticipantService.delete(id);
+    this.cache.delete(id);
   }
 }

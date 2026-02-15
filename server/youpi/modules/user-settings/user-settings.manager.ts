@@ -1,63 +1,56 @@
 import { UserSettings as UserSettingsModel } from "db/client";
 import { ServerInternalEvents } from "@/constants/socket/server-internal";
 import { publishRedisEvent } from "@/server/redis/publish";
-import { UserSettings, UserSettingsProps } from "@/server/youpi/modules/user-settings/user-settings.entity";
+import { UserSettings } from "@/server/youpi/modules/user-settings/user-settings.entity";
+import { UserSettingsFactory } from "@/server/youpi/modules/user-settings/user-settings.factory";
 import { UserSettingsService } from "@/server/youpi/modules/user-settings/user-settings.service";
 
 export class UserSettingsManager {
-  private static userSettings: Map<string, UserSettings> = new Map<string, UserSettings>();
+  private static cache: Map<string, UserSettings> = new Map<string, UserSettings>();
 
-  // ---------- Database Load ------------------------------
+  public static async findById(id: string): Promise<UserSettings> {
+    const cached: UserSettings | undefined = this.cache.get(id);
+    if (cached) return cached;
 
-  public static async loadUserSettingsFromDb(id: string): Promise<UserSettings> {
-    const db: UserSettingsModel | null = await UserSettingsService.getUserSettingsById(id);
-    if (!db) throw new Error(`UserSettings ${id} not found`);
-    return this.upsert(db);
+    const dbUserSettings: UserSettingsModel | null = await UserSettingsService.findById(id);
+    if (!dbUserSettings) throw new Error(`UserSettings ${id} not found`);
+
+    const userSettings: UserSettings = UserSettingsFactory.createUserSettings(dbUserSettings);
+    this.cache.set(userSettings.id, userSettings);
+
+    return userSettings;
   }
 
   public static async updateUserAvatar(id: string, avatarId: string): Promise<UserSettings> {
-    const db: UserSettingsModel = await UserSettingsService.updateAvatar(id, avatarId);
+    const dbUserSettings: UserSettingsModel = await UserSettingsService.updateAvatar(id, avatarId);
+
+    const userSettings: UserSettings = UserSettingsFactory.createUserSettings(dbUserSettings);
+    this.cache.set(userSettings.id, userSettings);
+
     await publishRedisEvent(ServerInternalEvents.USER_SETTINGS_AVATAR, { userId: id, avatarId });
-    return this.upsert(db);
+
+    return userSettings;
   }
 
   // public async updateTheme(id: string, theme: WebsiteTheme): Promise<UserSettings> {
-  //   const db: UserSettingsModel = await UserSettingsService.updateTheme(id, theme);
-  //   return this.upsert(db);
+  //   const dbUserSettings: UserSettingsModel = await UserSettingsService.updateTheme(id, theme);
+
+  //   const userSettings: UserSettings = UserSettingsFactory.createUserSettings(dbUserSettings);
+  //   this.cache.set(userSettings.id, userSettings);
+
+  //   return userSettings;
   // }
 
   // public async updateProfanityFilter(id: string, filter: ProfanityFilter): Promise<UserSettings> {
-  //   const db: UserSettingsModel = await UserSettingsService.updateProfanityFilter(id, filter);
-  //   return this.upsert(db);
+  //   const dbUserSettings: UserSettingsModel = await UserSettingsService.updateProfanityFilter(id, filter);
+
+  //   const userSettings: UserSettings = UserSettingsFactory.createUserSettings(dbUserSettings);
+  //   this.cache.set(userSettings.id, userSettings);
+
+  //   return userSettings;
   // }
 
-  // ---------- Basic CRUD ------------------------------
-
-  public static get(id: string): UserSettings | undefined {
-    return this.userSettings.get(id);
-  }
-
-  public static all(): UserSettings[] {
-    return [...this.userSettings.values()];
-  }
-
-  public static create(props: UserSettingsProps): UserSettings {
-    let userSetting: UserSettings | undefined = this.get(props.id);
-    if (userSetting) return userSetting;
-
-    userSetting = new UserSettings(props);
-    this.userSettings.set(userSetting.id, userSetting);
-
-    return userSetting;
-  }
-
-  public static upsert(props: UserSettingsProps): UserSettings {
-    const userSetting: UserSettings | undefined = this.get(props.id);
-    if (!userSetting) return this.create(props);
-    return Object.assign(userSetting, props);
-  }
-
   public static delete(id: string): void {
-    this.userSettings.delete(id);
+    this.cache.delete(id);
   }
 }

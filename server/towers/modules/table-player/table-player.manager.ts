@@ -1,58 +1,82 @@
-import { createId } from "@paralleldrive/cuid2";
 import { TableType } from "db/client";
 import { ServerInternalEvents } from "@/constants/socket/server-internal";
 import { publishRedisEvent } from "@/server/redis/publish";
 import { Player } from "@/server/towers/modules/player/player.entity";
 import { PlayerManager } from "@/server/towers/modules/player/player.manager.ts";
-import { TablePlayer, TablePlayerProps } from "@/server/towers/modules/table-player/table-player.entity";
+import { Table } from "@/server/towers/modules/table/table.entity";
+import { TableFactory } from "@/server/towers/modules/table/table.factory";
+import { TablePlayer } from "@/server/towers/modules/table-player/table-player.entity";
+import { TablePlayerFactory } from "@/server/towers/modules/table-player/table-player.factory";
+import { TablePlayerService } from "@/server/towers/modules/table-player/table-player.service";
+import { TowersTablePlayerWithRelations } from "@/types/prisma";
 
 export class TablePlayerManager {
-  private static tablePlayers: Map<string, TablePlayer> = new Map<string, TablePlayer>();
-
-  // ---------- Basic CRUD ------------------------------
+  private static cache: Map<string, TablePlayer> = new Map<string, TablePlayer>();
 
   private static getKey(tableId: string, playerId: string): string {
     return `${tableId}:${playerId}`;
   }
 
-  public static get(tableId: string, playerId: string): TablePlayer | undefined {
-    const key: string = this.getKey(tableId, playerId);
-    return this.tablePlayers.get(key);
-  }
+  public static async findByTableId(table: Table, playerId: string): Promise<TablePlayer> {
+    const key: string = this.getKey(table.id, playerId);
 
-  public static all(): TablePlayer[] {
-    return [...this.tablePlayers.values()];
-  }
+    const cached: TablePlayer | undefined = this.cache.get(key);
+    if (cached) return cached;
 
-  public static create(props: Omit<TablePlayerProps, "id">): TablePlayer {
-    const key: string = this.getKey(props.table.id, props.player.id);
-    let tablePlayer: TablePlayer | undefined = this.tablePlayers.get(key);
-    if (tablePlayer) return tablePlayer;
+    const dbRoomPlayer: TowersTablePlayerWithRelations | null = await TablePlayerService.findByTableId(
+      table.id,
+      playerId,
+    );
+    if (!dbRoomPlayer) throw new Error("Room Player not found");
 
-    tablePlayer = new TablePlayer({ id: createId(), ...props });
-    this.tablePlayers.set(key, tablePlayer);
-    PlayerManager.updateLastActiveAt(props.player.id);
+    const tablePlayer: TablePlayer = TablePlayerFactory.createTablePlayer(dbRoomPlayer, table);
+    this.cache.set(key, tablePlayer);
 
     return tablePlayer;
   }
 
+  public static async joinTable(table: Table, player: Player): Promise<TablePlayer> {
+    const key: string = this.getKey(table.id, player.id);
+
+    const cached: TablePlayer | undefined = this.cache.get(key);
+    if (cached) return cached;
+
+    const dbTablePlayer: TowersTablePlayerWithRelations = await TablePlayerService.upsert(table.id, player.id);
+    const tablePlayer: TablePlayer = TablePlayerFactory.createTablePlayer(dbTablePlayer, table);
+
+    this.cache.set(key, tablePlayer);
+    table.addPlayer(tablePlayer);
+    table.room.setPlayerTableNumber(tablePlayer.playerId, table.tableNumber);
+    await PlayerManager.updateLastActiveAt(player.id);
+
+    return tablePlayer;
+  }
+
+  public static async leaveTable(table: Table, player: Player): Promise<void> {
+    const key: string = this.getKey(table.id, player.id);
+
+    const tablePlayer: TablePlayer | undefined = this.cache.get(key);
+    if (!tablePlayer) return;
+
+    await TablePlayerService.delete(table.id, player.id);
+
+    this.cache.delete(key);
+    table.removePlayer(tablePlayer.playerId);
+    table.room.setPlayerTableNumber(tablePlayer.playerId, null);
+    await PlayerManager.updateLastActiveAt(player.id);
+  }
+
   public static async upsert(props: TablePlayer): Promise<TablePlayer> {
     const key: string = this.getKey(props.table.id, props.player.id);
-    const tablePlayer: TablePlayer | undefined = this.tablePlayers.get(key);
+    const tablePlayer: TablePlayer | undefined = this.cache.get(key);
 
     if (tablePlayer) {
-      tablePlayer.seatNumber = props.seatNumber;
-
-      if (props.isReady !== tablePlayer.isReady) {
-        tablePlayer.isReady = props.isReady;
-      }
-
-      if (props.isPlaying !== tablePlayer.isPlaying) {
-        tablePlayer.isPlaying = props.isPlaying;
-      }
+      // Update cache
+      tablePlayer.isReady = props.isReady;
+      tablePlayer.isPlaying = props.isPlaying;
 
       tablePlayer.table.updatePlayer(tablePlayer);
-      PlayerManager.updateLastActiveAt(props.player.id);
+      await PlayerManager.updateLastActiveAt(tablePlayer.playerId);
 
       await publishRedisEvent(ServerInternalEvents.TABLE_SEAT_PLAYER_STATE, {
         tableId: tablePlayer.tableId,
@@ -62,24 +86,17 @@ export class TablePlayerManager {
       return tablePlayer;
     }
 
-    return this.create(props);
+    // If not in cache, create and upsert to DB
+    return this.joinTable(props.table, props.player);
   }
 
-  public static delete(tableId: string, player: Player): void {
-    const key: string = this.getKey(tableId, player.id);
-    this.tablePlayers.delete(key);
-    PlayerManager.updateLastActiveAt(player.id);
-  }
+  public static async getTablesForPlayer(playerId: string): Promise<TablePlayer[]> {
+    const dbTablePlayers: TowersTablePlayerWithRelations[] = await TablePlayerService.findAllByPlayerId(playerId);
 
-  // ---------- Table Player Actions ------------------------------
-
-  public static isInTable(tableId: string, playerId: string): boolean {
-    const key: string = this.getKey(tableId, playerId);
-    return this.tablePlayers.has(key);
-  }
-
-  public static getTablesForPlayer(playerId: string): TablePlayer[] {
-    return this.all().filter((tp: TablePlayer) => tp.playerId === playerId);
+    return dbTablePlayers.map((dbTablePlayer: TowersTablePlayerWithRelations) => {
+      const table: Table = TableFactory.createTable(dbTablePlayer.table);
+      return TablePlayerFactory.createTablePlayer(dbTablePlayer, table);
+    });
   }
 
   /**
@@ -99,13 +116,13 @@ export class TablePlayerManager {
     targetUserId: string,
   ): { roomId: string; tableId: string } | null {
     // Find the table where the target player is currently playing
-    const targetTablePlayer: TablePlayer | undefined = this.all().find(
+    const targetTablePlayer: TablePlayer | undefined = [...this.cache.values()].find(
       (tp: TablePlayer) => tp.playerId === targetUserId && tp.isPlaying,
     );
     if (!targetTablePlayer) return null;
 
     // Check if this player is already in the same table
-    const alreadyAtSameTable: boolean = this.all().some(
+    const alreadyAtSameTable: boolean = [...this.cache.values()].some(
       (tp: TablePlayer) => tp.playerId === watcherUserId && tp.tableId === targetTablePlayer.tableId,
     );
     if (alreadyAtSameTable) return null;

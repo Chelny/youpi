@@ -47,8 +47,12 @@ export async function sendCipherKey(gameLoop: GameLoop): Promise<void> {
 
   if (cipherKey) {
     await TableChatMessageManager.create({
-      tableId: gameLoop.tableId,
-      player: gameLoop.tablePlayer.player,
+      table: {
+        connect: { id: gameLoop.tableId },
+      },
+      player: {
+        connect: { id: gameLoop.tablePlayer.playerId },
+      },
       text: null,
       type: TableChatMessageType.CIPHER_KEY,
       textVariables: { plainChar: cipherKey.plainChar, cipherChar: cipherKey.cipherChar },

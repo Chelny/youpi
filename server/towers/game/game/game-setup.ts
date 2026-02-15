@@ -36,7 +36,7 @@ export async function startGame(game: Game): Promise<void> {
 
     // Start GameLoop instances for seated and ready players
     const tablePlayer: TablePlayer | undefined = tableSeat.occupiedByPlayerId
-      ? TablePlayerManager.get(game.table.id, tableSeat.occupiedByPlayerId)
+      ? await TablePlayerManager.findByTableId(game.table, tableSeat.occupiedByPlayerId)
       : undefined;
 
     if (!tablePlayer || !tablePlayer.isReady) continue;

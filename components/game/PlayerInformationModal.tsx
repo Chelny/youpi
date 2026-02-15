@@ -53,6 +53,64 @@ export default function PlayerInformationModal({
   const losses: number | undefined = selectedPlayer?.stats.losses;
   const streak: number | undefined = selectedPlayer?.stats.streak;
 
+  const handleSendMessage = (): void => {
+    const text: string | undefined = message?.trim();
+    if (!text) return;
+
+    sendMessage(
+      {
+        recipientId: selectedPlayer?.id,
+        message: text,
+      },
+      (response: SocketCallback<string>) => {
+        if (response.success && response.data) {
+          onCancel?.();
+          openModal(ConversationsModal, { conversationId: response.data });
+        }
+      },
+    );
+  };
+
+  const handleToggleMuteUser = (): void => {
+    if (isMuted) {
+      socketRef.current?.emit(ClientToServerEvents.USER_RELATIONSHIP_UNMUTE, { mutedUserId: selectedPlayer?.id });
+    } else {
+      socketRef.current?.emit(ClientToServerEvents.USER_RELATIONSHIP_MUTE, { mutedUserId: selectedPlayer?.id });
+    }
+  };
+
+  const handleWatch = (): void => {
+    if (watchUserAtTable) {
+      router.push(watchUserAtTable);
+    }
+
+    onCancel?.();
+  };
+
+  const handlePing = (): void => {
+    if (!selectedPlayer?.id) return;
+
+    const startTime: number = Date.now();
+
+    socketRef.current?.emit(
+      ClientToServerEvents.PING_REQUEST,
+      { userId: selectedPlayer?.id },
+      (response: SocketCallback<{ roundTrip?: number }>) => {
+        if (response.success) {
+          const myDelayMs: number = Date.now() - startTime;
+          const targetDelayMs: number = response.data?.roundTrip ?? 0;
+
+          // Convert to seconds
+          const myDelaySeconds: number = Number((myDelayMs / 1000).toFixed(2));
+          const targetDelaySeconds: number = Number((targetDelayMs / 1000).toFixed(2));
+
+          setMyNetDelay(myDelaySeconds);
+          setTargetNetDelay(targetDelaySeconds);
+        }
+      },
+    );
+  };
+
   useEffect(() => {
     if (!selectedPlayer?.id || !session?.user?.id) return;
 
@@ -132,64 +190,6 @@ export default function PlayerInformationModal({
       socketListener.dispose();
     };
   }, [isConnected, selectedPlayer?.id]);
-
-  const handleSendMessage = (): void => {
-    const text: string | undefined = message?.trim();
-    if (!text) return;
-
-    sendMessage(
-      {
-        recipientId: selectedPlayer?.id,
-        message: text,
-      },
-      (response: SocketCallback<string>) => {
-        if (response.success && response.data) {
-          onCancel?.();
-          openModal(ConversationsModal, { conversationId: response.data });
-        }
-      },
-    );
-  };
-
-  const handleToggleMuteUser = (): void => {
-    if (isMuted) {
-      socketRef.current?.emit(ClientToServerEvents.USER_RELATIONSHIP_UNMUTE, { mutedUserId: selectedPlayer?.id });
-    } else {
-      socketRef.current?.emit(ClientToServerEvents.USER_RELATIONSHIP_MUTE, { mutedUserId: selectedPlayer?.id });
-    }
-  };
-
-  const handleWatch = (): void => {
-    if (watchUserAtTable) {
-      router.push(watchUserAtTable);
-    }
-
-    onCancel?.();
-  };
-
-  const handlePing = (): void => {
-    if (!selectedPlayer?.id) return;
-
-    const startTime: number = Date.now();
-
-    socketRef.current?.emit(
-      ClientToServerEvents.PING_REQUEST,
-      { userId: selectedPlayer?.id },
-      (response: SocketCallback<{ roundTrip?: number }>) => {
-        if (response.success) {
-          const myDelayMs: number = Date.now() - startTime;
-          const targetDelayMs: number = response.data?.roundTrip ?? 0;
-
-          // Convert to seconds
-          const myDelaySeconds: number = Number((myDelayMs / 1000).toFixed(2));
-          const targetDelaySeconds: number = Number((targetDelayMs / 1000).toFixed(2));
-
-          setMyNetDelay(myDelaySeconds);
-          setTargetNetDelay(targetDelaySeconds);
-        }
-      },
-    );
-  };
 
   return (
     <Modal

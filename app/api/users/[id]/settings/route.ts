@@ -15,7 +15,7 @@ export async function GET(
   const { id } = await params;
 
   try {
-    const userSettings: UserSettings = await UserSettingsManager.loadUserSettingsFromDb(id);
+    const userSettings: UserSettings = await UserSettingsManager.findById(id);
 
     return NextResponse.json(
       {

@@ -1,88 +1,46 @@
-import { createId } from "@paralleldrive/cuid2";
+import { TowersPlayerControlKeys } from "db/client";
+import { TowersPlayerControlKeysUpdateInput } from "db/models";
 import { ServerInternalEvents } from "@/constants/socket/server-internal";
 import { publishRedisEvent } from "@/server/redis/publish";
-import {
-  PlayerControlKeys,
-  PlayerControlKeysProps,
-} from "@/server/towers/modules/player-control-keys/player-control-keys.entity";
+import { PlayerControlKeys } from "@/server/towers/modules/player-control-keys/player-control-keys.entity";
+import { PlayerControlKeysFactory } from "@/server/towers/modules/player-control-keys/player-control-keys.factory";
+import { PlayerControlKeysService } from "@/server/towers/modules/player-control-keys/player-control-keys.service";
 
 export class PlayerControlKeysManager {
-  private static playerControlKeys: Map<string, PlayerControlKeys> = new Map<string, PlayerControlKeys>();
+  private static cache: Map<string, PlayerControlKeys> = new Map<string, PlayerControlKeys>();
 
-  // ---------- Basic CRUD ------------------------------
+  public static async findByPlayerId(playerId: string): Promise<PlayerControlKeys> {
+    const cached: PlayerControlKeys | undefined = this.cache.get(playerId);
+    if (cached) return cached;
 
-  public static get(id: string): PlayerControlKeys | undefined {
-    return this.playerControlKeys.get(id);
-  }
+    let dbPlayerControlKeys: TowersPlayerControlKeys | null = await PlayerControlKeysService.findByPlayerId(playerId);
 
-  public static all(): PlayerControlKeys[] {
-    return [...this.playerControlKeys.values()];
-  }
+    if (!dbPlayerControlKeys) {
+      dbPlayerControlKeys = await PlayerControlKeysService.create(playerId);
+    }
 
-  public static create(props: Omit<PlayerControlKeysProps, "id">): PlayerControlKeys {
-    const playerControlKeys: PlayerControlKeys | undefined = new PlayerControlKeys({ id: createId(), ...props });
-    this.playerControlKeys.set(playerControlKeys.id, playerControlKeys);
+    const playerControlKeys: PlayerControlKeys = PlayerControlKeysFactory.createPlayerControlKeys(dbPlayerControlKeys);
+    this.cache.set(playerId, playerControlKeys);
+
     return playerControlKeys;
   }
 
-  public static async upsert(props: PlayerControlKeysProps): Promise<PlayerControlKeys> {
-    const playerControlKeys: PlayerControlKeys | undefined = this.playerControlKeys.get(props.id);
+  public static async update(playerId: string, data: TowersPlayerControlKeysUpdateInput): Promise<PlayerControlKeys> {
+    const playerControlKeys: PlayerControlKeys = await this.findByPlayerId(playerId);
 
-    if (playerControlKeys) {
-      playerControlKeys.moveLeft = props.moveLeft;
-      playerControlKeys.moveRight = props.moveRight;
-      playerControlKeys.cycleBlock = props.cycleBlock;
-      playerControlKeys.dropPiece = props.dropPiece;
-      playerControlKeys.useItem = props.useItem;
-      playerControlKeys.useItemOnPlayer1 = props.useItemOnPlayer1;
-      playerControlKeys.useItemOnPlayer2 = props.useItemOnPlayer2;
-      playerControlKeys.useItemOnPlayer3 = props.useItemOnPlayer3;
-      playerControlKeys.useItemOnPlayer4 = props.useItemOnPlayer4;
-      playerControlKeys.useItemOnPlayer5 = props.useItemOnPlayer5;
-      playerControlKeys.useItemOnPlayer6 = props.useItemOnPlayer6;
-      playerControlKeys.useItemOnPlayer7 = props.useItemOnPlayer7;
-      playerControlKeys.useItemOnPlayer8 = props.useItemOnPlayer8;
+    Object.assign(playerControlKeys, data);
 
-      await publishRedisEvent(ServerInternalEvents.GAME_CONTROL_KEYS_UPDATE, {
-        userId: playerControlKeys.playerId,
-        controlKeys: playerControlKeys.toPlainObject(),
-      });
+    await PlayerControlKeysService.update(playerControlKeys.id, playerControlKeys);
 
-      return playerControlKeys;
-    }
+    await publishRedisEvent(ServerInternalEvents.GAME_CONTROL_KEYS_UPDATE, {
+      userId: playerId,
+      controlKeys: playerControlKeys.toPlainObject(),
+    });
 
-    return this.create(props);
+    return playerControlKeys;
   }
 
   public static delete(playerId: string): void {
-    this.playerControlKeys.delete(playerId);
-  }
-
-  // ---------- Controls Keys Actions ------------------------------
-
-  public static getByPlayerId(playerId: string): PlayerControlKeys {
-    const controlKeys: PlayerControlKeys | undefined = this.all().find(
-      (pck: PlayerControlKeys) => pck.playerId === playerId,
-    );
-    if (controlKeys) return controlKeys;
-
-    const defaultKeysProps: Omit<PlayerControlKeysProps, "id"> = {
-      playerId,
-      moveLeft: "ArrowLeft",
-      moveRight: "ArrowRight",
-      cycleBlock: "ArrowUp",
-      dropPiece: "ArrowDown",
-      useItem: "Space",
-      useItemOnPlayer1: "Digit1",
-      useItemOnPlayer2: "Digit2",
-      useItemOnPlayer3: "Digit3",
-      useItemOnPlayer4: "Digit4",
-      useItemOnPlayer5: "Digit5",
-      useItemOnPlayer6: "Digit6",
-      useItemOnPlayer7: "Digit7",
-      useItemOnPlayer8: "Digit8",
-    };
-
-    return this.create(defaultKeysProps);
+    this.cache.delete(playerId);
   }
 }

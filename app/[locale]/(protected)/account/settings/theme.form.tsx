@@ -49,16 +49,6 @@ export function ThemeForm({ session }: ThemeFormProps): ReactNode {
     },
   };
 
-  useEffect(() => {
-    setThemeValue(currentTheme);
-  }, [currentTheme]);
-
-  useEffect(() => {
-    if (themeValue !== currentTheme) {
-      formRef.current?.requestSubmit();
-    }
-  }, [themeValue]);
-
   const handleUpdateTheme = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
 
@@ -98,6 +88,16 @@ export function ThemeForm({ session }: ThemeFormProps): ReactNode {
       }
     }
   };
+
+  useEffect(() => {
+    setThemeValue(currentTheme);
+  }, [currentTheme]);
+
+  useEffect(() => {
+    if (themeValue !== currentTheme) {
+      formRef.current?.requestSubmit();
+    }
+  }, [themeValue]);
 
   return (
     <AccountSectionHeader

@@ -1,9 +1,7 @@
 import { Player } from "@/server/towers/modules/player/player.entity";
 import { PlayerFactory } from "@/server/towers/modules/player/player.factory";
-import { Room } from "@/server/towers/modules/room/room.entity";
 import { RoomFactory } from "@/server/towers/modules/room/room.factory";
-import { Table, TablePlainObject } from "@/server/towers/modules/table/table.entity";
-import { TableManager } from "@/server/towers/modules/table/table.manager";
+import { Table } from "@/server/towers/modules/table/table.entity";
 import {
   TableChatMessage,
   TableChatMessageVariables,
@@ -11,21 +9,28 @@ import {
 import { TableInvitation } from "@/server/towers/modules/table-invitation/table-invitation.entity";
 import { TablePlayer } from "@/server/towers/modules/table-player/table-player.entity";
 import { TableSeat } from "@/server/towers/modules/table-seat/table-seat.entity";
+import { jsonToTableChatVariables } from "@/server/towers/utils/table-chat-variables";
 import {
   TowersPlayerLite,
   TowersTableChatMessageWithRelations,
   TowersTableInvitationWithRelations,
+  TowersTableLiteWithRelations,
   TowersTablePlayerWithRelations,
   TowersTableSeatWithRelations,
   TowersTableWithRelations,
 } from "@/types/prisma";
-import { isObject } from "@/utils/object";
 
 export class TableFactory {
-  public static convertToPlainObject(dbTable: TowersTableWithRelations, userId: string): TablePlainObject {
-    const room: Room = RoomFactory.createRoom(dbTable.room);
-    const hostPlayer: Player = PlayerFactory.createPlayer(dbTable.hostPlayer);
-    const table: Table = new Table({ ...dbTable, room, hostPlayer });
+  public static createTable(dbTable: TowersTableWithRelations | TowersTableLiteWithRelations): Table {
+    return new Table({
+      ...dbTable,
+      room: RoomFactory.createRoom(dbTable.room),
+      hostPlayer: PlayerFactory.createPlayer(dbTable.hostPlayer),
+    });
+  }
+
+  public static convertToPlainObject(dbTable: TowersTableWithRelations): Table {
+    const table: Table = this.createTable(dbTable);
 
     table.players = dbTable.players.map((tp: TowersTablePlayerWithRelations) => {
       const dbPlayer: TowersPlayerLite = tp.player;
@@ -38,28 +43,23 @@ export class TableFactory {
       return tablePlayer;
     });
 
-    table.seats = dbTable.seats.reduce((acc: TableSeat[], t: TowersTableSeatWithRelations) => {
+    table.seats = dbTable.seats.map((t: TowersTableSeatWithRelations) => {
       const tablePlayer: TablePlayer | undefined = table.players.find(
         (tp: TablePlayer) => tp.playerId === t.occupiedByPlayerId,
       );
-      if (!tablePlayer) return acc;
 
-      acc.push(new TableSeat({ ...t, occupiedByPlayer: tablePlayer.player }));
-
-      return acc;
-    }, [] as TableSeat[]);
+      return new TableSeat({ ...t, occupiedByPlayer: tablePlayer ? tablePlayer.player : null });
+    });
 
     table.chatMessages = dbTable.chatMessages.reduce(
-      (acc: TableChatMessage[], rcm: TowersTableChatMessageWithRelations) => {
+      (acc: TableChatMessage[], tcm: TowersTableChatMessageWithRelations) => {
         const tablePlayer: TablePlayer | undefined = table.players.find(
-          (tp: TablePlayer) => tp.player.id === rcm.playerId,
+          (tp: TablePlayer) => tp.player.id === tcm.playerId,
         );
         if (!tablePlayer) return acc;
 
-        const variables: TableChatMessageVariables | null =
-          rcm.textVariables && isObject(rcm.textVariables) ? (rcm.textVariables as TableChatMessageVariables) : null;
-
-        acc.push(new TableChatMessage({ ...rcm, player: tablePlayer.player, textVariables: variables }));
+        const variables: TableChatMessageVariables | null = jsonToTableChatVariables(tcm.textVariables);
+        acc.push(new TableChatMessage({ ...tcm, player: tablePlayer.player, textVariables: variables }));
 
         return acc;
       },
@@ -83,9 +83,9 @@ export class TableFactory {
         ? inviteeTablePlayer.player
         : PlayerFactory.createPlayer(invitation.inviteePlayer);
 
-      return new TableInvitation({ ...invitation, room, table, inviterPlayer, inviteePlayer });
+      return new TableInvitation({ ...invitation, room: table.room, table, inviterPlayer, inviteePlayer });
     });
 
-    return TableManager.tableViewForPlayer(table, userId);
+    return table;
   }
 }

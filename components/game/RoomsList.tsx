@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plural, useLingui } from "@lingui/react/macro";
 import clsx from "clsx/lite";
-import { RoomLevel, TowersRoomPlayer } from "db/browser";
+import { RoomLevel } from "db/browser";
 import { Socket } from "socket.io-client";
 import useSWR from "swr";
 import Button from "@/components/ui/Button";
@@ -13,24 +13,48 @@ import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { useSocket } from "@/context/SocketContext";
 import { fetcher } from "@/lib/fetcher";
 import { SocketListener } from "@/lib/socket/socket-listener";
-import { TowersRoomsListWithCount } from "@/types/prisma";
+import { RoomPlainObject } from "@/server/towers/modules/room/room.entity";
+import { RoomPlayerPlainObject } from "@/server/towers/modules/room-player/room-player.entity";
 import { getRoomLevelText } from "@/utils/room";
 
 export default function RoomsList(): ReactNode {
   const router = useRouter();
   const { t } = useLingui();
   const { socketRef, isConnected, session } = useSocket();
-  const [rooms, setRooms] = useState<TowersRoomsListWithCount[]>([]);
+  const [rooms, setRooms] = useState<RoomPlainObject[]>([]);
 
   const {
     data: roomsResponse,
     error: roomsError,
     mutate: loadRooms,
-  } = useSWR<ApiResponse<TowersRoomsListWithCount[]>>("/api/games/towers/rooms", fetcher, {
+  } = useSWR<ApiResponse<RoomPlainObject[]>>("/api/games/towers/rooms", fetcher, {
     shouldRetryOnError: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: true,
   });
+
+  const groupedRoomsList = useMemo(() => {
+    const roomsListMap: Map<RoomLevel, RoomPlainObject[]> = new Map<RoomLevel, RoomPlainObject[]>();
+
+    for (const room of rooms ?? []) {
+      const key: RoomLevel = room.level;
+      if (!roomsListMap.has(key)) roomsListMap.set(key, []);
+      roomsListMap.get(key)!.push(room);
+    }
+
+    for (const [key, list] of roomsListMap) {
+      roomsListMap.set(key, list);
+    }
+
+    return [...roomsListMap.entries()].map(([level, list]: [RoomLevel, RoomPlainObject[]]) => ({
+      level,
+      rooms: list,
+    }));
+  }, [rooms]);
+
+  const handleJoinRoom = (roomId: string): void => {
+    router.push(`${ROUTE_TOWERS.PATH}?room=${roomId}`);
+  };
 
   useEffect(() => {
     if (roomsResponse?.success && roomsResponse.data) {
@@ -44,12 +68,12 @@ export default function RoomsList(): ReactNode {
 
     const socketListener: SocketListener = new SocketListener(socket);
 
-    const handleUpdateRoomslist = async (): Promise<void> => {
+    const handleUpdateRooms = async (): Promise<void> => {
       await loadRooms();
     };
 
     const attachListeners = (): void => {
-      socketListener.on(ServerToClientEvents.ROOMS_LIST_UPDATED, handleUpdateRoomslist);
+      socketListener.on(ServerToClientEvents.ROOMS_LIST_UPDATED, handleUpdateRooms);
     };
 
     const onConnect = (): void => {
@@ -65,36 +89,13 @@ export default function RoomsList(): ReactNode {
     return () => {
       socketListener.dispose();
     };
-  }, [isConnected, socketRef]);
-
-  const groupedRoomsList = useMemo(() => {
-    const roomsListMap: Map<RoomLevel, TowersRoomsListWithCount[]> = new Map<RoomLevel, TowersRoomsListWithCount[]>();
-
-    for (const room of rooms ?? []) {
-      const key: RoomLevel = room.level;
-      if (!roomsListMap.has(key)) roomsListMap.set(key, []);
-      roomsListMap.get(key)!.push(room);
-    }
-
-    for (const [key, list] of roomsListMap) {
-      roomsListMap.set(key, list);
-    }
-
-    return [...roomsListMap.entries()].map(([level, list]: [RoomLevel, TowersRoomsListWithCount[]]) => ({
-      level,
-      rooms: list,
-    }));
-  }, [rooms]);
-
-  const handleJoinRoom = (roomId: string): void => {
-    router.push(`${ROUTE_TOWERS.PATH}?room=${roomId}`);
-  };
+  }, [isConnected]);
 
   if (roomsError) return <div>Error: {roomsError.message}</div>;
 
   return (
     <div className="flex flex-col gap-10">
-      {groupedRoomsList.map(({ level, rooms: levelRooms }: { level: RoomLevel; rooms: TowersRoomsListWithCount[] }) => (
+      {groupedRoomsList.map(({ level, rooms: levelRooms }: { level: RoomLevel; rooms: RoomPlainObject[] }) => (
         <section key={level} className="flex flex-col gap-4">
           <div className="flex items-center">
             <div className="flex items-center gap-2">
@@ -103,10 +104,10 @@ export default function RoomsList(): ReactNode {
           </div>
 
           <ul className="grid grid-cols-[repeat(auto-fill,_minmax(14rem,_1fr))] gap-8">
-            {levelRooms.map((room: TowersRoomsListWithCount) => {
-              const usersCount: number = room._count.players;
-              const isUserInRoom: boolean = room.players?.some(
-                (roomPlayer: TowersRoomPlayer) => roomPlayer.playerId === session?.user?.id,
+            {levelRooms.map((room: RoomPlainObject) => {
+              const usersCount: number = room.players.length;
+              const isUserInRoom: boolean = room.players.some(
+                (roomPlayer: RoomPlayerPlainObject) => roomPlayer.playerId === session?.user?.id,
               );
 
               return (

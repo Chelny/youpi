@@ -77,28 +77,6 @@ export default function Calendar({
   ];
   const daysOfWeek: string[] = fullWeekDays.map((day: string) => day.charAt(0).toUpperCase());
 
-  useEffect(() => {
-    const year: number = browsingDate.getUTCFullYear();
-    const month: number = browsingDate.getUTCMonth();
-    const daysInMonthCount: number = new Date(year, month + 1, 0).getUTCDate();
-
-    setDaysInMonth(Array.from({ length: daysInMonthCount }, (_, index: number) => index + 1));
-  }, [browsingDate]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent): void => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
-        handleCloseCalendar();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
   const handleOpenCalendar = (): void => {
     const initialBrowsingDate: Date =
       (defaultValue && new Date(defaultValue).getTime() && new Date(defaultValue)) || new Date(maxDate) || new Date();
@@ -270,6 +248,28 @@ export default function Calendar({
     browsingDate.getUTCFullYear() === minDate.getUTCFullYear() && browsingDate.getUTCMonth() <= minDate.getUTCMonth();
   const isNextMonthDisabled: boolean =
     browsingDate.getUTCFullYear() === maxDate.getUTCFullYear() && browsingDate.getUTCMonth() >= maxDate.getUTCMonth();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent): void => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
+        handleCloseCalendar();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    const year: number = browsingDate.getUTCFullYear();
+    const month: number = browsingDate.getUTCMonth();
+    const daysInMonthCount: number = new Date(year, month + 1, 0).getUTCDate();
+
+    setDaysInMonth(Array.from({ length: daysInMonthCount }, (_, index: number) => index + 1));
+  }, [browsingDate]);
 
   return (
     <div className="relative mb-4">

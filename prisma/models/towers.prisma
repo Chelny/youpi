@@ -68,7 +68,6 @@ model TowersRoom {
   name             String                  @unique
   level            RoomLevel               @default(SOCIAL)
   sortOrder        Int                     @map("sort_order")
-  isFull           Boolean                 @default(false) @map("full")
   players          TowersRoomPlayer[]
   chatMessages     TowersRoomChatMessage[]
   tables           TowersTable[]

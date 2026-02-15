@@ -1,92 +1,81 @@
-import { createId } from "@paralleldrive/cuid2";
 import { ServerInternalEvents } from "@/constants/socket/server-internal";
 import { publishRedisEvent } from "@/server/redis/publish";
-import { Conversation, ConversationProps } from "@/server/youpi/modules/conversation/conversation.entity";
+import { Conversation } from "@/server/youpi/modules/conversation/conversation.entity";
+import { ConversationFactory } from "@/server/youpi/modules/conversation/conversation.factory";
+import { ConversationService } from "@/server/youpi/modules/conversation/conversation.service";
 import { ConversationParticipant } from "@/server/youpi/modules/conversation-participant/conversation-participant.entity";
 import { ConversationParticipantManager } from "@/server/youpi/modules/conversation-participant/conversation-participant.manager";
 import { User } from "@/server/youpi/modules/user/user.entity";
-import { UserManager } from "@/server/youpi/modules/user/user.manager";
+import { ConversationWithRelations } from "@/types/prisma";
 
 export class ConversationManager {
-  private static conversations: Map<string, Conversation> = new Map<string, Conversation>();
+  private static cache: Map<string, Conversation> = new Map<string, Conversation>();
 
-  // ---------- Basic CRUD ------------------------------
+  public static async findById(id: string): Promise<Conversation> {
+    const cached: Conversation | undefined = this.cache.get(id);
+    if (cached) return cached;
 
-  public static get(id: string): Conversation | undefined {
-    return this.conversations.get(id);
-  }
+    const dbConversation: ConversationWithRelations | null = await ConversationService.findById(id);
+    if (!dbConversation) throw new Error("Conversation not found");
 
-  public static all(): Conversation[] {
-    return [...this.conversations.values()];
-  }
-
-  public static create(props: Omit<ConversationProps, "id">): Conversation {
-    const conversation: Conversation = new Conversation({ id: createId(), ...props });
-    this.conversations.set(conversation.id, conversation);
-
-    props.participants.forEach((cp: ConversationParticipant) => this.addParticipant(conversation.id, cp.user));
+    const conversation: Conversation = ConversationFactory.createConversation(dbConversation);
+    this.cache.set(conversation.id, conversation);
 
     return conversation;
   }
 
-  public static delete(id: string): void {
-    this.conversations.delete(id);
-  }
+  public static async findAllByUserId(userId: string): Promise<Conversation[]> {
+    const dbConversations: ConversationWithRelations[] = await ConversationService.findAllByUserId(userId);
 
-  // ---------- Conversation Actions ------------------------------
-
-  public static getAllByUserId(userId: string): Conversation[] {
-    return this.all().filter((conversation: Conversation) =>
-      conversation.participants.some((cp: ConversationParticipant) => cp.userId === userId && cp.removedAt === null),
-    );
-  }
-
-  public static getOrCreateBetweenUsers(senderId: string, recipientId: string): Conversation {
-    let conversation: Conversation | undefined = this.all().find((c: Conversation) => {
-      const ids: string[] = c.participants.map((cp: ConversationParticipant) => cp.userId);
-      return ids.includes(senderId) && ids.includes(recipientId) && ids.length === 2;
+    return dbConversations.map((dbConversation: ConversationWithRelations) => {
+      const conversation: Conversation = ConversationFactory.createConversation(dbConversation);
+      this.cache.set(conversation.id, conversation);
+      return conversation;
     });
-    if (conversation) return conversation;
+  }
 
-    const sender: User | undefined = UserManager.get(senderId);
-    const recipient: User | undefined = UserManager.get(recipientId);
-
-    if (!sender) throw new Error(`Cannot create conversation: user not found (senderId=${senderId})`);
-    if (!recipient) throw new Error(`Cannot create conversation: user not found (recipientId=${recipientId})`);
-
-    conversation = this.create({ participants: [], messages: [] });
-    this.addParticipant(conversation.id, sender);
-    this.addParticipant(conversation.id, recipient);
-
+  public static async getOrCreateBetweenUsers(senderId: string, recipientId: string): Promise<Conversation> {
+    const dbConversation: ConversationWithRelations = await ConversationService.upsert(senderId, recipientId);
+    const conversation: Conversation = ConversationFactory.createConversation(dbConversation);
+    this.cache.set(conversation.id, conversation);
     return conversation;
   }
 
-  public static addParticipant(conversationId: string, user: User): ConversationParticipant {
-    const conversation: Conversation | undefined = this.get(conversationId);
-    if (!conversation) throw new Error("Conversation not found");
+  public static async addParticipant(id: string, user: User): Promise<ConversationParticipant> {
+    const conversation: Conversation = await this.findById(id);
+    const participant: ConversationParticipant = await ConversationParticipantManager.create({
+      conversation: {
+        connect: { id },
+      },
+      user: {
+        connect: {
+          id: user.id,
+        },
+      },
+    });
 
-    const participant: ConversationParticipant = ConversationParticipantManager.create({ conversationId, user });
     conversation.addParticipant(participant);
+    this.cache.set(conversation.id, conversation);
 
     return participant;
   }
 
-  public static removeParticipant(conversationId: string, participantId: string): void {
-    const conversation: Conversation | undefined = this.get(conversationId);
-    if (!conversation) throw new Error("Conversation not found");
-
+  public static async removeParticipant(id: string, participantId: string): Promise<void> {
+    const conversation: Conversation = await this.findById(id);
+    await ConversationParticipantManager.delete(participantId);
     conversation.removeParticipant(participantId);
-    ConversationParticipantManager.delete(participantId);
+    this.cache.set(conversation.id, conversation);
   }
 
-  public static getUnreadConversationsCount(userId: string): number {
-    const conversations: Conversation[] = ConversationManager.getAllByUserId(userId);
+  public static async getUnreadConversationsCount(userId: string): Promise<number> {
+    const conversations: Conversation[] = await ConversationManager.findAllByUserId(userId);
 
     let unreadCount: number = 0;
 
     for (const conversation of conversations) {
-      const participant: ConversationParticipant | undefined =
-        ConversationParticipantManager.getParticipantByConversationIdAndUserId(conversation.id, userId);
+      const participant: ConversationParticipant | undefined = conversation.participants.find(
+        (cp: ConversationParticipant) => cp.userId === userId,
+      );
 
       // Ignore muted and removed conversations
       if (!participant || participant.mutedAt || participant.removedAt) continue;
@@ -108,13 +97,11 @@ export class ConversationManager {
     return unreadCount;
   }
 
-  public static async markAsRead(conversationId: string, userId: string): Promise<void> {
-    ConversationParticipantManager.markConversationAsRead(conversationId, userId);
+  public static async markAsRead(id: string, userId: string): Promise<void> {
+    await ConversationParticipantManager.markConversationAsRead(id, userId);
 
-    const conversation: Conversation | undefined = this.get(conversationId);
-    if (!conversation) throw new Error("Conversation not found");
-
-    const unreadConversationsCount: number = ConversationManager.getUnreadConversationsCount(userId);
+    const conversation: Conversation = await this.findById(id);
+    const unreadConversationsCount: number = await ConversationManager.getUnreadConversationsCount(userId);
 
     await publishRedisEvent(ServerInternalEvents.CONVERSATION_MARK_AS_READ, {
       userId,
@@ -123,13 +110,11 @@ export class ConversationManager {
     });
   }
 
-  public static async mute(conversationId: string, userId: string): Promise<void> {
-    ConversationParticipantManager.muteConversationForUser(conversationId, userId);
+  public static async mute(id: string, userId: string): Promise<void> {
+    await ConversationParticipantManager.muteConversationForUser(id, userId);
 
-    const conversation: Conversation | undefined = this.get(conversationId);
-    if (!conversation) throw new Error("Conversation not found");
-
-    const unreadConversationsCount: number = ConversationManager.getUnreadConversationsCount(userId);
+    const conversation: Conversation = await this.findById(id);
+    const unreadConversationsCount: number = await ConversationManager.getUnreadConversationsCount(userId);
 
     await publishRedisEvent(ServerInternalEvents.CONVERSATION_MUTE, {
       userId,
@@ -138,13 +123,11 @@ export class ConversationManager {
     });
   }
 
-  public static async unmute(conversationId: string, userId: string): Promise<void> {
-    ConversationParticipantManager.unmuteConversationForUser(conversationId, userId);
+  public static async unmute(id: string, userId: string): Promise<void> {
+    await ConversationParticipantManager.unmuteConversationForUser(id, userId);
 
-    const conversation: Conversation | undefined = this.get(conversationId);
-    if (!conversation) throw new Error("Conversation not found");
-
-    const unreadConversationsCount: number = ConversationManager.getUnreadConversationsCount(userId);
+    const conversation: Conversation = await this.findById(id);
+    const unreadConversationsCount: number = await ConversationManager.getUnreadConversationsCount(userId);
 
     await publishRedisEvent(ServerInternalEvents.CONVERSATION_UNMUTE, {
       userId,
@@ -154,9 +137,8 @@ export class ConversationManager {
   }
 
   public static async remove(conversationId: string, userId: string): Promise<void> {
-    ConversationParticipantManager.removeConversationForUser(conversationId, userId);
-
-    const unreadConversationsCount: number = ConversationManager.getUnreadConversationsCount(userId);
+    await ConversationParticipantManager.removeConversationForUser(conversationId, userId);
+    const unreadConversationsCount: number = await ConversationManager.getUnreadConversationsCount(userId);
 
     await publishRedisEvent(ServerInternalEvents.CONVERSATION_REMOVE, {
       userId,
@@ -165,20 +147,20 @@ export class ConversationManager {
     });
   }
 
-  public static async restore(conversationId: string, userId: string): Promise<void> {
-    const conversation: Conversation | undefined = this.all().find(
-      (conversation: Conversation) => conversation.id === conversationId,
-    );
-    if (!conversation) return;
-
-    ConversationParticipantManager.restoreConversationForUser(conversation, userId);
-
-    const unreadConversationsCount: number = ConversationManager.getUnreadConversationsCount(userId);
+  public static async restore(id: string, userId: string): Promise<void> {
+    const conversation: Conversation = await this.findById(id);
+    await ConversationParticipantManager.restoreConversationForUser(conversation, userId);
+    const unreadConversationsCount: number = await ConversationManager.getUnreadConversationsCount(userId);
 
     await publishRedisEvent(ServerInternalEvents.CONVERSATION_RESTORE, {
       userId,
       conversation: conversation.toPlainObject(),
       unreadConversationsCount,
     });
+  }
+
+  public static async delete(id: string): Promise<void> {
+    await ConversationService.delete(id);
+    this.cache.delete(id);
   }
 }

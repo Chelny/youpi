@@ -26,10 +26,6 @@ export function AvatarListbox({
   const { saveAvatarDebounced } = useAvatarSave();
   const [avatarId, setAvatarId] = useState<string>(initialAvatarId);
 
-  useEffect(() => {
-    setAvatarId(initialAvatarId);
-  }, [initialAvatarId]);
-
   const handleKeyDown = (event: KeyboardEvent): void => {
     const idx: number = AVATARS.findIndex((avatar: Avatar) => avatar.id === avatarId);
 
@@ -51,6 +47,10 @@ export function AvatarListbox({
     saveAvatarDebounced(id);
     onSelect?.(id);
   };
+
+  useEffect(() => {
+    setAvatarId(initialAvatarId);
+  }, [initialAvatarId]);
 
   return (
     <div>

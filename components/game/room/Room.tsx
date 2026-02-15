@@ -72,25 +72,32 @@ export default function Room(): ReactNode {
   );
 
   useEffect(() => {
-    if (roomInfo && !joinedRoomSidebarRef.current.has(roomInfo.id)) {
-      joinedRoomSidebarRef.current.add(roomInfo.id);
-      addJoinedRoom({ id: roomInfo.id, name: roomInfo.name, basePath: ROUTE_TOWERS.PATH });
-    }
-  }, [roomInfo]);
+    const socket: Socket | null = socketRef.current;
+    if (!isConnected || !socket) return;
 
-  useEffect(() => {
     if (roomResponse?.success && roomResponse.data) {
       const roomData: RoomPlainObject = roomResponse.data;
+
       setRoomInfo({
         id: roomData.id,
         name: roomData.name,
         level: roomData.level,
+        isFull: roomData.isFull,
       });
       setPlayers(roomData.players || []);
       setChatMessages(roomData.chatMessages || []);
       setTables(roomData.tables || []);
+
+      if (!joinedRoomSidebarRef.current.has(roomData.id)) {
+        joinedRoomSidebarRef.current.add(roomData.id);
+        addJoinedRoom({
+          id: roomData.id,
+          name: roomData.name,
+          basePath: ROUTE_TOWERS.PATH,
+        });
+      }
     }
-  }, [roomResponse]);
+  }, [isConnected, roomResponse]);
 
   useEffect(() => {
     if ((settingsResponse?.success, settingsResponse?.data)) {
@@ -105,24 +112,18 @@ export default function Room(): ReactNode {
 
     const socketListener: SocketListener = new SocketListener(socket);
 
-    const emitInitialData = (): void => {
-      socket.emit(ClientToServerEvents.ROOM_JOIN, { roomId }, (response: SocketCallback<RoomPlainObject>) => {
-        if (response.success && response.data) {
-          // TODO: Switch to loadRoom when db logic will be implemented
-          // await loadRoom();
-          const roomData: RoomPlainObject = response.data;
-          setRoomInfo({
-            id: roomData.id,
-            name: roomData.name,
-            level: roomData.level,
-          });
-          setPlayers(roomData.players || []);
-          setChatMessages(roomData.chatMessages || []);
-          setTables(roomData.tables || []);
-        } else {
-          router.push(ROUTE_TOWERS.PATH);
-        }
-      });
+    const emitInitialData = async (): Promise<void> => {
+      socket.emit(
+        ClientToServerEvents.ROOM_JOIN,
+        { roomId: roomId },
+        async (response: SocketCallback<RoomPlainObject>) => {
+          if (response.success) {
+            await loadRoom();
+          } else {
+            router.push(ROUTE_TOWERS.PATH);
+          }
+        },
+      );
     };
 
     const handlePlayerJoinRoom = ({ roomPlayer }: { roomPlayer: RoomPlayerPlainObject }): void => {
@@ -148,10 +149,10 @@ export default function Room(): ReactNode {
 
     const handleUpdateTable = ({ table }: { table: TablePlainObject }): void => {
       setTables((prev: TablePlainObject[]) => {
-        const existingTableIndex: number = prev.findIndex((t: TablePlainObject) => t.id === table.id);
-        if (existingTableIndex !== -1) {
+        const index: number = prev.findIndex((t: TablePlainObject) => t.id === table.id);
+        if (index !== -1) {
           const updatedTables: TablePlainObject[] = [...prev];
-          updatedTables[existingTableIndex] = { ...prev[existingTableIndex], ...table };
+          updatedTables[index] = table;
           return updatedTables;
         }
         return [...prev, table];
@@ -159,18 +160,18 @@ export default function Room(): ReactNode {
     };
 
     const handlePlayerJoinTable = ({ tablePlayer }: { tablePlayer: TablePlayerPlainObject }): void => {
-      setTables((prev: TablePlainObject[]) =>
-        prev.map((table: TablePlainObject) => {
-          if (table.id !== tablePlayer.tableId) return table;
-
-          const isAlreadyInTable: boolean = table.players.some(
-            (tp: TablePlayerPlainObject) => tp.playerId === tablePlayer.playerId,
-          );
-          if (isAlreadyInTable) return table;
-
-          return { ...table, players: [...table.players, tablePlayer] };
-        }),
-      );
+      setTables((prev: TablePlainObject[]) => {
+        return prev.map((table: TablePlainObject) =>
+          table.id === tablePlayer.tableId
+            ? {
+                ...table,
+                players: table.players.some((tp: TablePlayerPlainObject) => tp.playerId === tablePlayer.playerId)
+                  ? table.players
+                  : [...table.players, tablePlayer],
+              }
+            : table,
+        );
+      });
 
       setPlayers((prev: RoomPlayerPlainObject[]) =>
         prev.map((rp: RoomPlayerPlainObject) =>

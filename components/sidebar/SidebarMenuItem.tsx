@@ -39,10 +39,6 @@ export default function SidebarMenuItem({
   const searchParams: ReadonlyURLSearchParams = useSearchParams();
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   const isActiveHref = useMemo(() => {
     const cleanPath: string = stripLocaleFromPath(pathname);
     const current: string = currentSignature(cleanPath, searchParams);
@@ -66,10 +62,6 @@ export default function SidebarMenuItem({
   }, [menuItems, isActiveHref]);
 
   const [isAccordionOpen, setAccordionOpen] = useState<boolean>(() => isDescendantActive);
-
-  useEffect(() => {
-    setAccordionOpen(isDescendantActive);
-  }, [isDescendantActive]);
 
   const baseItemClassName: string = clsx(
     "group/menu-item flex items-center gap-3 w-full p-2 text-white/80",
@@ -109,6 +101,14 @@ export default function SidebarMenuItem({
       onClick?.();
     }
   };
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    setAccordionOpen(isDescendantActive);
+  }, [isDescendantActive]);
 
   return (
     <div

@@ -31,22 +31,6 @@ export default function TableChangeKeysPanel({
   const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
   const validKeys: string[] = Object.keys(keyboardKeyLabels);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      if (!selectedKey) return;
-      if (!validKeys.includes(e.code)) return;
-
-      setControlKeys((prev: PlayerControlKeysPlainObject | null) => (prev ? { ...prev, [selectedKey]: e.code } : prev));
-      setSelectedKey(null);
-      setShowErrorMessage(false);
-      setShowSuccessMessage(false);
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedKey, validKeys]);
-
   const keyUsageMap: Record<string, number> = controlKeys
     ? Object.entries(controlKeys).reduce(
         (map: Record<string, number>, [_, key]: [string, string]) => {
@@ -95,6 +79,22 @@ export default function TableChangeKeysPanel({
       </div>
     );
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (!selectedKey) return;
+      if (!validKeys.includes(e.code)) return;
+
+      setControlKeys((prev: PlayerControlKeysPlainObject | null) => (prev ? { ...prev, [selectedKey]: e.code } : prev));
+      setSelectedKey(null);
+      setShowErrorMessage(false);
+      setShowSuccessMessage(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedKey, validKeys]);
 
   return (
     <div className="flex flex-col justify-center items-center">
@@ -152,7 +152,7 @@ export default function TableChangeKeysPanel({
                   onChangeView(TablePanelView.GAME);
                 }}
               >
-                <Trans>Cancel</Trans>
+                <Trans>Return to the game</Trans>
               </Button>
             </div>
           </div>

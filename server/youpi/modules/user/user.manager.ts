@@ -2,84 +2,41 @@ import { User as UserModel, UserSettings as UserSettingsModel } from "db/client"
 import { Server as IoServer, Socket } from "socket.io";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
 import { logger } from "@/lib/logger";
-import { User, UserProps } from "@/server/youpi/modules/user/user.entity";
+import { User } from "@/server/youpi/modules/user/user.entity";
+import { UserFactory } from "@/server/youpi/modules/user/user.factory";
 import { UserService } from "@/server/youpi/modules/user/user.service";
-import { UserSettings } from "@/server/youpi/modules/user-settings/user-settings.entity";
 
 export class UserManager {
-  private static users: Map<string, User> = new Map<string, User>();
+  private static cache: Map<string, User> = new Map<string, User>();
   private static socketIdsByUserId: Map<string, Set<string>> = new Map<string, Set<string>>();
 
-  // ---------- Database Load ------------------------------
+  public static async findById(id: string): Promise<User> {
+    const cached: User | undefined = this.cache.get(id);
+    if (cached) return cached;
 
-  public static async loadUserFromDb(id: string): Promise<User> {
-    const db: (UserModel & { userSettings: UserSettingsModel | null }) | null = await UserService.getUserById(id);
-    if (!db) throw new Error(`User ${id} not found`);
-    return this.upsert(db);
-  }
+    const dbUser: (UserModel & { userSettings: UserSettingsModel | null }) | null = await UserService.findById(id);
+    if (!dbUser) throw new Error(`User ${id} not found`);
 
-  // ---------- Basic CRUD ---------------------------------
-
-  public static get(id: string): User | undefined {
-    return this.users.get(id);
-  }
-
-  public static all(): User[] {
-    return [...this.users.values()];
-  }
-
-  public static create(props: UserProps): User {
-    let user: User | undefined = this.users.get(props.id);
-    if (user) return user;
-
-    user = new User(props);
-    this.users.set(user.id, user);
+    const user: User = UserFactory.createUser(dbUser);
+    this.cache.set(user.id, user);
 
     return user;
   }
 
-  public static upsert(props: UserProps): User {
-    const user: User | undefined = this.users.get(props.id);
+  public static async blockTableInvitations(userId: string): Promise<void> {
+    const user: User = await this.findById(userId);
+    user.blockTableInvitations();
+    logger.debug(`${user.username} blocked invitations.`);
+  }
 
-    if (user) {
-      user.username = props.username;
-      user.userSettings = props.userSettings
-        ? new UserSettings({
-            id: props.userSettings.id,
-            avatarId: props.userSettings.avatarId,
-            theme: props.userSettings.theme,
-            profanityFilter: props.userSettings.profanityFilter,
-          })
-        : null;
-
-      return user;
-    }
-
-    return this.create(props);
+  public static async allowTableInvitations(userId: string): Promise<void> {
+    const user: User = await this.findById(userId);
+    user.allowTableInvitations();
+    logger.debug(`${user.username} allow invitations.`);
   }
 
   public static delete(id: string): void {
-    this.users.delete(id);
-  }
-
-  // ---------- User Actions --------------------------------
-
-  public static blockTableInvitations(userId: string): void {
-    const user: User | undefined = this.get(userId);
-
-    if (user) {
-      user.blockTableInvitations();
-      logger.debug(`${user.username} blocked invitations.`);
-    }
-  }
-
-  public static allowTableInvitations(userId: string): void {
-    const user: User | undefined = this.get(userId);
-
-    if (user) {
-      user.allowTableInvitations();
-      logger.debug(`${user.username} allow invitations.`);
-    }
+    this.cache.delete(id);
   }
 
   // ---------- Socket Actions ------------------------------

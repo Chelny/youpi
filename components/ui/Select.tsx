@@ -59,62 +59,6 @@ export default function Select({
   const { modalPortalTarget } = useModal();
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent): void => {
-      const target: Node = event.target as Node;
-      if (selectBoxRef.current?.contains(target)) return;
-      if (dropdownRef.current?.contains(target)) return;
-      setIsDropdownOpen(false);
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  useEffect(() => {
-    const target: HTMLElement = modalPortalTarget ?? document.body;
-    setPortalTarget(target);
-  }, [modalPortalTarget]);
-
-  useLayoutEffect(() => {
-    if (!isDropdownOpen) return;
-    setDropdownStyle(computeDropdownStyle());
-  }, [isDropdownOpen]);
-
-  useEffect(() => {
-    if (!isDropdownOpen) return;
-
-    const onReposition = (): void => setDropdownStyle(computeDropdownStyle());
-
-    window.addEventListener("scroll", onReposition, true);
-    window.addEventListener("resize", onReposition);
-
-    return () => {
-      window.removeEventListener("scroll", onReposition, true);
-      window.removeEventListener("resize", onReposition);
-    };
-  }, [isDropdownOpen]);
-
-  useEffect(() => {
-    if (!isDropdownOpen) return;
-
-    const selectedIndex: number = Math.max(
-      0,
-      options.findIndex((option: ReactElement<SelectOptionProps>) => option.props.value === selectedValue),
-    );
-
-    requestAnimationFrame(() => {
-      optionRefs.current[selectedIndex]?.focus();
-    });
-  }, [isDropdownOpen, options, selectedValue]);
-
-  useEffect(() => {
-    setSelectedValue(defaultValue);
-  }, [defaultValue]);
-
   const computeDropdownStyle = (): CSSProperties => {
     if (!selectBoxRef.current) return {};
 
@@ -187,6 +131,62 @@ export default function Select({
 
     if (target) target.focus();
   };
+
+  useLayoutEffect(() => {
+    if (!isDropdownOpen) return;
+    setDropdownStyle(computeDropdownStyle());
+  }, [isDropdownOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent): void => {
+      const target: Node = event.target as Node;
+      if (selectBoxRef.current?.contains(target)) return;
+      if (dropdownRef.current?.contains(target)) return;
+      setIsDropdownOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    const target: HTMLElement = modalPortalTarget ?? document.body;
+    setPortalTarget(target);
+  }, [modalPortalTarget]);
+
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+
+    const onReposition = (): void => setDropdownStyle(computeDropdownStyle());
+
+    window.addEventListener("scroll", onReposition, true);
+    window.addEventListener("resize", onReposition);
+
+    return () => {
+      window.removeEventListener("scroll", onReposition, true);
+      window.removeEventListener("resize", onReposition);
+    };
+  }, [isDropdownOpen]);
+
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+
+    const selectedIndex: number = Math.max(
+      0,
+      options.findIndex((option: ReactElement<SelectOptionProps>) => option.props.value === selectedValue),
+    );
+
+    requestAnimationFrame(() => {
+      optionRefs.current[selectedIndex]?.focus();
+    });
+  }, [isDropdownOpen, options, selectedValue]);
+
+  useEffect(() => {
+    setSelectedValue(defaultValue);
+  }, [defaultValue]);
 
   return (
     <div className={clsx("flex flex-col", isNoBottomSpace ? "mb-0" : "mb-4")}>

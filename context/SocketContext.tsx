@@ -39,6 +39,13 @@ export const SocketProvider = ({ children, session }: PropsWithChildren<{ sessio
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [userAvatars, setUserAvatars] = useState<UserAvatarsMap>({});
 
+  const setUserAvatar = (userId: string, avatarId: string): void => {
+    setUserAvatars((prev: UserAvatarsMap) => {
+      if (prev[userId] === avatarId) return prev;
+      return { ...prev, [userId]: avatarId };
+    });
+  };
+
   useEffect(() => {
     if (!session) {
       if (socketRef.current) {
@@ -187,14 +194,6 @@ export const SocketProvider = ({ children, session }: PropsWithChildren<{ sessio
     if (!myId || !myAvatarId) return;
     setUserAvatar(myId, myAvatarId);
   }, [session?.user?.id, session?.user?.userSettings?.avatarId]);
-
-  const setUserAvatar = (userId: string, avatarId: string): void => {
-    setUserAvatars((prev: UserAvatarsMap) => {
-      if (prev[userId] === avatarId) return prev;
-      return { ...prev, [userId]: avatarId };
-    });
-  };
-
   return (
     <SocketContext.Provider value={{ socketRef, isConnected, session, userAvatars, setUserAvatar }}>
       {children}

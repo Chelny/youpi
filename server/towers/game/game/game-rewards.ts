@@ -21,13 +21,17 @@ export async function handleRewards(
     if (!tablePlayer) continue;
 
     if (winnerIds.includes(playerId)) {
-      tablePlayer.player.stats.recordWin();
+      await PlayerStatsManager.recordWin(playerId);
 
       if (tablePlayer.player.stats.isHeroEligible()) {
         const heroCode: string = CipherHeroManager.generateHeroCode(playerId);
         await TableChatMessageManager.create({
-          tableId: game.table.id,
-          player: tablePlayer.player,
+          table: {
+            connect: { id: game.table.id },
+          },
+          player: {
+            connect: { id: playerId },
+          },
           text: null,
           type: TableChatMessageType.HERO_CODE,
           textVariables: { heroCode },
@@ -35,7 +39,7 @@ export async function handleRewards(
         });
       }
     } else {
-      tablePlayer.player.stats.recordLoss();
+      await PlayerStatsManager.recordLoss(playerId);
     }
   }
 
@@ -67,8 +71,12 @@ export async function handleRewards(
 
       await PlayerStatsManager.updateRating(tablePlayer.playerId, eloResult.newRating);
       await TableChatMessageManager.create({
-        tableId: game.table.id,
-        player: tablePlayer.player,
+        table: {
+          connect: { id: game.table.id },
+        },
+        player: {
+          connect: { id: tablePlayer.playerId },
+        },
         text: null,
         type: TableChatMessageType.GAME_RATING,
         textVariables: {

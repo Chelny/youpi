@@ -1,4 +1,3 @@
-import { User } from "@/server/youpi/modules/user/user.entity";
 import { UserFactory } from "@/server/youpi/modules/user/user.factory";
 import {
   UserRelationship,
@@ -8,13 +7,10 @@ import { UserRelationshipWithRelations } from "@/types/prisma";
 
 export class UserRelationshipFactory {
   public static createUserRelationship(dbUserRelationship: UserRelationshipWithRelations): UserRelationship {
-    const sourceUser: User = UserFactory.createUser(dbUserRelationship.sourceUser);
-    const targetUser: User = UserFactory.createUser(dbUserRelationship.targetUser);
-
     return new UserRelationship({
       id: dbUserRelationship.id,
-      sourceUser,
-      targetUser,
+      sourceUser: UserFactory.createUser(dbUserRelationship.sourceUser),
+      targetUser: UserFactory.createUser(dbUserRelationship.targetUser),
       type: dbUserRelationship.type,
       blockReason: dbUserRelationship.blockReason,
       isMuted: dbUserRelationship.isMuted,

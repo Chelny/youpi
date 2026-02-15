@@ -1,11 +1,11 @@
 import { GameState, TableChatMessageType, TableType } from "db/client";
+import type { Game, GamePlainObject } from "@/server/towers/game/game/game";
 import type { Room, RoomLitePlainObject } from "@/server/towers/modules/room/room.entity";
 import type {
   TableInvitation,
   TableInvitationPlainObject,
 } from "@/server/towers/modules/table-invitation/table-invitation.entity";
 import { ServerTowersSeat, ServerTowersTeam } from "@/interfaces/table-seats";
-import { Game, GamePlainObject } from "@/server/towers/game/game/game";
 import { Player, PlayerPlainObject } from "@/server/towers/modules/player/player.entity";
 import {
   TableChatMessage,
@@ -13,7 +13,6 @@ import {
 } from "@/server/towers/modules/table-chat-message/table-chat-message.entity";
 import { TablePlayer, TablePlayerPlainObject } from "@/server/towers/modules/table-player/table-player.entity";
 import { TableSeat, TableSeatPlainObject } from "@/server/towers/modules/table-seat/table-seat.entity";
-import { UserRelationshipManager } from "@/server/youpi/modules/user-relationship/user-relationship.manager";
 
 export interface TableProps {
   id: string
@@ -98,10 +97,18 @@ export class Table {
     this._tableType = tableType;
   }
 
+  public isPlayerInTable(playerId: string): boolean {
+    return this.players.some((tp: TablePlayer) => tp.playerId === playerId);
+  }
+
   public addPlayer(tablePlayer: TablePlayer): void {
     if (!this.players.some((tp: TablePlayer) => tp.playerId === tablePlayer.playerId)) {
       this.players.push(tablePlayer);
     }
+  }
+
+  public getPlayer(playerId: string): TablePlayer | undefined {
+    return this.players.find((tp: TablePlayer) => tp.playerId === playerId);
   }
 
   public updatePlayer(tablePlayer: TablePlayer): void {
@@ -176,22 +183,13 @@ export class Table {
     }
   }
 
-  public messagesFor(playerId: string): TableChatMessage[] {
+  public async messagesFor(playerId: string, mutedUserIds: string[]): Promise<TableChatMessage[]> {
     const tablePlayer: TablePlayer | undefined = this.players.find((tp: TablePlayer) => tp.playerId === playerId);
     if (!tablePlayer) return [];
 
     return this.chatMessages.filter(async (tcm: TableChatMessage) => {
-      if (tcm.createdAt < tablePlayer.createdAt) {
-        return false;
-      }
-
-      const mutedUserIds: string[] = await UserRelationshipManager.mutedUserIdsFor(playerId);
-
-      if (mutedUserIds.includes(tcm.player.id) && tcm.type === TableChatMessageType.CHAT) {
-        return false;
-      }
-
-      return true;
+      if (mutedUserIds.includes(tcm.player.id) && tcm.type === TableChatMessageType.CHAT) return false;
+      return tcm.createdAt >= tablePlayer.createdAt;
     });
   }
 

@@ -39,14 +39,7 @@ export class PlayerStats {
     this.wins = props.wins;
     this.losses = props.losses;
     this.streak = props.streak;
-    this.winHistory = Array.isArray(props.winHistory)
-      ? (props.winHistory as unknown[])
-          .filter(
-            (v: unknown): v is string | number | Date =>
-              typeof v === "string" || typeof v === "number" || v instanceof Date,
-          )
-          .map((v: string | number | Date) => new Date(v))
-      : null;
+    this.winHistory = props.winHistory;
   }
 
   public async recordWin(): Promise<void> {

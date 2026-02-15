@@ -72,17 +72,17 @@ export class YoupiSocketHandler {
   };
 
   private handleMuteUser = async ({ mutedUserId }: { mutedUserId: string }): Promise<void> => {
-    if (!(await UserRelationshipManager.isMuted(this.user.id, mutedUserId))) {
-      const user: User | undefined = UserManager.get(mutedUserId);
-      if (!user) throw new Error("User not found");
+    const isMuted: boolean = await UserRelationshipManager.isMuted(this.user.id, mutedUserId);
+    if (!isMuted) {
+      const user: User = await UserManager.findById(mutedUserId);
       await UserRelationshipManager.mute(this.user, user);
     }
   };
 
   private handleUnmuteUser = async ({ mutedUserId }: { mutedUserId: string }): Promise<void> => {
-    if (await UserRelationshipManager.isMuted(this.user.id, mutedUserId)) {
-      const user: User | undefined = UserManager.get(mutedUserId);
-      if (!user) throw new Error("User not found");
+    const isMuted: boolean = await UserRelationshipManager.isMuted(this.user.id, mutedUserId);
+    if (isMuted) {
+      const user: User = await UserManager.findById(mutedUserId);
       await UserRelationshipManager.unmute(this.user, user);
     }
   };
@@ -117,33 +117,36 @@ export class YoupiSocketHandler {
     }
   };
 
-  private handleGetConversations = ({}, callback: <T>({ success, message, data }: SocketCallback<T>) => void): void => {
+  private handleGetConversations = async (
+    {},
+    callback: <T>({ success, message, data }: SocketCallback<T>) => void,
+  ): Promise<void> => {
     try {
-      const conversations: Conversation[] = ConversationManager.getAllByUserId(this.user.id);
+      const conversations: Conversation[] = await ConversationManager.findAllByUserId(this.user.id);
       callback({ success: true, data: conversations.map((c: Conversation) => c.toPlainObject()) });
     } catch (error) {
       callback({ success: false, message: error instanceof Error ? error.message : "Error getting conversations" });
     }
   };
 
-  private handleGetUnreadConversations = (
+  private handleGetUnreadConversations = async (
     {},
     callback: <T>({ success, message, data }: SocketCallback<T>) => void,
-  ): void => {
+  ): Promise<void> => {
     try {
-      const unreadConversationsCount: number = ConversationManager.getUnreadConversationsCount(this.user.id);
+      const unreadConversationsCount: number = await ConversationManager.getUnreadConversationsCount(this.user.id);
       callback({ success: true, data: unreadConversationsCount });
     } catch (error) {
       callback({ success: false, message: error instanceof Error ? error.message : "Error getting unread messages" });
     }
   };
 
-  private handleGetConversation = (
+  private handleGetConversation = async (
     { conversationId }: { conversationId: string },
     callback: ({ success, message }: SocketCallback) => void,
-  ): void => {
+  ): Promise<void> => {
     try {
-      const conversation: Conversation | undefined = ConversationManager.get(conversationId);
+      const conversation: Conversation | undefined = await ConversationManager.findById(conversationId);
       if (!conversation) throw Error;
 
       callback({ success: true, data: conversation.toPlainObject() });
@@ -168,30 +171,32 @@ export class YoupiSocketHandler {
     await ConversationManager.remove(conversationId, this.user.id);
   };
 
-  private handleSendInstantMessage = (
+  private handleSendInstantMessage = async (
     { conversationId, recipientId, message }: { conversationId?: string; recipientId?: string; message: string },
     callback: ({ success, message }: SocketCallback) => void,
-  ): void => {
+  ): Promise<void> => {
     try {
       let conversation: Conversation | undefined;
 
       if (!conversationId) {
         if (recipientId) {
-          conversation = ConversationManager.getOrCreateBetweenUsers(this.user.id, recipientId);
+          conversation = await ConversationManager.getOrCreateBetweenUsers(this.user.id, recipientId);
         } else {
           throw Error("recipientId not provided");
         }
       } else {
-        conversation = ConversationManager.get(conversationId);
+        conversation = await ConversationManager.findById(conversationId);
       }
 
       if (!conversation) throw Error("Conversation not found");
 
-      const conversationParticipant: ConversationParticipant | undefined =
-        ConversationParticipantManager.getOtherParticipant(conversation.id, this.user.id);
+      const conversationParticipant: ConversationParticipant = await ConversationParticipantManager.getOtherParticipant(
+        conversation.id,
+        this.user.id,
+      );
       if (!conversationParticipant) throw Error("Conversation participant not found");
 
-      InstantMessageManager.sendMessage(conversation.id, this.user, conversationParticipant?.user, message);
+      await InstantMessageManager.sendMessage(conversation.id, this.user, conversationParticipant?.user, message);
 
       callback({ success: true, message: "Message has been sent.", data: conversation.id });
     } catch (error) {

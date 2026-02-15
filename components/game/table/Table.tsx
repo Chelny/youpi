@@ -95,19 +95,28 @@ export default function Table(): ReactNode {
     revalidateOnReconnect: true,
   });
 
-  useEffect(() => {
-    if (tableInfo && !joinedTableSidebarRef.current.has(tableInfo.id)) {
-      joinedTableSidebarRef.current.add(tableInfo.id);
-      addJoinedTable({
-        id: tableInfo.id,
-        roomId: tableInfo.roomId,
-        roomName: tableInfo.room.name,
-        tableNumber: tableInfo.tableNumber,
-      });
+  const handleSit = (seatNumber: number): void => {
+    socketRef.current?.emit(ClientToServerEvents.TABLE_SEAT_SIT, { tableId, seatNumber });
+  };
+
+  const handleStand = (): void => {
+    socketRef.current?.emit(ClientToServerEvents.TABLE_SEAT_STAND, { tableId });
+  };
+
+  const handleStart = (): void => {
+    socketRef.current?.emit(ClientToServerEvents.TABLE_SEAT_READY, { tableId });
+  };
+
+  const updateTablePlayer = (tablePlayer: TablePlayerPlainObject): void => {
+    if (tablePlayer.playerId === session?.user.id) {
+      setCurrentTablePlayer(tablePlayer);
     }
-  }, [tableInfo]);
+  };
 
   useEffect(() => {
+    const socket: Socket | null = socketRef.current;
+    if (!isConnected || !socket) return;
+
     if (tableResponse?.success && tableResponse.data) {
       // Hide PlayerBoardSkeleton
       setIsTableHydrated(true);
@@ -130,18 +139,33 @@ export default function Table(): ReactNode {
       setCurrentTablePlayer(
         tableResponse.data?.players.find((tp: TablePlayerPlainObject) => tp.playerId === session?.user.id),
       );
+
+      if (!joinedTableSidebarRef.current.has(tableData.id)) {
+        joinedTableSidebarRef.current.add(tableData.id);
+        addJoinedTable({
+          id: tableData.id,
+          roomId: tableData.roomId,
+          roomName: tableData.room.name,
+          tableNumber: tableData.tableNumber,
+        });
+      }
     }
-  }, [tableResponse]);
+  }, [isConnected, tableResponse]);
 
   useEffect(() => {
-    if (!currentTablePlayer) {
-      setSeatNumber(null);
-      setIsReady(false);
-    } else {
-      setSeatNumber(currentTablePlayer.seatNumber);
-      setIsReady(currentTablePlayer.isReady);
-    }
-  }, [currentTablePlayer]);
+    const socket: Socket | null = socketRef.current;
+    if (!isConnected || !socket || !tableInfo) return;
+
+    socket.emit(
+      ClientToServerEvents.GAME_CONTROL_KEYS,
+      { playerId: session?.user.id },
+      (response: SocketCallback<PlayerControlKeysPlainObject>) => {
+        if (response.success && response.data) {
+          setControlKeys(response.data);
+        }
+      },
+    );
+  }, [isConnected, tableInfo?.id]);
 
   useEffect(() => {
     const handleFKeyMessage = (event: KeyboardEvent): void => {
@@ -169,6 +193,16 @@ export default function Table(): ReactNode {
   }, [roomId, tableId]);
 
   useEffect(() => {
+    if (!currentTablePlayer) {
+      setSeatNumber(null);
+      setIsReady(false);
+    } else {
+      setSeatNumber(currentTablePlayer.seatNumber);
+      setIsReady(currentTablePlayer.isReady);
+    }
+  }, [currentTablePlayer]);
+
+  useEffect(() => {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
 
@@ -179,43 +213,8 @@ export default function Table(): ReactNode {
         ClientToServerEvents.TABLE_JOIN,
         { tableId },
         async (response: SocketCallback<TablePlainObject>): Promise<void> => {
-          if (response.success && response.data) {
-            // Hide PlayerBoardSkeleton
-            setIsTableHydrated(true);
-
-            // TODO: Switch to loadRoom when db logic will be implemented
-            // await loadTable();
-
-            const tableData: TablePlainObject = response.data;
-            setTableInfo({
-              id: tableData.id,
-              roomId: tableData.roomId,
-              room: tableData.room,
-              tableNumber: tableData.tableNumber,
-              hostPlayerId: tableData.hostPlayerId,
-              hostPlayer: tableData.hostPlayer,
-              tableType: tableData.tableType,
-              isRated: tableData.isRated,
-            });
-            setPlayers(tableData.players || []);
-            setChatMessages(tableData.chatMessages || []);
-            setSeats(tableData.seats || []);
-            setInvitations(tableData.invitations || []);
-
-            // TODO: Delete when API will be used
-            setCurrentTablePlayer(
-              response.data?.players.find((tp: TablePlayerPlainObject) => tp.playerId === session?.user.id),
-            );
-
-            socket.emit(
-              ClientToServerEvents.GAME_CONTROL_KEYS,
-              { playerId: session?.user.id },
-              (response: SocketCallback<PlayerControlKeysPlainObject>) => {
-                if (response.success && response.data) {
-                  setControlKeys(response.data);
-                }
-              },
-            );
+          if (response.success) {
+            await loadTable();
           } else {
             router.push(`${ROUTE_TOWERS.PATH}?room=${roomId}`);
           }
@@ -379,24 +378,6 @@ export default function Table(): ReactNode {
     };
   }, [isConnected, tableId]);
 
-  const handleSit = (seatNumber: number): void => {
-    socketRef.current?.emit(ClientToServerEvents.TABLE_SEAT_SIT, { tableId, seatNumber });
-  };
-
-  const handleStand = (): void => {
-    socketRef.current?.emit(ClientToServerEvents.TABLE_SEAT_STAND, { tableId });
-  };
-
-  const handleStart = (): void => {
-    socketRef.current?.emit(ClientToServerEvents.TABLE_SEAT_READY, { tableId });
-  };
-
-  const updateTablePlayer = (tablePlayer: TablePlayerPlainObject): void => {
-    if (tablePlayer.playerId === session?.user.id) {
-      setCurrentTablePlayer(tablePlayer);
-    }
-  };
-
   if (tableError) return <div>Error: {tableError.message}</div>;
 
   return (
@@ -451,6 +432,7 @@ export default function Table(): ReactNode {
                 players={players}
                 invitations={invitations}
                 currentTablePlayer={currentTablePlayer}
+                controlKeys={controlKeys}
                 gameStateBySeat={gameStateBySeat}
                 seatNumber={seatNumber}
                 gameState={gameState}

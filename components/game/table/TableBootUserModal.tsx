@@ -37,6 +37,18 @@ export default function TableBootUserModal({
   const [playersToBoot, setPlayersToBoot] = useState<TablePlayerPlainObject[]>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
 
+  const handleSelectedPlayer = (): void => {
+    socketRef.current?.emit(
+      ClientToServerEvents.TABLE_BOOT_USER,
+      { tableId, hostId, playerToBootId: selectedPlayerId },
+      (response: SocketCallback) => {
+        if (response.success) {
+          onCancel?.();
+        }
+      },
+    );
+  };
+
   useEffect(() => {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
@@ -79,18 +91,6 @@ export default function TableBootUserModal({
       socketListener.dispose();
     };
   }, [isConnected, tableId]);
-
-  const handleSelectedPlayer = (): void => {
-    socketRef.current?.emit(
-      ClientToServerEvents.TABLE_BOOT_USER,
-      { tableId, hostId, playerToBootId: selectedPlayerId },
-      (response: SocketCallback) => {
-        if (response.success) {
-          onCancel?.();
-        }
-      },
-    );
-  };
 
   return (
     <Modal

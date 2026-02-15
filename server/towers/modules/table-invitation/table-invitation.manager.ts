@@ -1,5 +1,5 @@
-import { createId } from "@paralleldrive/cuid2";
 import { NotificationType, TableChatMessageType, TableInvitationStatus, TableType } from "db/client";
+import { TowersTableInvitationCreateInput } from "db/models";
 import { ServerInternalEvents } from "@/constants/socket/server-internal";
 import { logger } from "@/lib/logger";
 import { publishRedisEvent } from "@/server/redis/publish";
@@ -8,100 +8,83 @@ import { NotificationManager } from "@/server/towers/modules/notification/notifi
 import { PlayerManager } from "@/server/towers/modules/player/player.manager.ts";
 import { TableChatMessage } from "@/server/towers/modules/table-chat-message/table-chat-message.entity";
 import { TableChatMessageManager } from "@/server/towers/modules/table-chat-message/table-chat-message.manager";
-import { TableInvitation, TableInvitationProps } from "@/server/towers/modules/table-invitation/table-invitation.entity";
-import { TablePlayerManager } from "@/server/towers/modules/table-player/table-player.manager";
+import { TableInvitation } from "@/server/towers/modules/table-invitation/table-invitation.entity";
+import { TableInvitationFactory } from "@/server/towers/modules/table-invitation/table-invitation.factory";
+import { TableInvitationService } from "@/server/towers/modules/table-invitation/table-invitation.service";
 import { User } from "@/server/youpi/modules/user/user.entity";
 import { UserManager } from "@/server/youpi/modules/user/user.manager";
+import { TowersTableInvitationWithRelations } from "@/types/prisma";
 
 export class TableInvitationManager {
-  private static tableInvitations: Map<string, TableInvitation> = new Map<string, TableInvitation>();
+  private static cache: Map<string, TableInvitation> = new Map<string, TableInvitation>();
 
-  // ---------- Basic CRUD ------------------------------
-
-  public static get(id: string): TableInvitation | undefined {
-    return this.tableInvitations.get(id);
+  public static async findAllByPlayerId(tableId: string, playerId: string): Promise<TableInvitation[]> {
+    const dbTableInvitations: TowersTableInvitationWithRelations[] = await TableInvitationService.findAllByPlayerId(
+      tableId,
+      playerId,
+    );
+    return dbTableInvitations.map(TableInvitationFactory.createTableInvitation);
   }
 
-  public static all(): TableInvitation[] {
-    return [...this.tableInvitations.values()];
+  public static async findAllByInviterPlayerId(playerId: string): Promise<TableInvitation[]> {
+    const dbTableInvitations: TowersTableInvitationWithRelations[] =
+      await TableInvitationService.findAllByInviterPlayerId(playerId);
+    return dbTableInvitations.map(TableInvitationFactory.createTableInvitation);
   }
 
-  public static create(props: Omit<TableInvitationProps, "id">): TableInvitation {
-    const tableInvitation: TableInvitation = new TableInvitation({ id: createId(), ...props });
-    this.tableInvitations.set(tableInvitation.id, tableInvitation);
-    PlayerManager.updateLastActiveAt(props.inviterPlayer.id);
+  public static async findAllByInviteePlayerId(playerId: string): Promise<TableInvitation[]> {
+    const dbTableInvitations: TowersTableInvitationWithRelations[] =
+      await TableInvitationService.findAllByInviteePlayerId(playerId);
+    return dbTableInvitations.map(TableInvitationFactory.createTableInvitation);
+  }
+
+  private static async findReceivedInvitationsByTableId(tableId: string, playerId: string): Promise<TableInvitation[]> {
+    const tableInvitations: TableInvitation[] = await this.findAllByInviteePlayerId(playerId);
+    return tableInvitations.filter((ti: TableInvitation) => ti.tableId === tableId);
+  }
+
+  public static async hasPendingInvitationForTable(tableId: string, playerId: string): Promise<boolean> {
+    const tableInvitations: TableInvitation[] = await this.findReceivedInvitationsByTableId(tableId, playerId);
+    return tableInvitations.some((ti: TableInvitation) => ti.status === TableInvitationStatus.PENDING);
+  }
+
+  public static async hasAcceptedInvitationForTable(tableId: string, playerId: string): Promise<boolean> {
+    const tableInvitations: TableInvitation[] = await this.findReceivedInvitationsByTableId(tableId, playerId);
+    return tableInvitations.some((ti: TableInvitation) => ti.status === TableInvitationStatus.ACCEPTED);
+  }
+
+  public static async create(props: TowersTableInvitationCreateInput): Promise<TableInvitation> {
+    const dbTableInvitation: TowersTableInvitationWithRelations = await TableInvitationService.create(props);
+    const tableInvitation: TableInvitation = TableInvitationFactory.createTableInvitation(dbTableInvitation);
+    await PlayerManager.updateLastActiveAt(tableInvitation.inviterPlayerId);
     return tableInvitation;
   }
 
-  public static delete(id: string): void {
-    this.tableInvitations.delete(id);
-  }
-
-  // ---------- Table Invitation Actions ------------------------------
-
-  public static getInvitationsForPlayer(tableId: string, playerId: string): TableInvitation[] {
-    return this.all().filter(
-      (ti: TableInvitation) =>
-        ti.tableId === tableId && (ti.inviterPlayerId === playerId || ti.inviteePlayerId === playerId),
-    );
-  }
-
-  public static getSentInvitations(playerId: string): TableInvitation[] {
-    return this.all().filter((ti: TableInvitation) => ti.inviterPlayerId === playerId);
-  }
-
-  public static getSentInvitationsByTableId(tableId: string, playerId: string): TableInvitation[] {
-    return this.getSentInvitations(playerId).filter((ti: TableInvitation) => ti.tableId === tableId);
-  }
-
-  public static getReceivedInvitations(playerId: string): TableInvitation[] {
-    return this.all().filter((ti: TableInvitation) => ti.inviteePlayerId === playerId);
-  }
-
-  public static getReceivedInvitationsByTableId(tableId: string, playerId: string): TableInvitation[] {
-    return this.getReceivedInvitations(playerId).filter((ti: TableInvitation) => ti.tableId === tableId);
-  }
-
-  public static hasPendingInvitationForTable(tableId: string, playerId: string): boolean {
-    return this.getReceivedInvitationsByTableId(tableId, playerId).some(
-      (ti: TableInvitation) => ti.status === TableInvitationStatus.PENDING,
-    );
-  }
-
-  public static hasAcceptedInvitationForTable(tableId: string, playerId: string): boolean {
-    return this.getReceivedInvitationsByTableId(tableId, playerId).some(
-      (ti: TableInvitation) => ti.status === TableInvitationStatus.ACCEPTED,
-    );
-  }
-
-  public static deleteForTableAndPlayer(tableId: string, playerId: string): void {
-    for (const invitation of this.tableInvitations.values()) {
-      if (
-        invitation.tableId === tableId &&
-        (invitation.inviteePlayerId === playerId || invitation.inviterPlayerId === playerId)
-      ) {
-        this.delete(invitation.id);
-        invitation.table.removeInvitation(invitation.id);
-      }
-    }
-  }
-
   public static async accept(tableInvitationId: string): Promise<void> {
-    const tableInvitation: TableInvitation | undefined = this.get(tableInvitationId);
-    if (!tableInvitation) return;
+    const dbTableInvitation: TowersTableInvitationWithRelations = await TableInvitationService.update(
+      tableInvitationId,
+      {
+        status: TableInvitationStatus.ACCEPTED,
+      },
+    );
 
-    tableInvitation.status = TableInvitationStatus.ACCEPTED;
-    PlayerManager.updateLastActiveAt(tableInvitation.inviterPlayer.id);
+    await PlayerManager.updateLastActiveAt(dbTableInvitation.inviterPlayer.id);
+
+    const tableInvitation: TableInvitation = TableInvitationFactory.createTableInvitation(dbTableInvitation);
 
     if (
       (tableInvitation.table.tableType === TableType.PROTECTED ||
         tableInvitation.table.tableType === TableType.PRIVATE) &&
-      TablePlayerManager.isInTable(tableInvitation.tableId, tableInvitation.inviteePlayerId)
+      tableInvitation.table.isPlayerInTable(tableInvitation.inviteePlayerId)
     ) {
       // Auto-accept case: Existing seated player in protected/private tables
       const inviterTableChatMessage: TableChatMessage = await TableChatMessageManager.create({
-        tableId: tableInvitation.table.id,
-        player: tableInvitation.inviterPlayer,
+        table: {
+          connect: { id: tableInvitation.table.id },
+        },
+        player: {
+          connect: { id: tableInvitation.inviterPlayerId },
+        },
         text: null,
         type: TableChatMessageType.USER_GRANTED_SEAT_ACCESS_INVITER,
         textVariables: { username: tableInvitation.inviteePlayer.user.username },
@@ -111,11 +94,15 @@ export class TableInvitationManager {
       tableInvitation.table.addChatMessage(inviterTableChatMessage);
 
       const inviteeTableChatMessage: TableChatMessage = await TableChatMessageManager.create({
-        tableId: tableInvitation.table.id,
-        player: tableInvitation.inviteePlayer,
+        table: {
+          connect: { id: tableInvitation.table.id },
+        },
+        player: {
+          connect: { id: tableInvitation.inviteePlayerId },
+        },
         text: null,
         type: TableChatMessageType.USER_GRANTED_SEAT_ACCESS_INVITEE,
-        textVariables: null,
+        textVariables: undefined,
         visibleToUserId: tableInvitation.inviteePlayerId,
       });
 
@@ -132,8 +119,12 @@ export class TableInvitationManager {
     } else {
       // Notify inviter privately that the invitee accepted their invitation
       const tableChatMessage: TableChatMessage = await TableChatMessageManager.create({
-        tableId: tableInvitation.table.id,
-        player: tableInvitation.inviterPlayer,
+        table: {
+          connect: { id: tableInvitation.table.id },
+        },
+        player: {
+          connect: { id: tableInvitation.inviterPlayerId },
+        },
         text: null,
         type: TableChatMessageType.USER_INVITED_TO_TABLE,
         textVariables: { username: tableInvitation.inviteePlayer.user.username },
@@ -150,22 +141,30 @@ export class TableInvitationManager {
 
   public static async decline(
     tableInvitationId: string,
-    reason: string | null,
+    declinedReason: string | null,
     isDeclineAll: boolean = false,
   ): Promise<void> {
-    const tableInvitation: TableInvitation | undefined = this.get(tableInvitationId);
-    if (!tableInvitation) return;
+    const dbTableInvitation: TowersTableInvitationWithRelations = await TableInvitationService.update(
+      tableInvitationId,
+      {
+        status: TableInvitationStatus.DECLINED,
+        declinedReason,
+      },
+    );
 
-    tableInvitation.status = TableInvitationStatus.DECLINED;
-    tableInvitation.declinedReason = reason;
-    this.delete(tableInvitation.id);
-    PlayerManager.updateLastActiveAt(tableInvitation.inviterPlayer.id);
+    await PlayerManager.updateLastActiveAt(dbTableInvitation.inviterPlayer.id);
 
-    const notification: Notification = NotificationManager.create({
-      playerId: tableInvitation.inviteePlayerId,
+    const tableInvitation: TableInvitation = TableInvitationFactory.createTableInvitation(dbTableInvitation);
+
+    const notification: Notification = await NotificationManager.create({
+      player: {
+        connect: { id: tableInvitation.inviteePlayerId },
+      },
       roomId: tableInvitation.roomId,
       type: NotificationType.TABLE_INVITE_DECLINED,
-      tableInvitation: tableInvitation,
+      tableInvitation: {
+        connect: { id: tableInvitationId },
+      },
     });
 
     await publishRedisEvent(ServerInternalEvents.TABLE_INVITATION_DECLINE, {
@@ -174,24 +173,39 @@ export class TableInvitationManager {
     });
 
     logger.debug(
-      `${tableInvitation.inviteePlayer?.user?.username} declined invitation to table #${tableInvitation.table?.tableNumber}. Reason: ${reason}`,
+      `${tableInvitation.inviteePlayer?.user?.username} declined invitation to table #${tableInvitation.table?.tableNumber}. Reason: ${declinedReason}`,
     );
 
     if (isDeclineAll) {
-      this.declineAll(tableInvitation.inviteePlayer.user);
+      await this.declineAll(tableInvitation.inviteePlayer.user);
     }
   }
 
   public static async declineAll(user: User): Promise<void> {
-    const pendingInvitations: TableInvitation[] = this.getReceivedInvitations(user.id).filter(
+    const tableInvitations: TableInvitation[] = await this.findAllByInviteePlayerId(user.id);
+    const pendingInvitations: TableInvitation[] = tableInvitations.filter(
       (ti: TableInvitation) => ti.status === TableInvitationStatus.PENDING,
     );
 
     for (const pendingInvitation of pendingInvitations) {
       pendingInvitation.status = TableInvitationStatus.DECLINED;
-      this.delete(pendingInvitation.id);
+      await this.delete(pendingInvitation.id);
     }
 
-    UserManager.blockTableInvitations(user.id);
+    await UserManager.blockTableInvitations(user.id);
+  }
+
+  public static async deleteAllByTableIdAndPlayerId(tableId: string, playerId: string): Promise<void> {
+    const invitations: TableInvitation[] = await this.findAllByPlayerId(tableId, playerId);
+    await TableInvitationService.deleteAllByTableIdAndPlayerId(tableId, playerId);
+
+    for (const invitation of invitations) {
+      invitation.table.removeInvitation(invitation.id);
+    }
+  }
+
+  public static async delete(id: string): Promise<void> {
+    await TableInvitationService.delete(id);
+    this.cache.delete(id);
   }
 }

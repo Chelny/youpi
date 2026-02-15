@@ -1,42 +1,49 @@
-import { createId } from "@paralleldrive/cuid2";
+import { TowersNotificationCreateInput } from "db/models";
 import { ServerInternalEvents } from "@/constants/socket/server-internal";
 import { publishRedisEvent } from "@/server/redis/publish";
-import { Notification, NotificationCreateProps } from "@/server/towers/modules/notification/notification.entity";
+import { Notification } from "@/server/towers/modules/notification/notification.entity";
+import { NotificationFactory } from "@/server/towers/modules/notification/notification.factory";
+import { NotificationService } from "@/server/towers/modules/notification/notification.service";
+import { TowersNotificationWithRelations } from "@/types/prisma";
 
 export class NotificationManager {
-  private static notifications: Map<string, Notification> = new Map<string, Notification>();
+  private static cache: Map<string, Notification> = new Map<string, Notification>();
 
-  // ---------- Basic CRUD ------------------------------
+  public static async findById(id: string): Promise<Notification | null> {
+    const cached: Notification | undefined = this.cache.get(id);
+    if (cached) return cached;
 
-  public static get(id: string): Notification | undefined {
-    return this.notifications.get(id);
-  }
+    const dbNotification: TowersNotificationWithRelations | null = await NotificationService.findById(id);
+    if (!dbNotification) return null;
 
-  public static all(): Notification[] {
-    return [...this.notifications.values()];
-  }
+    const notification: Notification = NotificationFactory.createNotification(dbNotification);
+    this.cache.set(notification.id, notification);
 
-  public static create(props: NotificationCreateProps): Notification {
-    const notification: Notification = new Notification({ id: createId(), ...props });
-    this.notifications.set(notification.id, notification);
     return notification;
   }
 
-  public static async delete(id: string): Promise<void> {
-    this.notifications.delete(id);
+  public static async findAllByPlayerId(playerId: string): Promise<Notification[]> {
+    const dbNotifications: TowersNotificationWithRelations[] = await NotificationService.findAllByPlayerId(playerId);
+
+    return dbNotifications.map((dbNotification: TowersNotificationWithRelations) => {
+      const notification: Notification = NotificationFactory.createNotification(dbNotification);
+      this.cache.set(notification.id, notification);
+      return notification;
+    });
   }
 
-  // ---------- Notification Actions ------------------------------
-
-  public static getAllByPlayerId(playerId: string): Notification[] {
-    return this.all().filter((notification: Notification) => notification.playerId === playerId);
+  public static async create(data: TowersNotificationCreateInput): Promise<Notification> {
+    const dbNotification: TowersNotificationWithRelations = await NotificationService.create(data);
+    const notification: Notification = NotificationFactory.createNotification(dbNotification);
+    this.cache.set(notification.id, notification);
+    return notification;
   }
 
-  public static async markAsRead(notificationId: string, userId: string): Promise<void> {
-    const notification: Notification | undefined = this.get(notificationId);
-    if (!notification) return undefined;
+  public static async markAsRead(id: string, userId: string): Promise<void> {
+    const dbNotification: TowersNotificationWithRelations = await NotificationService.markAsRead(id);
+    const notification: Notification = NotificationFactory.createNotification(dbNotification);
 
-    notification.markAsRead();
+    this.cache.set(notification.id, notification);
 
     await publishRedisEvent(ServerInternalEvents.NOTIFICATION_MARK_AS_READ, {
       userId,
@@ -44,8 +51,13 @@ export class NotificationManager {
     });
   }
 
-  public static async deleteNotification(id: string, userId: string): Promise<void> {
-    this.delete(id);
-    await publishRedisEvent(ServerInternalEvents.NOTIFICATION_DELETE, { userId, notificationId: id });
+  public static async delete(id: string, userId: string): Promise<void> {
+    await NotificationService.delete(id);
+    this.cache.delete(id);
+
+    await publishRedisEvent(ServerInternalEvents.NOTIFICATION_DELETE, {
+      userId,
+      notificationId: id,
+    });
   }
 }

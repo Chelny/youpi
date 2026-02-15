@@ -28,17 +28,6 @@ export function LinkedSocialAccountsForm(): ReactNode {
     }),
   };
 
-  useEffect(() => {
-    if (errorParam && errorMessages[errorParam]) {
-      setFormState({
-        success: false,
-        message: errorMessages[errorParam],
-      });
-    }
-
-    getLinkedAccounts();
-  }, []);
-
   const getLinkedAccounts = async (): Promise<void> => {
     await authClient.listAccounts(
       {},
@@ -120,6 +109,17 @@ export function LinkedSocialAccountsForm(): ReactNode {
       );
     }
   };
+
+  useEffect(() => {
+    if (errorParam && errorMessages[errorParam]) {
+      setFormState({
+        success: false,
+        message: errorMessages[errorParam],
+      });
+    }
+
+    getLinkedAccounts();
+  }, []);
 
   return (
     <AccountSectionHeader

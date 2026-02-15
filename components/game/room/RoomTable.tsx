@@ -35,6 +35,24 @@ export default function RoomTable({ roomId, table, roomPlayer }: RoomTableProps)
   const isWatchAccessGranted: boolean = !isPrivate || hasAccess;
   const isSitAccessGranted: boolean = (!isPrivate && !isProtected) || hasAccess;
 
+  const handleJoinTable = (seatNumber: number | null = null): void => {
+    if (seatNumber) {
+      socketRef.current?.emit(
+        ClientToServerEvents.TABLE_JOIN,
+        { tableId: table.id, seatNumber },
+        (response: SocketCallback) => {
+          if (response.success) {
+            router.push(`${ROUTE_TOWERS.PATH}?room=${roomId}&table=${table.id}`);
+          } else {
+            router.push(`${ROUTE_TOWERS.PATH}?room=${roomId}`);
+          }
+        },
+      );
+    } else {
+      router.push(`${ROUTE_TOWERS.PATH}?room=${roomId}&table=${table.id}`);
+    }
+  };
+
   useEffect(() => {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
@@ -65,24 +83,6 @@ export default function RoomTable({ roomId, table, roomPlayer }: RoomTableProps)
       socket.off("connect", onConnect);
     };
   }, [isConnected]);
-
-  const handleJoinTable = (seatNumber: number | null = null): void => {
-    if (seatNumber) {
-      socketRef.current?.emit(
-        ClientToServerEvents.TABLE_JOIN,
-        { tableId: table.id, seatNumber },
-        (response: SocketCallback) => {
-          if (response.success) {
-            router.push(`${ROUTE_TOWERS.PATH}?room=${roomId}&table=${table.id}`);
-          } else {
-            router.push(`${ROUTE_TOWERS.PATH}?room=${roomId}`);
-          }
-        },
-      );
-    } else {
-      router.push(`${ROUTE_TOWERS.PATH}?room=${roomId}&table=${table.id}`);
-    }
-  };
 
   return (
     <div className="flex flex-col">

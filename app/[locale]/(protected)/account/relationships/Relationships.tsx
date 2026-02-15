@@ -69,25 +69,6 @@ export function Relationships({ session }: RelationshipsProps): ReactNode {
   const [orderBy, setOrderBy] = useState<string>(urlOrderBy);
   const [sortOrder, setSortOrder] = useState<Prisma.SortOrder>(urlSort);
 
-  useEffect(() => setQuery(urlQuery), [urlQuery]);
-  useEffect(() => setType(urlType), [urlType]);
-  useEffect(() => setMuted(urlMuted), [urlMuted]);
-  useEffect(() => setOrderBy(urlOrderBy), [urlOrderBy]);
-  useEffect(() => setSortOrder(urlSort), [urlSort]);
-
-  useEffect(() => {
-    const next: string = buildQueryString({
-      query: debouncedQuery || undefined,
-      type: type || undefined,
-      muted: muted || undefined,
-      orderBy: orderBy || undefined,
-      sort: sortOrder || undefined,
-      page: undefined,
-    });
-
-    router.replace(`${pathname}${next}`);
-  }, [debouncedQuery, type, muted, orderBy, sortOrder, pathname, router]);
-
   const getKey = (pageIndex: number, previousPageData?: ApiResponse<UserRelationshipTableRow[]>) => {
     if (!userId) return null;
 
@@ -186,6 +167,25 @@ export function Relationships({ session }: RelationshipsProps): ReactNode {
 
     await mutate();
   };
+
+  useEffect(() => setQuery(urlQuery), [urlQuery]);
+  useEffect(() => setType(urlType), [urlType]);
+  useEffect(() => setMuted(urlMuted), [urlMuted]);
+  useEffect(() => setOrderBy(urlOrderBy), [urlOrderBy]);
+  useEffect(() => setSortOrder(urlSort), [urlSort]);
+
+  useEffect(() => {
+    const next: string = buildQueryString({
+      query: debouncedQuery || undefined,
+      type: type || undefined,
+      muted: muted || undefined,
+      orderBy: orderBy || undefined,
+      sort: sortOrder || undefined,
+      page: undefined,
+    });
+
+    router.replace(`${pathname}${next}`);
+  }, [debouncedQuery, type, muted, orderBy, sortOrder, pathname, router]);
 
   return (
     <div className="flex flex-col gap-4">

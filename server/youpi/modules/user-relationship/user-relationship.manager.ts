@@ -11,7 +11,7 @@ import { UserRelationshipService } from "@/server/youpi/modules/user-relationshi
 import { UserRelationshipWithRelations } from "@/types/prisma";
 
 export class UserRelationshipManager {
-  // ---------- Basic CRUD ------------------------------
+  private static cache: Map<string, UserRelationship> = new Map<string, UserRelationship>();
 
   public static async upsert(props: Optional<UserRelationshipProps, "id">): Promise<UserRelationship | null> {
     const dbUserRelationship: UserRelationshipWithRelations | null = await UserRelationshipService.upsert(
@@ -20,18 +20,12 @@ export class UserRelationshipManager {
       { type: props.type, isMuted: props.isMuted },
     );
 
-    PlayerManager.updateLastActiveAt(props.sourceUser.id);
+    await PlayerManager.updateLastActiveAt(props.sourceUser.id);
 
     if (!dbUserRelationship) return null;
 
     return UserRelationshipFactory.createUserRelationship(dbUserRelationship);
   }
-
-  public static async delete(id: string): Promise<void> {
-    await UserRelationshipService.delete(id);
-  }
-
-  // ---------- User Relationship Actions ------------------------------
 
   public static async findByUsers(
     sourceUserId: string,
@@ -50,17 +44,18 @@ export class UserRelationshipManager {
 
   public static async mute(sourceUser: User, targetUser: User): Promise<void> {
     await this.upsert({ sourceUser, targetUser, isMuted: true });
-
-    PlayerManager.updateLastActiveAt(sourceUser.id);
-
+    await PlayerManager.updateLastActiveAt(sourceUser.id);
     await publishRedisEvent(ServerInternalEvents.USER_RELATIONSHIP_MUTE, { sourceUserId: sourceUser.id });
   }
 
   public static async unmute(sourceUser: User, targetUser: User): Promise<void> {
     await this.upsert({ sourceUser, targetUser, isMuted: false });
-
-    PlayerManager.updateLastActiveAt(sourceUser.id);
-
+    await PlayerManager.updateLastActiveAt(sourceUser.id);
     await publishRedisEvent(ServerInternalEvents.USER_RELATIONSHIP_UNMUTE, { sourceUserId: sourceUser.id });
+  }
+
+  public static async delete(id: string): Promise<void> {
+    await UserRelationshipService.delete(id);
+    this.cache.delete(id);
   }
 }

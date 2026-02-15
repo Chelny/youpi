@@ -32,7 +32,8 @@
     "paths": {
       "@/*": [
         "./*"
-      ]
+      ],
+      "db/*": ["@/app/generated/prisma/*"]
     },
     // Types & Plugins
     "types": [

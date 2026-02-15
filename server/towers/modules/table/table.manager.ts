@@ -1,8 +1,7 @@
-import { createId } from "@paralleldrive/cuid2";
 import { logger } from "better-auth";
 import { NotificationType, TableChatMessageType, TableType } from "db/client";
+import { TowersTableCreateInput } from "db/models";
 import { Server as IoServer, Socket } from "socket.io";
-import { NUM_TABLE_SEATS } from "@/constants/game";
 import { ServerInternalEvents } from "@/constants/socket/server-internal";
 import { publishRedisEvent } from "@/server/redis/publish";
 import { CipherHeroManager } from "@/server/towers/game/cipher-hero-manager";
@@ -13,7 +12,9 @@ import { NotificationManager } from "@/server/towers/modules/notification/notifi
 import { Player } from "@/server/towers/modules/player/player.entity";
 import { PlayerManager } from "@/server/towers/modules/player/player.manager.ts";
 import { RoomPlayer } from "@/server/towers/modules/room-player/room-player.entity";
-import { Table, TablePlainObject, TableProps } from "@/server/towers/modules/table/table.entity";
+import { Table, TablePlainObject } from "@/server/towers/modules/table/table.entity";
+import { TableFactory } from "@/server/towers/modules/table/table.factory";
+import { TableService } from "@/server/towers/modules/table/table.service";
 import { TableBoot } from "@/server/towers/modules/table-boot/table-boot.entity";
 import { TableBootManager } from "@/server/towers/modules/table-boot/table-boot.manager";
 import {
@@ -26,61 +27,51 @@ import { TableInvitationManager } from "@/server/towers/modules/table-invitation
 import { TablePlayer } from "@/server/towers/modules/table-player/table-player.entity";
 import { TablePlayerManager } from "@/server/towers/modules/table-player/table-player.manager";
 import { TableSeat } from "@/server/towers/modules/table-seat/table-seat.entity";
+import { TableSeatFactory } from "@/server/towers/modules/table-seat/table-seat.factory";
 import { TableSeatManager } from "@/server/towers/modules/table-seat/table-seat.manager";
+import { tableChatVariablesToJson } from "@/server/towers/utils/table-chat-variables";
 import { User } from "@/server/youpi/modules/user/user.entity";
+import { UserRelationshipManager } from "@/server/youpi/modules/user-relationship/user-relationship.manager";
+import { TowersTableSeatWithRelations, TowersTableWithRelations } from "@/types/prisma";
 
 export class TableManager {
-  private static tables: Map<string, Table> = new Map<string, Table>();
+  private static cache: Map<string, Table> = new Map<string, Table>();
 
-  // ---------- Basic CRUD ------------------------------
+  public static async findById(id: string): Promise<Table> {
+    const cached: Table | undefined = this.cache.get(id);
+    if (cached) return cached;
 
-  public static get(id: string): Table | undefined {
-    return this.tables.get(id);
-  }
+    const dbTable: TowersTableWithRelations | null = await TableService.findById(id);
+    if (!dbTable) throw new Error("Room not found");
 
-  public static all(): Table[] {
-    return [...this.tables.values()];
-  }
-
-  public static create(props: Omit<TableProps, "id">): Table {
-    const table: Table = new Table({ id: createId(), ...props });
-
-    table.seats = Array.from({ length: NUM_TABLE_SEATS }, (_, i: number) =>
-      TableSeatManager.create({ tableId: table.id, seatNumber: i + 1, occupiedByPlayer: null }),
-    );
-
-    this.tables.set(table.id, table);
+    const table: Table = TableFactory.createTable(dbTable);
+    this.cache.set(table.id, table);
 
     return table;
   }
 
-  public static upsert(props: TableProps): Table {
-    const table: Table | undefined = this.tables.get(props.id);
+  public static async create(props: TowersTableCreateInput): Promise<Table> {
+    const dbTable: TowersTableWithRelations = await TableService.create(props);
+    const table: Table = TableFactory.createTable(dbTable);
 
-    if (table) {
-      table.hostPlayer = props.hostPlayer;
-      table.tableType = props.tableType;
-      table.isRated = props.isRated;
-      return table;
-    }
+    table.seats = dbTable.seats.map((tableSeat: TowersTableSeatWithRelations) => {
+      return TableSeatFactory.createTableSeat(tableSeat);
+    });
 
-    return this.create(props);
+    this.cache.set(table.id, table);
+    table.room.addTable(table);
+
+    return table;
   }
 
-  public static delete(id: string): void {
-    this.tables.delete(id);
-  }
-
-  // ---------- Table Actions ------------------------------
-
-  public static canUserAccess(table: Table, userId: string): boolean {
+  public static async canUserAccess(table: Table, playerId: string): Promise<boolean> {
     // Already in table
-    if (table.players.find((tp: TablePlayer) => tp.playerId === userId)) {
+    if (table.isPlayerInTable(playerId)) {
       return true;
     }
 
     // Allow the first user to access the table — they will become the host
-    if (!table.hostPlayer || userId === table.hostPlayerId) {
+    if (!table.hostPlayer || playerId === table.hostPlayerId) {
       return true;
     }
 
@@ -90,82 +81,77 @@ export class TableManager {
     }
 
     // Private tables → check invitations
-    const tableInvitations: TableInvitation[] = TableInvitationManager.getReceivedInvitations(userId);
+    const tableInvitations: TableInvitation[] = await TableInvitationManager.findAllByInviteePlayerId(playerId);
     const isInvited = tableInvitations.some((ti: TableInvitation) => ti.tableId === table.id);
 
     return table.tableType === TableType.PRIVATE && isInvited;
   }
 
   public static async joinTable(table: Table, user: User, socket: Socket, seatNumber?: number): Promise<void> {
-    const player: Player | undefined = PlayerManager.get(user.id);
-    if (!player) throw new Error("Player not found");
+    const player: Player = await PlayerManager.findById(user.id);
 
-    if (TablePlayerManager.isInTable(table.id, player.id)) {
+    const isPlayerJoinedTable: boolean = table.isPlayerInTable(player.id);
+    let tablePlayer: TablePlayer | undefined;
+
+    if (isPlayerJoinedTable) {
+      tablePlayer = table.getPlayer(player.id);
       await socket.join(table.id);
-      return;
-    }
+    } else {
+      tablePlayer = await TablePlayerManager.joinTable(table, player);
 
-    let tablePlayer: TablePlayer = TablePlayerManager.create({ table, player });
-    table.addPlayer(tablePlayer);
-    table.room.setPlayerTableNumber(tablePlayer.playerId, table.tableNumber);
+      await socket.join(table.id);
 
-    await socket.join(table.id);
+      if (seatNumber) {
+        tablePlayer = await this.sitPlayer(table.id, tablePlayer.playerId, seatNumber);
+      }
 
-    if (seatNumber) {
-      tablePlayer = await this.sitPlayer(table.id, tablePlayer.playerId, seatNumber);
-    }
-
-    // Announce when user joins table
-    await this.sendMessage(
-      table.id,
-      tablePlayer.playerId,
-      null,
-      TableChatMessageType.USER_JOINED_TABLE,
-      { username: tablePlayer.player.user?.username },
-      null,
-    );
-
-    logger.debug(`${tablePlayer.player.user?.username} has joined table #${table.tableNumber}.`);
-
-    if (table.players.length === 1 && table.hostPlayerId === tablePlayer.playerId) {
-      // Announce privately to table host their role
+      // Announce when user joins table
       await this.sendMessage(
         table.id,
         tablePlayer.playerId,
         null,
-        TableChatMessageType.TABLE_HOST,
+        TableChatMessageType.USER_JOINED_TABLE,
+        { username: tablePlayer.player.user?.username },
         null,
-        tablePlayer.playerId,
       );
 
-      logger.debug(
-        "You are the host of the table. This gives you the power to invite to [or boot people from] your table. You may also limit other player’s access to your table by selecting its \"Table Type\".",
-      );
+      logger.debug(`${tablePlayer.player.user?.username} has joined table #${table.tableNumber}.`);
+
+      if (table.players.length === 1 && table.hostPlayerId === tablePlayer.playerId) {
+        // Announce privately to table host their role
+        await this.sendMessage(
+          table.id,
+          tablePlayer.playerId,
+          null,
+          TableChatMessageType.TABLE_HOST,
+          null,
+          tablePlayer.playerId,
+        );
+
+        logger.debug(
+          "You are the host of the table. This gives you the power to invite to [or boot people from] your table. You may also limit other player’s access to your table by selecting its \"Table Type\".",
+        );
+      }
     }
 
     await publishRedisEvent(ServerInternalEvents.TABLE_JOIN, {
       roomId: table.roomId,
       tableId: table.id,
       table: table.toPlainObject(),
-      tablePlayer: tablePlayer.toPlainObject(),
+      tablePlayer: tablePlayer?.toPlainObject(),
     });
   }
 
   public static async leaveTable(table: Table, user: User, socket: Socket): Promise<void> {
-    const player: Player | undefined = PlayerManager.get(user.id);
-    if (!player) throw new Error("Player not found");
-
-    const tablePlayer: TablePlayer | undefined = TablePlayerManager.get(table.id, player.id);
-    if (!tablePlayer) return;
+    const player: Player = await PlayerManager.findById(user.id);
+    const tablePlayer: TablePlayer = await TablePlayerManager.findByTableId(table, player.id);
 
     if (TableSeatManager.isPlayerSeated(table.id, tablePlayer.playerId)) {
       await this.standPlayer(table.id, tablePlayer.playerId);
     }
 
+    await TablePlayerManager.leaveTable(table, player);
     await socket.leave(table.id);
-
-    table.removePlayer(tablePlayer.playerId);
-    table.room.setPlayerTableNumber(tablePlayer.playerId, null);
 
     // Announce when user leaves table
     await this.sendMessage(
@@ -206,10 +192,8 @@ export class TableManager {
       }
     }
 
-    TablePlayerManager.delete(table.id, player);
-
-    // Remove received invitations to this table
-    TableInvitationManager.deleteForTableAndPlayer(table.id, tablePlayer.playerId);
+    // Remove sent and received invitations to/from this table
+    await TableInvitationManager.deleteAllByTableIdAndPlayerId(table.id, tablePlayer.playerId);
 
     await publishRedisEvent(ServerInternalEvents.TABLE_LEAVE, {
       roomId: table.roomId,
@@ -219,18 +203,19 @@ export class TableManager {
     });
 
     // If no users are left, delete the table
-    if (table.players.length === 0 && table.onRemoveCallbacks) {
-      table.onRemoveCallbacks();
+    if (table.players.length === 0) {
+      table.onRemoveCallbacks?.();
+      await TableService.delete(table.id);
+      this.cache.delete(table.id);
       await publishRedisEvent(ServerInternalEvents.TABLE_DELETE, { roomId: table.roomId, table: table.toPlainObject() });
     }
   }
 
   public static async leaveAllTablesInRoom(roomId: string, player: Player, socket: Socket): Promise<void> {
-    const tablePlayers: TablePlayer[] = TablePlayerManager.getTablesForPlayer(player.id);
+    const tablePlayers: TablePlayer[] = await TablePlayerManager.getTablesForPlayer(player.id);
 
     for (const tp of tablePlayers) {
-      const table: Table | undefined = this.get(tp.tableId);
-      if (!table) continue;
+      const table: Table = await this.findById(tp.tableId);
       if (table.roomId !== roomId) continue;
 
       await this.leaveTable(table, player.user, socket);
@@ -245,21 +230,20 @@ export class TableManager {
     textVariables: TableChatMessageVariables | null,
     visibleToUserId: string | null,
   ): Promise<void> {
-    const player: Player | undefined = PlayerManager.get(playerId);
-    if (!player) throw new Error("Player not found");
-
     const tableChatMessage: TableChatMessage = await TableChatMessageManager.create({
-      tableId,
-      player,
+      table: {
+        connect: { id: tableId },
+      },
+      player: {
+        connect: { id: playerId },
+      },
       text,
       type,
-      textVariables,
+      textVariables: tableChatVariablesToJson(textVariables),
       visibleToUserId,
     });
 
-    const table: Table | undefined = TableManager.get(tableId);
-    if (!table) throw new Error("Table not found");
-
+    const table: Table = await TableManager.findById(tableChatMessage.tableId);
     table.addChatMessage(tableChatMessage);
   }
 
@@ -268,68 +252,74 @@ export class TableManager {
     playerId: string,
     options: { tableType?: TableType; isRated?: boolean },
   ): Promise<void> {
-    const table: Table | undefined = TableManager.get(tableId);
+    const table: Table = await TableManager.findById(tableId);
 
-    if (table && table.hostPlayerId === playerId) {
-      if (options.tableType && table.tableType !== options.tableType) {
-        table.tableType = options.tableType;
-
-        if (table.hostPlayer) {
-          await this.sendMessage(
-            table.id,
-            table.hostPlayerId,
-            null,
-            TableChatMessageType.TABLE_TYPE,
-            { tableType: options.tableType },
-            table.hostPlayerId,
-          );
-
-          switch (options.tableType) {
-            case TableType.PROTECTED:
-              logger.debug("Only invited players may play now.");
-              break;
-            case TableType.PRIVATE:
-              logger.debug("Only invited players may play or watch.");
-              break;
-            default:
-              logger.debug("Anyone may play or watch.");
-          }
-        }
-      }
-
-      if (typeof options.isRated !== "undefined") {
-        table.isRated = options.isRated;
-      }
-
-      table.hostPlayer.lastActiveAt = new Date();
-
-      await publishRedisEvent(ServerInternalEvents.TABLE_OPTIONS_UPDATE, {
-        roomId: table.roomId,
-        table: table.toPlainObject(),
-      });
+    if (table.hostPlayerId !== playerId) {
+      throw new Error("Only host can update table options");
     }
+
+    const dbTable: TowersTableWithRelations = await TableService.update(tableId, {
+      tableType: options.tableType,
+      isRated: options.isRated,
+    });
+
+    if (typeof dbTable.tableType !== "undefined") {
+      table.tableType = dbTable.tableType;
+    }
+
+    if (typeof dbTable.isRated !== "undefined") {
+      table.isRated = dbTable.isRated;
+    }
+
+    const player: Player = await PlayerManager.updateLastActiveAt(playerId);
+    table.hostPlayer.lastActiveAt = player.lastActiveAt;
+
+    if (options.tableType && options.tableType !== table.tableType) {
+      await this.sendMessage(
+        table.id,
+        table.hostPlayerId,
+        null,
+        TableChatMessageType.TABLE_TYPE,
+        { tableType: options.tableType },
+        table.hostPlayerId,
+      );
+
+      switch (options.tableType) {
+        case TableType.PROTECTED:
+          logger.debug("Only invited players may play now.");
+          break;
+        case TableType.PRIVATE:
+          logger.debug("Only invited players may play or watch.");
+          break;
+        default:
+          logger.debug("Anyone may play or watch.");
+      }
+    }
+
+    await publishRedisEvent(ServerInternalEvents.TABLE_OPTIONS_UPDATE, {
+      roomId: table.roomId,
+      table: table.toPlainObject(),
+    });
   }
 
-  public static getPlayersToInvite(tableId: string): RoomPlayer[] {
-    const table: Table | undefined = this.get(tableId);
-    if (!table) throw new Error("Table not found");
+  public static async getPlayersToInvite(tableId: string): Promise<RoomPlayer[]> {
+    const table: Table = await TableManager.findById(tableId);
 
-    return table.room.players.filter((rp: RoomPlayer) => {
+    return table.room.players.filter(async (rp: RoomPlayer) => {
       if (table.tableType === TableType.PRIVATE || table.tableType === TableType.PROTECTED) {
-        const tableInvitation: TableInvitation[] = TableInvitationManager.getReceivedInvitations(rp.playerId);
+        const tableInvitation: TableInvitation[] = await TableInvitationManager.findAllByInviteePlayerId(rp.playerId);
         return (
           rp.playerId !== table.hostPlayerId && !tableInvitation.some((ti: TableInvitation) => ti.tableId === table.id)
         );
       } else {
-        const tables: TablePlayer[] = TablePlayerManager.getTablesForPlayer(rp.playerId);
+        const tables: TablePlayer[] = await TablePlayerManager.getTablesForPlayer(rp.playerId);
         return !tables.some((tp: TablePlayer) => tp.tableId === table.id);
       }
     });
   }
 
   public static async invitePlayer(tableId: string, inviterId: string, inviteeId: string): Promise<void> {
-    const table: Table | undefined = this.get(tableId);
-    if (!table) throw new Error("Table not found");
+    const table: Table = await TableManager.findById(tableId);
 
     const inviter: TablePlayer | undefined = table.players.find((tp: TablePlayer) => tp.playerId === inviterId);
     if (!inviter || table.hostPlayerId !== inviterId) throw new Error("Only host can invite");
@@ -340,7 +330,7 @@ export class TableManager {
       return;
     }
 
-    const isAlreadyInvited: boolean = TableInvitationManager.hasPendingInvitationForTable(table.id, inviteeId);
+    const isAlreadyInvited: boolean = await TableInvitationManager.hasPendingInvitationForTable(table.id, inviteeId);
     if (isAlreadyInvited) {
       logger.debug(`User ${invitee.player?.user?.username} already invited.`);
       return;
@@ -352,18 +342,18 @@ export class TableManager {
       return;
     }
 
-    const invitation: TableInvitation = TableInvitationManager.create({
-      room: table.room,
-      table,
-      inviterPlayer: inviter.player,
-      inviteePlayer: invitee.player,
+    const invitation: TableInvitation = await TableInvitationManager.create({
+      room: { connect: { id: table.roomId } },
+      table: { connect: { id: tableId } },
+      inviterPlayer: { connect: { id: inviterId } },
+      inviteePlayer: { connect: { id: inviteeId } },
     });
 
     TableManager.addInvitationToTable(table, invitation);
 
     if (
       (table.tableType === TableType.PROTECTED || table.tableType === TableType.PRIVATE) &&
-      TablePlayerManager.isInTable(invitation.tableId, invitation.inviteePlayerId)
+      table.isPlayerInTable(invitation.inviteePlayerId)
     ) {
       // If user to be invited is already in the table, do not show the invitaiton modal to them - granted access to seats directly
       await TableInvitationManager.accept(invitation.id);
@@ -371,11 +361,11 @@ export class TableManager {
         `${inviter.player.user?.username} granted ${invitee.player?.user?.username} access to play at table #${table.tableNumber}.`,
       );
     } else {
-      const notification: Notification = NotificationManager.create({
-        playerId: inviteeId,
+      const notification: Notification = await NotificationManager.create({
+        player: { connect: { id: inviteeId } },
         roomId: table.roomId,
         type: NotificationType.TABLE_INVITE,
-        tableInvitation: invitation,
+        tableInvitation: { connect: { id: invitation.id } },
       });
 
       await publishRedisEvent(ServerInternalEvents.TABLE_INVITE_USER, {
@@ -387,47 +377,43 @@ export class TableManager {
       );
     }
 
-    table.hostPlayer.lastActiveAt = new Date();
+    const player: Player = await PlayerManager.updateLastActiveAt(inviterId);
+    table.hostPlayer.lastActiveAt = player.lastActiveAt;
   }
 
   public static addInvitationToTable(table: Table, invitation: TableInvitation): void {
     table.addInvitation(invitation);
   }
 
-  public static removeInvitationFromTable(table: Table, invitationId: string): void {
+  public static async removeInvitationFromTable(table: Table, invitationId: string): Promise<void> {
     table.removeInvitation(invitationId);
-    TableInvitationManager.delete(invitationId);
+    await TableInvitationManager.delete(invitationId);
   }
 
-  public static getPlayersToBoot(tableId: string): TablePlayer[] {
-    const table: Table | undefined = this.get(tableId);
-    if (!table) throw new Error("Table not found");
-
+  public static async getPlayersToBoot(tableId: string): Promise<TablePlayer[]> {
+    const table: Table = await TableManager.findById(tableId);
     return table.players.filter((tp: TablePlayer) => tp.playerId !== table.hostPlayerId);
   }
 
   public static async bootPlayer(tableId: string, hostId: string, playerToBootId: string): Promise<void> {
-    const table: Table | undefined = this.get(tableId);
-    if (!table) throw new Error("Table not found");
+    const table: Table = await TableManager.findById(tableId);
 
     if (table.hostPlayerId !== hostId) throw new Error("Only host can boot");
 
-    const hostPlayer: Player | undefined = PlayerManager.get(hostId);
-    if (!hostPlayer) throw new Error("Host not found");
-
-    const playerToBoot: TablePlayer | undefined = table.players.find(
-      (tp: TablePlayer) => tp.playerId === playerToBootId,
-    );
-    if (!playerToBoot) throw new Error("Player to boot not found");
-
     const tableBoot: TableBoot = await TableBootManager.create({
-      table,
-      booterPlayer: hostPlayer,
-      bootedPlayer: playerToBoot.player,
+      table: {
+        connect: { id: tableId },
+      },
+      booterPlayer: {
+        connect: { id: hostId },
+      },
+      bootedPlayer: {
+        connect: { id: playerToBootId },
+      },
     });
 
-    table.removePlayer(playerToBoot.playerId);
-    table.room.setPlayerTableNumber(playerToBoot.playerId, null);
+    table.removePlayer(playerToBootId);
+    table.room.setPlayerTableNumber(playerToBootId, null);
 
     await this.sendMessage(
       tableBoot.tableId,
@@ -441,11 +427,15 @@ export class TableManager {
       null,
     );
 
-    const notification: Notification = NotificationManager.create({
-      playerId: tableBoot.bootedPlayerId,
+    const notification: Notification = await NotificationManager.create({
+      player: {
+        connect: { id: tableBoot.bootedPlayerId },
+      },
       roomId: tableBoot.table.roomId,
       type: NotificationType.TABLE_BOOTED,
-      bootedFromTable: tableBoot,
+      bootedFromTable: {
+        connect: { id: tableBoot.id },
+      },
     });
 
     await publishRedisEvent(ServerInternalEvents.TABLE_BOOT_USER, {
@@ -454,19 +444,15 @@ export class TableManager {
     });
 
     // Remove booted user invitation to the table
-    const tableInvitations: TableInvitation[] = TableInvitationManager.getInvitationsForPlayer(
-      table.id,
-      playerToBoot.playerId,
-    );
+    const tableInvitations: TableInvitation[] = await TableInvitationManager.findAllByPlayerId(table.id, playerToBootId);
 
     for (const tableInvitation of tableInvitations) {
-      this.removeInvitationFromTable(table, tableInvitation.id);
+      await this.removeInvitationFromTable(table, tableInvitation.id);
     }
   }
 
   public static async sitPlayer(tableId: string, playerId: string, seatNumber: number): Promise<TablePlayer> {
-    const table: Table | undefined = this.get(tableId);
-    if (!table) throw new Error("Table not found");
+    const table: Table = await TableManager.findById(tableId);
 
     let tablePlayer: TablePlayer | undefined = table.players.find((tp: TablePlayer) => tp.playerId === playerId);
     if (!tablePlayer) throw new Error("Player not at table");
@@ -474,7 +460,7 @@ export class TableManager {
     if (table.tableType === TableType.PROTECTED || table.tableType === TableType.PRIVATE) {
       const isInvited: boolean =
         tablePlayer.playerId === table.hostPlayerId ||
-        TableInvitationManager.hasPendingInvitationForTable(table.id, tablePlayer.playerId);
+        (await TableInvitationManager.hasPendingInvitationForTable(table.id, tablePlayer.playerId));
 
       const isAlreadyInTable: boolean = table.players.some((tp: TablePlayer) => tp.playerId === tablePlayer?.playerId);
 
@@ -493,8 +479,7 @@ export class TableManager {
     );
     if (!tableSeat) throw new Error("Seat not available");
 
-    TableSeatManager.sitPlayer(tableSeat, tablePlayer.player);
-    tablePlayer.seatNumber = seatNumber;
+    await TableSeatManager.sitPlayer(tableSeat, tablePlayer.player);
     tablePlayer = await TablePlayerManager.upsert(tablePlayer);
 
     await publishRedisEvent(ServerInternalEvents.TABLE_SEAT_SIT, {
@@ -510,8 +495,7 @@ export class TableManager {
   }
 
   public static async standPlayer(tableId: string, playerId: string): Promise<void> {
-    const table: Table | undefined = this.get(tableId);
-    if (!table) throw new Error("Table not found");
+    const table: Table = await TableManager.findById(tableId);
 
     let tablePlayer: TablePlayer | undefined = table.players.find((tp: TablePlayer) => tp.playerId === playerId);
     if (!tablePlayer) throw new Error("Player not at table");
@@ -519,8 +503,8 @@ export class TableManager {
     const tableSeat: TableSeat | undefined = TableSeatManager.getSeatByPlayerId(tableId, playerId);
     if (!tableSeat) throw new Error("Player is not seated");
 
-    TableSeatManager.standPlayer(tableSeat);
-    tablePlayer.seatNumber = null;
+    await TableSeatManager.standPlayer(tableSeat);
+
     tablePlayer.isReady = false;
     tablePlayer.isPlaying = false;
     tablePlayer = await TablePlayerManager.upsert(tablePlayer);
@@ -538,8 +522,7 @@ export class TableManager {
   }
 
   public static async setPlayerReady(io: IoServer, tableId: string, playerId: string): Promise<void> {
-    const table: Table | undefined = this.get(tableId);
-    if (!table) throw new Error("Table not found");
+    const table: Table = await TableManager.findById(tableId);
 
     let tablePlayer: TablePlayer | undefined = table.players.find((tp: TablePlayer) => tp.playerId === playerId);
     if (!tablePlayer) throw new Error("Player not at table");
@@ -568,8 +551,7 @@ export class TableManager {
 
   public static async heroCode(tableId: string, playerId: string, code: string): Promise<void> {
     if (code && CipherHeroManager.isGuessedCodeMatchesHeroCode(playerId, code)) {
-      const player: Player | undefined = PlayerManager.get(playerId);
-      if (!player) throw new Error("Player not found");
+      const player: Player = await PlayerManager.findById(playerId);
 
       await this.sendMessage(
         tableId,
@@ -584,10 +566,10 @@ export class TableManager {
     }
   }
 
-  public static tableViewForPlayer(table: Table, playerId: string): TablePlainObject {
-    return {
-      ...table.toPlainObject(),
-      chatMessages: table.messagesFor(playerId).map((tcm: TableChatMessage) => tcm.toPlainObject()),
-    };
+  public static async tableViewForPlayer(table: Table, playerId: string): Promise<TablePlainObject> {
+    const mutedUserIds: string[] = await UserRelationshipManager.mutedUserIdsFor(playerId);
+    const tableChatMessages: TableChatMessage[] = await table.messagesFor(playerId, mutedUserIds);
+    table.chatMessages = tableChatMessages;
+    return table.toPlainObject();
   }
 }

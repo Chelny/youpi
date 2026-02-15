@@ -10,6 +10,7 @@ export interface PlayerProps {
   user: User
   controlKeys: PlayerControlKeys
   stats: PlayerStats
+  lastActiveAt: Date | null
 }
 
 export interface PlayerPlainObject {
@@ -35,6 +36,7 @@ export class Player {
     this._user = props.user;
     this.controlKeys = props.controlKeys;
     this.stats = props.stats;
+    this.lastActiveAt = props.lastActiveAt;
   }
 
   public get user(): User {

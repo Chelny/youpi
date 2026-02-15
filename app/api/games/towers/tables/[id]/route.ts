@@ -3,8 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { handleApiError, handleUnauthorizedApiError } from "@/lib/api-error";
 import { auth, Session } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { TablePlainObject } from "@/server/towers/modules/table/table.entity";
+import { Table, TablePlainObject } from "@/server/towers/modules/table/table.entity";
 import { TableFactory } from "@/server/towers/modules/table/table.factory";
+import { TableManager } from "@/server/towers/modules/table/table.manager";
 import { getTowersTableIncludes, TowersTableWithRelations } from "@/types/prisma";
 
 export async function GET(
@@ -18,12 +19,13 @@ export async function GET(
   if (!session) return handleUnauthorizedApiError();
 
   try {
-    const table: TowersTableWithRelations = await prisma.towersTable.findUniqueOrThrow({
+    const dbTable: TowersTableWithRelations = await prisma.towersTable.findUniqueOrThrow({
       where: { id },
       include: getTowersTableIncludes(),
     });
 
-    const data: TablePlainObject = await TableFactory.convertToPlainObject(table, session.user.id);
+    const table: Table = TableFactory.convertToPlainObject(dbTable);
+    const data: TablePlainObject = await TableManager.tableViewForPlayer(table, session.user.id);
 
     return NextResponse.json({ success: true, data }, { status: 200 });
   } catch (error) {

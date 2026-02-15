@@ -1,44 +1,34 @@
-import { createId } from "@paralleldrive/cuid2";
-import { JsonValue } from "@prisma/client/runtime/client";
 import { logger } from "better-auth";
 import { InstantMessageType } from "db/client";
+import { InstantMessageCreateInput } from "db/models";
 import { INSTANT_MESSAGE_MAX_LENGTH } from "@/constants/game";
 import { ServerInternalEvents } from "@/constants/socket/server-internal";
 import { publishRedisEvent } from "@/server/redis/publish";
 import { PlayerManager } from "@/server/towers/modules/player/player.manager";
+import { instantMessageVariablesToJson } from "@/server/towers/utils/instant-messages";
 import { Conversation } from "@/server/youpi/modules/conversation/conversation.entity";
 import { ConversationManager } from "@/server/youpi/modules/conversation/conversation.manager";
 import { ConversationParticipantManager } from "@/server/youpi/modules/conversation-participant/conversation-participant.manager";
-import {
-  InstantMessage,
-  InstantMessageProps,
-  InstantMessageVariables,
-} from "@/server/youpi/modules/instant-message/instant-message.entity";
+import { InstantMessage, InstantMessageVariables } from "@/server/youpi/modules/instant-message/instant-message.entity";
+import { InstantMessageFactory } from "@/server/youpi/modules/instant-message/instant-message.factory";
+import { InstantMessageService } from "@/server/youpi/modules/instant-message/instant-message.service";
 import { User } from "@/server/youpi/modules/user/user.entity";
+import { InstantMessageWithRelations } from "@/types/prisma";
 
 export class InstantMessageManager {
-  private static instantMessages: Map<string, InstantMessage> = new Map<string, InstantMessage>();
+  private static cache: Map<string, InstantMessage> = new Map<string, InstantMessage>();
 
-  // ---------- Basic CRUD ------------------------------
+  public static async create(data: InstantMessageCreateInput, conversation: Conversation): Promise<InstantMessage> {
+    const dbInstantMessage: InstantMessageWithRelations = await InstantMessageService.create(data);
+    const instantMessage: InstantMessage = InstantMessageFactory.createInstantMessage(dbInstantMessage);
 
-  public static get(id: string): InstantMessage | undefined {
-    return this.instantMessages.get(id);
-  }
-
-  public static all(): InstantMessage[] {
-    return [...this.instantMessages.values()];
-  }
-
-  public static async create(props: Omit<InstantMessageProps, "id">, conversation: Conversation): Promise<void> {
-    const instantMessage: InstantMessage = new InstantMessage({ id: createId(), ...props });
-    this.instantMessages.set(instantMessage.id, instantMessage);
-
+    this.cache.set(instantMessage.id, instantMessage);
     conversation.addMessage(instantMessage);
 
     for (const participant of conversation.participants) {
       if (participant.removedAt !== null) continue;
 
-      const unreadConversationsCount: number = ConversationManager.getUnreadConversationsCount(participant.userId);
+      const unreadConversationsCount: number = await ConversationManager.getUnreadConversationsCount(participant.userId);
 
       await publishRedisEvent(ServerInternalEvents.CONVERSATION_MESSAGE_SEND, {
         userId: participant.userId,
@@ -46,13 +36,9 @@ export class InstantMessageManager {
         unreadConversationsCount,
       });
     }
-  }
 
-  public static delete(id: string): void {
-    this.instantMessages.delete(id);
+    return instantMessage;
   }
-
-  // ---------- Instant Message Actions ------------------------------
 
   public static async sendMessage(
     conversationId: string,
@@ -61,8 +47,7 @@ export class InstantMessageManager {
     text: string,
     type: InstantMessageType = InstantMessageType.CHAT,
   ): Promise<void> {
-    const conversation: Conversation | undefined = ConversationManager.get(conversationId);
-    if (!conversation) throw new Error("Conversation not found");
+    const conversation: Conversation = await ConversationManager.findById(conversationId);
 
     const trimmedText: string = text?.trim();
 
@@ -76,11 +61,15 @@ export class InstantMessageManager {
 
     await this.create(
       {
-        conversationId: conversation.id,
-        user: sender,
+        conversation: {
+          connect: { id: conversation.id },
+        },
+        user: {
+          connect: { id: sender.id },
+        },
         text: trimmedText,
         type,
-        textVariables: null,
+        textVariables: undefined,
         visibleToUserId: null,
       },
       conversation,
@@ -88,10 +77,10 @@ export class InstantMessageManager {
 
     logger.debug(`IM Thread ${conversation.id} | ${sender.username} → ${recipient.username}: ${trimmedText}`);
 
-    PlayerManager.updateLastActiveAt(sender.id);
+    await PlayerManager.updateLastActiveAt(sender.id);
 
     // Restore conversation if removed in client
-    ConversationParticipantManager.restoreConversationForUser(conversation, recipient.id);
+    await ConversationParticipantManager.restoreConversationForUser(conversation, recipient.id);
   }
 
   /**
@@ -111,16 +100,19 @@ export class InstantMessageManager {
     textVariables: InstantMessageVariables | null,
     visibleToUserId: string | null,
   ): Promise<void> {
-    const conversation: Conversation | undefined = ConversationManager.get(conversationId);
-    if (!conversation) throw new Error("Conversation not found");
+    const conversation: Conversation = await ConversationManager.findById(conversationId);
 
     await this.create(
       {
-        conversationId: conversation.id,
-        user: sender,
+        conversation: {
+          connect: { id: conversation.id },
+        },
+        user: {
+          connect: { id: sender.id },
+        },
         text: null,
         type,
-        textVariables: textVariables as JsonValue,
+        textVariables: instantMessageVariablesToJson(textVariables),
         visibleToUserId,
       },
       conversation,
@@ -130,5 +122,10 @@ export class InstantMessageManager {
 
     await ConversationManager.markAsRead(conversation.id, sender.id);
     await ConversationManager.markAsRead(conversation.id, recipient.id);
+  }
+
+  public static async delete(id: string): Promise<void> {
+    await InstantMessageService.delete(id);
+    this.cache.delete(id);
   }
 }

@@ -37,7 +37,7 @@ class AppServer {
   }
 
   private async loadGameRooms(): Promise<void> {
-    await RoomManager.loadRoomsFromDb();
+    await RoomManager.findAll();
   }
 
   private async setupRedis(): Promise<void> {
@@ -115,7 +115,7 @@ class AppServer {
       return;
     }
 
-    const user: User | null = await UserManager.loadUserFromDb(sessionUser.id);
+    const user: User | null = await UserManager.findById(sessionUser.id);
     if (!user) {
       socket.disconnect(true);
       return;
