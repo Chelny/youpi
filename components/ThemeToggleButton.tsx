@@ -29,6 +29,12 @@ export default function ThemeToggleButton(): ReactNode {
   const Icon: IconType =
     websiteTheme === WebsiteTheme.LIGHT ? TbSunHigh : websiteTheme === WebsiteTheme.DARK ? TbMoon : TbBrightnessFilled;
 
+  useEffect(() => setIsMounted(true), []);
+
+  useEffect(() => {
+    setTheme(websiteTheme.toLowerCase());
+  }, [websiteTheme]);
+
   const handleSetTheme = async (): Promise<void> => {
     const nextTheme: WebsiteTheme =
       websiteTheme === WebsiteTheme.LIGHT
@@ -45,12 +51,6 @@ export default function ThemeToggleButton(): ReactNode {
       setTheme(fallback.toLowerCase());
     }
   };
-
-  useEffect(() => setIsMounted(true), []);
-
-  useEffect(() => {
-    setTheme(websiteTheme.toLowerCase());
-  }, [websiteTheme]);
 
   if (!isMounted) return null;
 

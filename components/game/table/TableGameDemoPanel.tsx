@@ -155,96 +155,6 @@ export default function TableGameDemoPanel({ nextGameCountdown, onChangeView }: 
   const [attackBoard, setAttackBoard] = useState<string[]>(DEFAULT_ATTACK_BOARD);
   const [defenseBoard, setDefenseBoard] = useState<string[]>(DEFAULT_DEFENSE_BOARD);
 
-  const startVideo = (): void => {
-    if (videoRef.current) {
-      videoRef.current.play();
-      setIsVideoPaused(false);
-    }
-  };
-
-  const pauseVideo = (): void => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-      setIsVideoPaused(true);
-    }
-  };
-
-  const handleDemoVideo = (): void => {
-    if (isVideoPaused) {
-      startVideo();
-    } else {
-      pauseVideo();
-    }
-  };
-
-  const handleVideoEnded = (): void => {
-    setIsVideoPaused(true);
-    setTimeout(() => {
-      if (videoRef.current) {
-        videoRef.current.currentTime = 0;
-        videoRef.current.play();
-        setIsVideoPaused(false);
-      }
-    }, 3000);
-  };
-
-  const handleKeyClick = (key: string): void => {
-    setArrowPressed(key);
-
-    switch (key) {
-      case "ArrowUp":
-        setPosition({ x: 28, y: -14 });
-        setLetters((prev: TowersBlockLetter[]) => {
-          const rotated: TowersBlockLetter[] = [...prev];
-          const firstLetter: TowersBlockLetter = rotated.shift()!;
-          rotated.push(firstLetter);
-          return rotated;
-        });
-        break;
-      case "ArrowDown":
-        setPosition({ x: 28, y: 70 });
-        break;
-      case "ArrowLeft":
-        setPosition({ x: 0, y: 28 });
-        break;
-      case "ArrowRight":
-        setPosition({ x: 56, y: 28 });
-        break;
-      default:
-        setPosition({ x: 28, y: 28 });
-        break;
-    }
-
-    setTimeout(() => setArrowPressed(null), 200);
-  };
-
-  const keyboardKeyClasses = (key: string): string =>
-    `overflow-hidden flex w-10 h-10 pl-0.5 border-t-4 border-t-[#D6D7BD] border-r-4 border-r-[#D6D7BD] border-b-4 border-b-[#5E4511] border-l-4 border-l-[#5E4511] rounded-xs ring-1 ring-black shadow-sm bg-[#ECE3D7] text-black font-medium line-clamp-1 transition-transform duration-100 ${
-      arrowPressed === key || (key === "Space" && isSpaceBarPressed) ? "scale-90 bg-[#A1978A]" : ""
-    }`;
-
-  const powerBarClasses: string =
-    "flex flex-col-reverse w-5 h-full p-0.5 border border-gray-200 mb-2 bg-neutral-600 dark:border-slate-500 dark:bg-slate-600";
-
-  const renderRegularBlock = ({ letter }: { letter: TowersBlockLetter }): ReactNode => (
-    <div
-      className={`flex items-center justify-center w-demo-block h-demo-block box-border block-${letter === "!" ? "x" : letter.toLowerCase()}`}
-    >
-      <RegularBlock letter={letter} />
-    </div>
-  );
-
-  const renderAttackBlock = ({ letter, attackLabel, defenseLabel }: PowerBlockDemo): ReactNode => (
-    <li key={letter} className="flex items-center gap-2">
-      <div
-        className={`flex items-center justify-center w-demo-block h-demo-block box-border block-${letter === "!" ? "x" : letter.toLowerCase()} ${visibleBlockPowerType}-block`}
-      >
-        {visibleBlockPowerType === "defense" ? <DefenseBlock letter={letter} /> : <RegularBlock letter={letter} />}
-      </div>
-      <span>{visibleBlockPowerType === "defense" ? defenseLabel : attackLabel}</span>
-    </li>
-  );
-
   useEffect(() => {
     startVideo();
   }, []);
@@ -474,6 +384,96 @@ export default function TableGameDemoPanel({ nextGameCountdown, onChangeView }: 
       }
     }
   }, [activePowerBlockIndex, visibleBlockPowerType, isSpaceBarPressed]);
+
+  const startVideo = (): void => {
+    if (videoRef.current) {
+      videoRef.current.play();
+      setIsVideoPaused(false);
+    }
+  };
+
+  const pauseVideo = (): void => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      setIsVideoPaused(true);
+    }
+  };
+
+  const handleDemoVideo = (): void => {
+    if (isVideoPaused) {
+      startVideo();
+    } else {
+      pauseVideo();
+    }
+  };
+
+  const handleVideoEnded = (): void => {
+    setIsVideoPaused(true);
+    setTimeout(() => {
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play();
+        setIsVideoPaused(false);
+      }
+    }, 3000);
+  };
+
+  const handleKeyClick = (key: string): void => {
+    setArrowPressed(key);
+
+    switch (key) {
+      case "ArrowUp":
+        setPosition({ x: 28, y: -14 });
+        setLetters((prev: TowersBlockLetter[]) => {
+          const rotated: TowersBlockLetter[] = [...prev];
+          const firstLetter: TowersBlockLetter = rotated.shift()!;
+          rotated.push(firstLetter);
+          return rotated;
+        });
+        break;
+      case "ArrowDown":
+        setPosition({ x: 28, y: 70 });
+        break;
+      case "ArrowLeft":
+        setPosition({ x: 0, y: 28 });
+        break;
+      case "ArrowRight":
+        setPosition({ x: 56, y: 28 });
+        break;
+      default:
+        setPosition({ x: 28, y: 28 });
+        break;
+    }
+
+    setTimeout(() => setArrowPressed(null), 200);
+  };
+
+  const keyboardKeyClasses = (key: string): string =>
+    `overflow-hidden flex w-10 h-10 pl-0.5 border-t-4 border-t-[#D6D7BD] border-r-4 border-r-[#D6D7BD] border-b-4 border-b-[#5E4511] border-l-4 border-l-[#5E4511] rounded-xs ring-1 ring-black shadow-sm bg-[#ECE3D7] text-black font-medium line-clamp-1 transition-transform duration-100 ${
+      arrowPressed === key || (key === "Space" && isSpaceBarPressed) ? "scale-90 bg-[#A1978A]" : ""
+    }`;
+
+  const powerBarClasses: string =
+    "flex flex-col-reverse w-5 h-full p-0.5 border border-gray-200 mb-2 bg-neutral-600 dark:border-slate-500 dark:bg-slate-600";
+
+  const renderRegularBlock = ({ letter }: { letter: TowersBlockLetter }): ReactNode => (
+    <div
+      className={`flex items-center justify-center w-demo-block h-demo-block box-border block-${letter === "!" ? "x" : letter.toLowerCase()}`}
+    >
+      <RegularBlock letter={letter} />
+    </div>
+  );
+
+  const renderAttackBlock = ({ letter, attackLabel, defenseLabel }: PowerBlockDemo): ReactNode => (
+    <li key={letter} className="flex items-center gap-2">
+      <div
+        className={`flex items-center justify-center w-demo-block h-demo-block box-border block-${letter === "!" ? "x" : letter.toLowerCase()} ${visibleBlockPowerType}-block`}
+      >
+        {visibleBlockPowerType === "defense" ? <DefenseBlock letter={letter} /> : <RegularBlock letter={letter} />}
+      </div>
+      <span>{visibleBlockPowerType === "defense" ? defenseLabel : attackLabel}</span>
+    </li>
+  );
 
   return (
     <div

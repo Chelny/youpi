@@ -8,7 +8,7 @@ import { PlayerManager } from "@/server/towers/modules/player/player.manager";
 import { instantMessageVariablesToJson } from "@/server/towers/utils/instant-messages";
 import { Conversation } from "@/server/youpi/modules/conversation/conversation.entity";
 import { ConversationManager } from "@/server/youpi/modules/conversation/conversation.manager";
-import { ConversationParticipantManager } from "@/server/youpi/modules/conversation-participant/conversation-participant.manager";
+import { ConversationParticipantService } from "@/server/youpi/modules/conversation-participant/conversation-participant.service";
 import { InstantMessage, InstantMessageVariables } from "@/server/youpi/modules/instant-message/instant-message.entity";
 import { InstantMessageFactory } from "@/server/youpi/modules/instant-message/instant-message.factory";
 import { InstantMessageService } from "@/server/youpi/modules/instant-message/instant-message.service";
@@ -80,7 +80,7 @@ export class InstantMessageManager {
     await PlayerManager.updateLastActiveAt(sender.id);
 
     // Restore conversation if removed in client
-    await ConversationParticipantManager.restoreConversationForUser(conversation, recipient.id);
+    await ConversationParticipantService.restore(conversation.id, recipient.id);
   }
 
   /**

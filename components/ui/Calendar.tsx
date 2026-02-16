@@ -76,6 +76,35 @@ export default function Calendar({
     t({ message: "Saturday" }),
   ];
   const daysOfWeek: string[] = fullWeekDays.map((day: string) => day.charAt(0).toUpperCase());
+  const isPreviousYearDisabled: boolean = browsingDate.getUTCFullYear() <= minDate.getUTCFullYear();
+  const isNextYearDisabled: boolean =
+    new Date(browsingDate.getUTCFullYear() + 1, browsingDate.getUTCMonth(), browsingDate.getUTCDate()) > maxDate;
+  const isPreviousMonthDisabled: boolean =
+    browsingDate.getUTCFullYear() === minDate.getUTCFullYear() && browsingDate.getUTCMonth() <= minDate.getUTCMonth();
+  const isNextMonthDisabled: boolean =
+    browsingDate.getUTCFullYear() === maxDate.getUTCFullYear() && browsingDate.getUTCMonth() >= maxDate.getUTCMonth();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent): void => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
+        handleCloseCalendar();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    const year: number = browsingDate.getUTCFullYear();
+    const month: number = browsingDate.getUTCMonth();
+    const daysInMonthCount: number = new Date(year, month + 1, 0).getUTCDate();
+
+    setDaysInMonth(Array.from({ length: daysInMonthCount }, (_, index: number) => index + 1));
+  }, [browsingDate]);
 
   const handleOpenCalendar = (): void => {
     const initialBrowsingDate: Date =
@@ -240,36 +269,6 @@ export default function Calendar({
       </div>
     );
   };
-
-  const isPreviousYearDisabled: boolean = browsingDate.getUTCFullYear() <= minDate.getUTCFullYear();
-  const isNextYearDisabled: boolean =
-    new Date(browsingDate.getUTCFullYear() + 1, browsingDate.getUTCMonth(), browsingDate.getUTCDate()) > maxDate;
-  const isPreviousMonthDisabled: boolean =
-    browsingDate.getUTCFullYear() === minDate.getUTCFullYear() && browsingDate.getUTCMonth() <= minDate.getUTCMonth();
-  const isNextMonthDisabled: boolean =
-    browsingDate.getUTCFullYear() === maxDate.getUTCFullYear() && browsingDate.getUTCMonth() >= maxDate.getUTCMonth();
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent): void => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
-        handleCloseCalendar();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  useEffect(() => {
-    const year: number = browsingDate.getUTCFullYear();
-    const month: number = browsingDate.getUTCMonth();
-    const daysInMonthCount: number = new Date(year, month + 1, 0).getUTCDate();
-
-    setDaysInMonth(Array.from({ length: daysInMonthCount }, (_, index: number) => index + 1));
-  }, [browsingDate]);
 
   return (
     <div className="relative mb-4">

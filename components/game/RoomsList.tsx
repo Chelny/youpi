@@ -52,10 +52,6 @@ export default function RoomsList(): ReactNode {
     }));
   }, [rooms]);
 
-  const handleJoinRoom = (roomId: string): void => {
-    router.push(`${ROUTE_TOWERS.PATH}?room=${roomId}`);
-  };
-
   useEffect(() => {
     if (roomsResponse?.success && roomsResponse.data) {
       setRooms(roomsResponse.data);
@@ -90,6 +86,10 @@ export default function RoomsList(): ReactNode {
       socketListener.dispose();
     };
   }, [isConnected]);
+
+  const handleJoinRoom = (roomId: string): void => {
+    router.push(`${ROUTE_TOWERS.PATH}?room=${roomId}`);
+  };
 
   if (roomsError) return <div>Error: {roomsError.message}</div>;
 

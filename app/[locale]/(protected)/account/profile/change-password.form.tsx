@@ -36,6 +36,13 @@ export function ChangePasswordForm({ session }: ChangePasswordFormProps): ReactN
   const confirmNewPasswordRef = useRef<InputImperativeHandle>(null);
   const { t } = useLingui();
 
+  useEffect(() => {
+    if (session) {
+      const isPasswordFound: Account | undefined = session?.accounts.find((account: Account) => account.password);
+      setIsUserPasswordSet(typeof isPasswordFound !== "undefined");
+    }
+  }, [session]);
+
   const handleChangeSetPassword = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
 
@@ -176,13 +183,6 @@ export function ChangePasswordForm({ session }: ChangePasswordFormProps): ReactN
       );
     }
   };
-
-  useEffect(() => {
-    if (session) {
-      const isPasswordFound: Account | undefined = session?.accounts.find((account: Account) => account.password);
-      setIsUserPasswordSet(typeof isPasswordFound !== "undefined");
-    }
-  }, [session]);
 
   return (
     <AccountSectionHeader

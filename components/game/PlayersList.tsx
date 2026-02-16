@@ -18,22 +18,6 @@ import { useKeyboardActions } from "@/hooks/useKeyboardActions";
 import { RoomPlayerPlainObject } from "@/server/towers/modules/room-player/room-player.entity";
 import { TablePlayerPlainObject } from "@/server/towers/modules/table-player/table-player.entity";
 
-type PlayerListItem = RoomPlayerPlainObject | TablePlayerPlainObject;
-
-function getTableNumber(playerListItem: PlayerListItem): number | null {
-  if ("tableNumber" in playerListItem) {
-    // RoomPlayerPlainObject
-    return playerListItem.tableNumber;
-  }
-
-  if ("table" in playerListItem && playerListItem.table?.tableNumber !== null) {
-    // TablePlayerPlainObject
-    return playerListItem.table.tableNumber;
-  }
-
-  return null;
-}
-
 type PlayersListProps = {
   roomId: string
   players: PlayerListItem[]
@@ -151,6 +135,30 @@ export default function PlayersList({
     });
   }, [players, orderBy, sortOrder]);
 
+  useEffect(() => {
+    const checkTheme = (): void => {
+      setIsRtl(document.documentElement.dir === "rtl");
+      setIsDarkMode(document.documentElement.classList.contains("dark"));
+    };
+
+    checkTheme();
+
+    const observer: MutationObserver = new MutationObserver((mutations: MutationRecord[]) => {
+      mutations.forEach((mutation: MutationRecord) => {
+        if (mutation.attributeName === "class") {
+          checkTheme();
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   const handleSort = (key: "name" | "rating" | "table"): void => {
     if (orderBy === key) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -181,30 +189,6 @@ export default function PlayersList({
     onKeyI: () => handleOpenPlayerInfoModal(),
     onCtrlEnter: () => handleOpenPlayerInfoModal(),
   });
-
-  useEffect(() => {
-    const checkTheme = (): void => {
-      setIsRtl(document.documentElement.dir === "rtl");
-      setIsDarkMode(document.documentElement.classList.contains("dark"));
-    };
-
-    checkTheme();
-
-    const observer: MutationObserver = new MutationObserver((mutations: MutationRecord[]) => {
-      mutations.forEach((mutation: MutationRecord) => {
-        if (mutation.attributeName === "class") {
-          checkTheme();
-        }
-      });
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <div
@@ -325,4 +309,20 @@ export default function PlayersList({
       </div>
     </div>
   );
+}
+
+type PlayerListItem = RoomPlayerPlainObject | TablePlayerPlainObject;
+
+function getTableNumber(playerListItem: PlayerListItem): number | null {
+  if ("tableNumber" in playerListItem) {
+    // RoomPlayerPlainObject
+    return playerListItem.tableNumber;
+  }
+
+  if ("table" in playerListItem && playerListItem.table?.tableNumber !== null) {
+    // TablePlayerPlainObject
+    return playerListItem.table.tableNumber;
+  }
+
+  return null;
 }

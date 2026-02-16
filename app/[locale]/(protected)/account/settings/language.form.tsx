@@ -32,6 +32,21 @@ export function LanguageForm({ session }: LanguageFormProps): ReactNode {
   const formRef = useRef<HTMLFormElement>(null);
   const [language, setLanguage] = useState<string>(session?.user.language ?? DEFAULT_LOCALE);
 
+  useEffect(() => {
+    const savedState: string | null = localStorage.getItem(APP_STORAGE_KEYS.SETTINGS_FORM_STATE);
+
+    if (savedState) {
+      setFormState(JSON.parse(savedState));
+      localStorage.removeItem(APP_STORAGE_KEYS.SETTINGS_FORM_STATE);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (language !== session?.user.language) {
+      formRef.current?.requestSubmit();
+    }
+  }, [language]);
+
   const handleUpdateLanguage = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
 
@@ -90,21 +105,6 @@ export function LanguageForm({ session }: LanguageFormProps): ReactNode {
         });
     }
   };
-
-  useEffect(() => {
-    const savedState: string | null = localStorage.getItem(APP_STORAGE_KEYS.SETTINGS_FORM_STATE);
-
-    if (savedState) {
-      setFormState(JSON.parse(savedState));
-      localStorage.removeItem(APP_STORAGE_KEYS.SETTINGS_FORM_STATE);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (language !== session?.user.language) {
-      formRef.current?.requestSubmit();
-    }
-  }, [language]);
 
   return (
     <AccountSectionHeader

@@ -165,6 +165,7 @@ You can view the video of the Towers game [here](public/videos/readme-demo.mp4).
 - [ ] User changing username while in room(s) and table(s)
   - [ ] Prevent user from accessing the profile page while in a game room (show prompt on click)
   - [ ] Send websocket event to all rooms and tables to update the username if changed
+- [ ] Add new theme for original game color palette
 
 See the [open issues](https://github.com/Chelny/youpi/issues) for a full list of proposed features (and known issues).
 

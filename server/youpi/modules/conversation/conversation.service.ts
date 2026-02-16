@@ -23,6 +23,53 @@ export class ConversationService {
     });
   }
 
+  public static async getUnreadCount(userId: string): Promise<number> {
+    const messages = await prisma.instantMessage.findMany({
+      where: {
+        NOT: {
+          // Ignore own messages
+          userId,
+        },
+        OR: [{ visibleToUserId: null }, { visibleToUserId: userId }],
+        conversation: {
+          participants: {
+            some: {
+              userId,
+              mutedAt: null,
+              removedAt: null,
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        conversation: {
+          select: {
+            participants: {
+              where: { userId },
+              select: { readAt: true },
+            },
+          },
+        },
+      },
+    });
+
+    let count: number = 0;
+
+    for (const message of messages) {
+      const participant: { readAt: Date | null } = message.conversation.participants[0];
+      if (!participant) continue;
+
+      // If participant hasn't read any messages yet, or readAt is before message creation → unread
+      if (!participant.readAt || message.createdAt > participant.readAt) {
+        count++;
+      }
+    }
+
+    return count;
+  }
+
   public static async upsert(senderId: string, recipientId: string): Promise<ConversationWithRelations> {
     const conversation: ConversationWithRelations | null = await prisma.conversation.findFirst({
       where: {

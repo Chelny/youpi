@@ -53,6 +53,115 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
   const modalRef = useRef<HTMLDialogElement>(null);
   const { menu, openMenu, closeMenu } = useContextMenu<ConversationPlainObject>(modalRef);
 
+  const currentConversation = useMemo(() => {
+    if (!activeConversationId) return undefined;
+    return conversations.get(activeConversationId);
+  }, [activeConversationId, conversations]);
+
+  const translatedMessages = useMemo(() => {
+    return currentConversation?.messages
+      .filter((instantMessage: InstantMessagePlainObject) => {
+        const visibleToUserId: string | null = instantMessage.visibleToUserId;
+        return !visibleToUserId || visibleToUserId === session?.user.id;
+      })
+      .map((instantMessage: InstantMessagePlainObject) => {
+        const translatedMessage: string =
+          instantMessage.text ?? getInstantMessageAutomatedMessage(instantMessage.type, instantMessage.textVariables);
+
+        return {
+          ...instantMessage,
+          text: translatedMessage,
+        };
+      });
+  }, [currentConversation]);
+
+  useEffect(() => {
+    if (!currentConversation) return;
+
+    const otherParticipant: ConversationParticipantPlainObject | undefined = currentConversation.participants.find(
+      (cp: ConversationParticipantPlainObject) => cp.userId !== session?.user.id,
+    );
+    setOtherParticipant(otherParticipant);
+    setConversationTime(
+      format(currentConversation.createdAt, "EEE MMM dd HH:mm:ss", { locale: getDateFnsLocale(i18n.locale) }),
+    );
+    markConversationAsRead(currentConversation.id);
+  }, [currentConversation]);
+
+  useEffect(() => {
+    if (!currentConversation) return;
+    scrollToBottom();
+  }, [currentConversation?.messages.length]);
+
+  useEffect(() => {
+    if (!activeConversationId) return;
+
+    const handleVisibilityChange = (): void => {
+      if (document.visibilityState === "visible") {
+        markConversationAsRead(activeConversationId);
+      }
+    };
+
+    const handleFocus = (): void => {
+      markConversationAsRead(activeConversationId);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [activeConversationId]);
+
+  useEffect(() => {
+    const socket: Socket | null = socketRef.current;
+    if (!isConnected || !socket) return;
+
+    const socketListener: SocketListener = new SocketListener(socket);
+
+    const emitInitialData = (): void => {
+      loadConversations();
+
+      if (conversationId) {
+        openConversation(conversationId);
+      }
+    };
+
+    const handleUpdateConversation = ({ conversation }: { conversation: ConversationPlainObject }): void => {
+      applyConversationUpdate(conversation);
+    };
+
+    const handleRemoveConversation = ({ conversationId }: { conversationId: string }): void => {
+      applyConversationRemove(conversationId);
+    };
+
+    const attachListeners = (): void => {
+      socketListener.on(ServerToClientEvents.CONVERSATION_MARK_AS_READ, handleUpdateConversation);
+      socketListener.on(ServerToClientEvents.CONVERSATION_MUTED, handleUpdateConversation);
+      socketListener.on(ServerToClientEvents.CONVERSATION_UNMUTED, handleUpdateConversation);
+      socketListener.on(ServerToClientEvents.CONVERSATION_REMOVED, handleRemoveConversation);
+      socketListener.on(ServerToClientEvents.CONVERSATION_RESTORED, handleUpdateConversation);
+      socketListener.on(ServerToClientEvents.CONVERSATION_MESSAGE_SENT, handleUpdateConversation);
+    };
+
+    const onConnect = (): void => {
+      attachListeners();
+      emitInitialData();
+    };
+
+    if (socket.connected) {
+      onConnect();
+    } else {
+      socketListener.on("connect", onConnect);
+    }
+
+    return () => {
+      socketListener.dispose();
+    };
+  }, [isConnected, session?.user.id]);
+
   const menuSections: ContextMenuSection<ConversationPlainObject>[] = useMemo(
     () => [
       {
@@ -97,28 +206,6 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
     ],
     [session?.user.id],
   );
-
-  const currentConversation = useMemo(() => {
-    if (!activeConversationId) return undefined;
-    return conversations.get(activeConversationId);
-  }, [activeConversationId, conversations]);
-
-  const translatedMessages = useMemo(() => {
-    return currentConversation?.messages
-      .filter((instantMessage: InstantMessagePlainObject) => {
-        const visibleToUserId: string | null = instantMessage.visibleToUserId;
-        return !visibleToUserId || visibleToUserId === session?.user.id;
-      })
-      .map((instantMessage: InstantMessagePlainObject) => {
-        const translatedMessage: string =
-          instantMessage.text ?? getInstantMessageAutomatedMessage(instantMessage.type, instantMessage.textVariables);
-
-        return {
-          ...instantMessage,
-          text: translatedMessage,
-        };
-      });
-  }, [currentConversation]);
 
   const getLastMessageSnippet = (conversation: ConversationPlainObject): string => {
     const lastMessage: InstantMessagePlainObject = conversation.messages[conversation.messages.length - 1];
@@ -188,90 +275,6 @@ export default function ConversationsModal({ conversationId, onClose }: Conversa
       />
     );
   };
-
-  useEffect(() => {
-    if (!currentConversation) return;
-
-    const otherParticipant: ConversationParticipantPlainObject | undefined = currentConversation.participants.find(
-      (cp: ConversationParticipantPlainObject) => cp.userId !== session?.user.id,
-    );
-    setOtherParticipant(otherParticipant);
-    setConversationTime(
-      format(currentConversation.createdAt, "EEE MMM dd HH:mm:ss", { locale: getDateFnsLocale(i18n.locale) }),
-    );
-    markConversationAsRead(currentConversation.id);
-  }, [currentConversation]);
-
-  useEffect(() => {
-    if (!currentConversation) return;
-    scrollToBottom();
-  }, [currentConversation?.messages.length]);
-
-  useEffect(() => {
-    if (!activeConversationId) return;
-
-    const handleVisibilityChange = (): void => {
-      if (document.visibilityState === "visible") {
-        markConversationAsRead(activeConversationId);
-      }
-    };
-
-    const handleFocus = (): void => {
-      markConversationAsRead(activeConversationId);
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, [activeConversationId]);
-
-  useEffect(() => {
-    const socket: Socket | null = socketRef.current;
-    if (!isConnected || !socket) return;
-
-    const socketListener: SocketListener = new SocketListener(socket);
-
-    const emitInitialData = (): void => {
-      loadConversations();
-      openConversation(conversationId);
-    };
-
-    const handleUpdateConversation = ({ conversation }: { conversation: ConversationPlainObject }): void => {
-      applyConversationUpdate(conversation);
-    };
-
-    const handleRemoveConversation = ({ conversationId }: { conversationId: string }): void => {
-      applyConversationRemove(conversationId);
-    };
-
-    const attachListeners = (): void => {
-      socketListener.on(ServerToClientEvents.CONVERSATION_MARK_AS_READ, handleUpdateConversation);
-      socketListener.on(ServerToClientEvents.CONVERSATION_MUTED, handleUpdateConversation);
-      socketListener.on(ServerToClientEvents.CONVERSATION_UNMUTED, handleUpdateConversation);
-      socketListener.on(ServerToClientEvents.CONVERSATION_REMOVED, handleRemoveConversation);
-      socketListener.on(ServerToClientEvents.CONVERSATION_RESTORED, handleUpdateConversation);
-      socketListener.on(ServerToClientEvents.CONVERSATION_MESSAGE_SENT, handleUpdateConversation);
-    };
-
-    const onConnect = (): void => {
-      attachListeners();
-      emitInitialData();
-    };
-
-    if (socket.connected) {
-      onConnect();
-    } else {
-      socketListener.on("connect", onConnect);
-    }
-
-    return () => {
-      socketListener.dispose();
-    };
-  }, [isConnected, session?.user.id]);
 
   return (
     <Modal

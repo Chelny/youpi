@@ -27,6 +27,14 @@ export function ResetPasswordForm(): ReactNode {
   const [formState, setFormState] = useState<ApiResponse>(INITIAL_FORM_STATE);
   const { t } = useLingui();
 
+  useEffect(() => {
+    if (formState?.success) {
+      setTimeout(() => {
+        router.push(ROUTE_SIGN_IN.PATH);
+      }, 3000);
+    }
+  }, [formState]);
+
   const handleResetPassword = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
 
@@ -99,14 +107,6 @@ export function ResetPasswordForm(): ReactNode {
       );
     }
   };
-
-  useEffect(() => {
-    if (formState?.success) {
-      setTimeout(() => {
-        router.push(ROUTE_SIGN_IN.PATH);
-      }, 3000);
-    }
-  }, [formState]);
 
   return (
     <form className="w-full" noValidate onSubmit={handleResetPassword}>

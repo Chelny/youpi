@@ -37,6 +37,30 @@ export default function Chat({
   const { i18n, t } = useLingui();
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  const translatedMessages = useMemo(() => {
+    if (!chatMessages) return;
+
+    return chatMessages
+      .filter((message: ChatMessage) => {
+        const visibleToUserId: string | null = (message as TableChatMessagePlainObject).visibleToUserId;
+        return !visibleToUserId || visibleToUserId === session?.user.id;
+      })
+      .map((message: ChatMessage) => {
+        const textVariables: TableChatMessageVariables | null = (message as TableChatMessagePlainObject).textVariables;
+        const translatedMessage: string | null =
+          message.text ?? getTableAutomatedChatMessage((message as TableChatMessagePlainObject).type, textVariables);
+
+        return {
+          ...message,
+          text: filterProfanity(translatedMessage, profanityFilter),
+        };
+      });
+  }, [chatMessages, profanityFilter, session?.user.id]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages]);
+
   const getTableAutomatedChatMessage = (
     type: TableChatMessageType,
     textVariables: TableChatMessageVariables | null,
@@ -131,33 +155,9 @@ export default function Chat({
     return `*** ${message}`;
   };
 
-  const translatedMessages = useMemo(() => {
-    if (!chatMessages) return;
-
-    return chatMessages
-      .filter((message: ChatMessage) => {
-        const visibleToUserId: string | null = (message as TableChatMessagePlainObject).visibleToUserId;
-        return !visibleToUserId || visibleToUserId === session?.user.id;
-      })
-      .map((message: ChatMessage) => {
-        const textVariables: TableChatMessageVariables | null = (message as TableChatMessagePlainObject).textVariables;
-        const translatedMessage: string | null =
-          message.text ?? getTableAutomatedChatMessage((message as TableChatMessagePlainObject).type, textVariables);
-
-        return {
-          ...message,
-          text: filterProfanity(translatedMessage, profanityFilter),
-        };
-      });
-  }, [chatMessages, profanityFilter, session?.user.id]);
-
   const scrollToBottom = (): void => {
     chatEndRef.current?.scrollIntoView({ behavior: "instant", block: "end" });
   };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [chatMessages]);
 
   return (
     <div className="overflow-hidden flex flex-col gap-1 h-full">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Context, createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { Context, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Socket } from "socket.io-client";
 import { ClientToServerEvents } from "@/constants/socket/client-to-server";
 import { ServerToClientEvents } from "@/constants/socket/server-to-client";
@@ -47,134 +47,6 @@ export const ConversationProvider = ({ children }: { children: React.ReactNode }
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const conversationsRef = useRef(conversations);
 
-  const loadConversations = useCallback((): void => {
-    const socket: Socket | null = socketRef.current;
-    if (!isConnected || !socket) return;
-
-    socket.emit(ClientToServerEvents.CONVERSATIONS, {}, (response: SocketCallback<ConversationPlainObject[]>) => {
-      const data: ConversationPlainObject[] | undefined = response.data;
-      if (response.success && data) {
-        setConversations(() => {
-          const conversations: Map<string, ConversationPlainObject> = new Map<string, ConversationPlainObject>();
-          for (const conversation of data) {
-            conversations.set(conversation.id, conversation);
-          }
-          return conversations;
-        });
-      }
-    });
-  }, [isConnected]);
-
-  const openConversation = useCallback(
-    (conversationId: string): void => {
-      const socket: Socket | null = socketRef.current;
-      if (!isConnected || !socket) return;
-
-      setActiveConversationId(conversationId);
-
-      if (conversationsRef.current.has(conversationId)) return;
-
-      socket.emit(
-        ClientToServerEvents.CONVERSATION,
-        { conversationId },
-        (response: SocketCallback<ConversationPlainObject>) => {
-          if (response.success && response.data) {
-            applyConversationUpdate(response.data);
-          }
-        },
-      );
-    },
-    [isConnected],
-  );
-
-  const closeConversation = useCallback((): void => {
-    setActiveConversationId(null);
-  }, []);
-
-  const getUnreadConversationsCount = useCallback((): void => {
-    const socket: Socket | null = socketRef.current;
-    if (!isConnected || !socket) return;
-
-    socket.emit(ClientToServerEvents.CONVERSATIONS_UNREAD, {}, (response: SocketCallback<number>) => {
-      if (response.success && typeof response.data === "number") {
-        setUnreadConversationsCount(response.data);
-      }
-    });
-  }, [isConnected]);
-
-  const sendMessage = useCallback(
-    (
-      data: { conversationId?: string; recipientId?: string; message: string },
-      onAck?: (response: SocketCallback<string>) => void,
-    ): void => {
-      const socket: Socket | null = socketRef.current;
-      if (!isConnected || !socket) return;
-
-      socket.emit(ClientToServerEvents.CONVERSATION_MESSAGE_SEND, data, (response: SocketCallback<string>) => {
-        onAck?.(response);
-      });
-    },
-    [isConnected],
-  );
-
-  const markConversationAsRead = useCallback(
-    (conversationId: string): void => {
-      const socket: Socket | null = socketRef.current;
-      if (!isConnected || !socket) return;
-
-      socket.emit(ClientToServerEvents.CONVERSATION_MARK_AS_READ, { conversationId });
-    },
-    [isConnected],
-  );
-
-  const muteConversation = useCallback(
-    (conversationId: string): void => {
-      const socket: Socket | null = socketRef.current;
-      if (!isConnected || !socket) return;
-
-      socket.emit(ClientToServerEvents.CONVERSATION_MUTE, { conversationId });
-    },
-    [isConnected],
-  );
-
-  const unmuteConversation = useCallback(
-    (conversationId: string): void => {
-      const socket: Socket | null = socketRef.current;
-      if (!isConnected || !socket) return;
-
-      socket.emit(ClientToServerEvents.CONVERSATION_UNMUTE, { conversationId });
-    },
-    [isConnected],
-  );
-
-  const removeConversation = useCallback(
-    (conversationId: string): void => {
-      const socket: Socket | null = socketRef.current;
-      if (!isConnected || !socket) return;
-
-      socket.emit(ClientToServerEvents.CONVERSATION_REMOVE, { conversationId });
-    },
-    [isConnected],
-  );
-
-  const applyConversationUpdate = useCallback((conversation: ConversationPlainObject) => {
-    setConversations((prev: Map<string, ConversationPlainObject>) => {
-      const conversations: Map<string, ConversationPlainObject> = new Map<string, ConversationPlainObject>(prev);
-      conversations.set(conversation.id, conversation);
-      return conversations;
-    });
-  }, []);
-
-  const applyConversationRemove = useCallback((conversationId: string) => {
-    setConversations((prev: Map<string, ConversationPlainObject>) => {
-      const conversations: Map<string, ConversationPlainObject> = new Map<string, ConversationPlainObject>(prev);
-      conversations.delete(conversationId);
-      return conversations;
-    });
-
-    setActiveConversationId((prev: string | null) => (prev === conversationId ? null : prev));
-  }, []);
-
   useEffect(() => {
     conversationsRef.current = conversations;
   }, [conversations]);
@@ -213,28 +85,138 @@ export const ConversationProvider = ({ children }: { children: React.ReactNode }
     };
   }, [isConnected]);
 
-  return (
-    <ConversationContext.Provider
-      value={{
-        conversations,
-        unreadConversationsCount,
-        activeConversationId,
-        loadConversations,
-        openConversation,
-        closeConversation,
-        getUnreadConversationsCount,
-        sendMessage,
-        markConversationAsRead,
-        muteConversation,
-        unmuteConversation,
-        removeConversation,
-        applyConversationUpdate,
-        applyConversationRemove,
-      }}
-    >
-      {children}
-    </ConversationContext.Provider>
+  const loadConversations = (): void => {
+    const socket: Socket | null = socketRef.current;
+    if (!socket || !socket.connected) return;
+
+    socket.emit(ClientToServerEvents.CONVERSATIONS, {}, (response: SocketCallback<ConversationPlainObject[]>) => {
+      const data: ConversationPlainObject[] | undefined = response.data;
+      if (response.success && data) {
+        setConversations(() => {
+          const conversations: Map<string, ConversationPlainObject> = new Map<string, ConversationPlainObject>();
+          for (const conversation of data) {
+            conversations.set(conversation.id, conversation);
+          }
+          return conversations;
+        });
+      }
+    });
+  };
+
+  const openConversation = (conversationId: string): void => {
+    const socket: Socket | null = socketRef.current;
+    if (!socket || !socket.connected) return;
+
+    setActiveConversationId(conversationId);
+
+    if (conversationsRef.current.has(conversationId)) return;
+
+    socket.emit(
+      ClientToServerEvents.CONVERSATION,
+      { conversationId },
+      (response: SocketCallback<ConversationPlainObject>) => {
+        console.log("CHELNY ClientToServerEvents.CONVERSATION", response);
+        if (response.success && response.data) {
+          applyConversationUpdate(response.data);
+        }
+      },
+    );
+  };
+
+  const closeConversation = (): void => {
+    setActiveConversationId(null);
+  };
+
+  const getUnreadConversationsCount = useCallback((): void => {
+    const socket: Socket | null = socketRef.current;
+    if (!isConnected || !socket) return;
+
+    socket.emit(ClientToServerEvents.CONVERSATIONS_UNREAD, {}, (response: SocketCallback<number>) => {
+      if (response.success && typeof response.data === "number") {
+        setUnreadConversationsCount(response.data);
+      }
+    });
+  }, [isConnected]);
+
+  const sendMessage = (
+    data: { conversationId?: string; recipientId?: string; message: string },
+    onAck?: (response: SocketCallback<string>) => void,
+  ): void => {
+    const socket: Socket | null = socketRef.current;
+    if (!socket || !socket.connected) return;
+
+    socket.emit(ClientToServerEvents.CONVERSATION_MESSAGE_SEND, data, (response: SocketCallback<string>) => {
+      onAck?.(response);
+    });
+  };
+
+  const markConversationAsRead = (conversationId: string): void => {
+    const socket: Socket | null = socketRef.current;
+    if (!socket || !socket.connected) return;
+
+    socket.emit(ClientToServerEvents.CONVERSATION_MARK_AS_READ, { conversationId });
+  };
+
+  const muteConversation = (conversationId: string): void => {
+    const socket: Socket | null = socketRef.current;
+    if (!socket || !socket.connected) return;
+
+    socket.emit(ClientToServerEvents.CONVERSATION_MUTE, { conversationId });
+  };
+
+  const unmuteConversation = (conversationId: string): void => {
+    const socket: Socket | null = socketRef.current;
+    if (!socket || !socket.connected) return;
+
+    socket.emit(ClientToServerEvents.CONVERSATION_UNMUTE, { conversationId });
+  };
+
+  const removeConversation = (conversationId: string): void => {
+    const socket: Socket | null = socketRef.current;
+    if (!socket || !socket.connected) return;
+
+    socket.emit(ClientToServerEvents.CONVERSATION_REMOVE, { conversationId });
+  };
+
+  const applyConversationUpdate = (conversation: ConversationPlainObject) => {
+    setConversations((prev: Map<string, ConversationPlainObject>) => {
+      const conversations: Map<string, ConversationPlainObject> = new Map<string, ConversationPlainObject>(prev);
+      conversations.set(conversation.id, conversation);
+      return conversations;
+    });
+  };
+
+  const applyConversationRemove = (conversationId: string) => {
+    setConversations((prev: Map<string, ConversationPlainObject>) => {
+      const conversations: Map<string, ConversationPlainObject> = new Map<string, ConversationPlainObject>(prev);
+      conversations.delete(conversationId);
+      return conversations;
+    });
+
+    setActiveConversationId((prev: string | null) => (prev === conversationId ? null : prev));
+  };
+
+  const value: ConversationContextType = useMemo(
+    () => ({
+      conversations,
+      unreadConversationsCount,
+      activeConversationId,
+      loadConversations,
+      openConversation,
+      closeConversation,
+      getUnreadConversationsCount,
+      sendMessage,
+      markConversationAsRead,
+      muteConversation,
+      unmuteConversation,
+      removeConversation,
+      applyConversationUpdate,
+      applyConversationRemove,
+    }),
+    [conversations, unreadConversationsCount, activeConversationId],
   );
+
+  return <ConversationContext.Provider value={value}>{children}</ConversationContext.Provider>;
 };
 
 export const useConversation = (): ConversationContextType => {

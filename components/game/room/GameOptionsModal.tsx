@@ -47,18 +47,6 @@ export default function GameOptionsModal({
     },
   );
 
-  const handleToggleDeclineAll = (value: boolean): void => {
-    setIsDeclineAll(value);
-
-    socketRef.current?.emit(
-      value ? ClientToServerEvents.TABLE_INVITATIONS_BLOCK : ClientToServerEvents.TABLE_INVITATIONS_ALLOW,
-    );
-  };
-
-  const handleUpdateProfanityFilter = async (value: ProfanityFilter): Promise<void> => {
-    await updateSettings({ profanityFilter: value });
-  };
-
   useEffect(() => {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
@@ -85,6 +73,18 @@ export default function GameOptionsModal({
       socket.off("connect", onConnect);
     };
   }, [isConnected, session?.user.id]);
+
+  const handleToggleDeclineAll = (value: boolean): void => {
+    setIsDeclineAll(value);
+
+    socketRef.current?.emit(
+      value ? ClientToServerEvents.TABLE_INVITATIONS_BLOCK : ClientToServerEvents.TABLE_INVITATIONS_ALLOW,
+    );
+  };
+
+  const handleUpdateProfanityFilter = async (value: ProfanityFilter): Promise<void> => {
+    await updateSettings({ profanityFilter: value });
+  };
 
   return (
     <Modal

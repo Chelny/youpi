@@ -47,6 +47,22 @@ export default function TableChangeKeysPanel({
       .map(([key]: [string, number]) => key),
   );
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (!selectedKey) return;
+      if (!validKeys.includes(e.code)) return;
+
+      setControlKeys((prev: PlayerControlKeysPlainObject | null) => (prev ? { ...prev, [selectedKey]: e.code } : prev));
+      setSelectedKey(null);
+      setShowErrorMessage(false);
+      setShowSuccessMessage(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedKey, validKeys]);
+
   const handleSave = (): void => {
     if (duplicatedKeys.size > 0) {
       setShowErrorMessage(true);
@@ -79,22 +95,6 @@ export default function TableChangeKeysPanel({
       </div>
     );
   };
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      if (!selectedKey) return;
-      if (!validKeys.includes(e.code)) return;
-
-      setControlKeys((prev: PlayerControlKeysPlainObject | null) => (prev ? { ...prev, [selectedKey]: e.code } : prev));
-      setSelectedKey(null);
-      setShowErrorMessage(false);
-      setShowSuccessMessage(false);
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedKey, validKeys]);
 
   return (
     <div className="flex flex-col justify-center items-center">

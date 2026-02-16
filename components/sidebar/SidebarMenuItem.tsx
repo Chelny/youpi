@@ -39,6 +39,16 @@ export default function SidebarMenuItem({
   const searchParams: ReadonlyURLSearchParams = useSearchParams();
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
+  const labelClassName: string = clsx(
+    "transition-opacity duration-300",
+    isExpanded ? "block opacity-100" : "hidden opacity-0",
+  );
+
+  const accordionLabelClassName: string = clsx(
+    "flex justify-between items-center w-full transition-opacity duration-300",
+    isExpanded ? "block opacity-100" : "hidden opacity-0",
+  );
+
   const isActiveHref = useMemo(() => {
     const cleanPath: string = stripLocaleFromPath(pathname);
     const current: string = currentSignature(cleanPath, searchParams);
@@ -78,15 +88,13 @@ export default function SidebarMenuItem({
         : "border-slate-600 bg-slate-700 text-white/70",
     );
 
-  const labelClassName: string = clsx(
-    "transition-opacity duration-300",
-    isExpanded ? "block opacity-100" : "hidden opacity-0",
-  );
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-  const accordionLabelClassName: string = clsx(
-    "flex justify-between items-center w-full transition-opacity duration-300",
-    isExpanded ? "block opacity-100" : "hidden opacity-0",
-  );
+  useEffect(() => {
+    setAccordionOpen(isDescendantActive);
+  }, [isDescendantActive]);
 
   const iconIsActive: boolean = href ? isLinkActive : isDescendantActive;
 
@@ -101,14 +109,6 @@ export default function SidebarMenuItem({
       onClick?.();
     }
   };
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
-    setAccordionOpen(isDescendantActive);
-  }, [isDescendantActive]);
 
   return (
     <div

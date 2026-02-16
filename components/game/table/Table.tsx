@@ -95,24 +95,6 @@ export default function Table(): ReactNode {
     revalidateOnReconnect: true,
   });
 
-  const handleSit = (seatNumber: number): void => {
-    socketRef.current?.emit(ClientToServerEvents.TABLE_SEAT_SIT, { tableId, seatNumber });
-  };
-
-  const handleStand = (): void => {
-    socketRef.current?.emit(ClientToServerEvents.TABLE_SEAT_STAND, { tableId });
-  };
-
-  const handleStart = (): void => {
-    socketRef.current?.emit(ClientToServerEvents.TABLE_SEAT_READY, { tableId });
-  };
-
-  const updateTablePlayer = (tablePlayer: TablePlayerPlainObject): void => {
-    if (tablePlayer.playerId === session?.user.id) {
-      setCurrentTablePlayer(tablePlayer);
-    }
-  };
-
   useEffect(() => {
     const socket: Socket | null = socketRef.current;
     if (!isConnected || !socket) return;
@@ -377,6 +359,24 @@ export default function Table(): ReactNode {
       socketListener.dispose();
     };
   }, [isConnected, tableId]);
+
+  const handleSit = (seatNumber: number): void => {
+    socketRef.current?.emit(ClientToServerEvents.TABLE_SEAT_SIT, { tableId, seatNumber });
+  };
+
+  const handleStand = (): void => {
+    socketRef.current?.emit(ClientToServerEvents.TABLE_SEAT_STAND, { tableId });
+  };
+
+  const handleStart = (): void => {
+    socketRef.current?.emit(ClientToServerEvents.TABLE_SEAT_READY, { tableId });
+  };
+
+  const updateTablePlayer = (tablePlayer: TablePlayerPlainObject): void => {
+    if (tablePlayer.playerId === session?.user.id) {
+      setCurrentTablePlayer(tablePlayer);
+    }
+  };
 
   if (tableError) return <div>Error: {tableError.message}</div>;
 

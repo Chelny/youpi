@@ -38,28 +38,6 @@ const Modal = forwardRef(function Modal(
   const { t } = useLingui();
   const { closeModal, setModalPortalTarget } = useModal();
 
-  const handleConfirm = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault();
-    onConfirm?.(event);
-  };
-
-  const handleCancel = (): void => {
-    onCancel?.();
-  };
-
-  const handleClose = (): void => {
-    dialogRef.current?.close();
-    onClose?.();
-  };
-
-  useEffect(() => {
-    if (ref && typeof ref === "object") {
-      ref.current = dialogRef.current;
-    } else if (typeof ref === "function") {
-      ref(dialogRef.current);
-    }
-  }, [ref]);
-
   useEffect(() => {
     const dialog: HTMLDialogElement | null = dialogRef.current;
     if (!dialog) return;
@@ -90,6 +68,28 @@ const Modal = forwardRef(function Modal(
       setModalPortalTarget(null);
     };
   }, []);
+
+  useEffect(() => {
+    if (ref && typeof ref === "object") {
+      ref.current = dialogRef.current;
+    } else if (typeof ref === "function") {
+      ref(dialogRef.current);
+    }
+  }, [ref]);
+
+  const handleConfirm = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    onConfirm?.(event);
+  };
+
+  const handleCancel = (): void => {
+    onCancel?.();
+  };
+
+  const handleClose = (): void => {
+    dialogRef.current?.close();
+    onClose?.();
+  };
 
   return (
     <dialog

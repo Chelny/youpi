@@ -27,6 +27,76 @@ export function TableGamePowerActions({
   >(undefined);
   const [usedPowerItemTextOpacity, setUsedPowerItemTextOpacity] = useState<number>(1);
 
+  useEffect(() => {
+    seatNumberRef.current = seatNumber;
+  }, [seatNumber]);
+
+  useEffect(() => {
+    setUsedPowerItemTextOpacity(1);
+
+    let current: number = 1.0;
+    const step: number = 0.04; // Decrease by 4% at a time
+    const min: number = 0.6;
+
+    const interval: NodeJS.Timeout = setInterval(() => {
+      current = Math.max(min, current - step);
+      setUsedPowerItemTextOpacity(current);
+
+      if (current <= min) {
+        clearInterval(interval);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [usedPowerItem]);
+
+  useEffect(() => {
+    const socket: Socket | null = socketRef.current;
+    if (!isConnected || !socket) return;
+
+    const socketListener: SocketListener = new SocketListener(socket);
+
+    const handlePowerFire = ({
+      powerItem,
+      source,
+      target,
+    }: {
+      powerItem: PowerBarItemPlainObject
+      source: TablePlayerPlainObject
+      target: TablePlayerPlainObject
+    }): void => {
+      const mySeatNumber: number | null = seatNumberRef.current;
+
+      if (mySeatNumber === target.seatNumber && target.playerId === session?.user.id) {
+        socket.emit(ClientToServerEvents.GAME_POWER_APPLY, { tableId, powerItem, source, target });
+      }
+
+      setUsedPowerItem({
+        powerItem,
+        sourceUsername: source.player.user.username,
+        targetUsername: target.player.user.username,
+      });
+    };
+
+    const attachListeners = (): void => {
+      socketListener.on(ServerToClientEvents.GAME_POWER_USE, handlePowerFire);
+    };
+
+    const onConnect = (): void => {
+      attachListeners();
+    };
+
+    if (socket.connected) {
+      onConnect();
+    } else {
+      socketListener.on("connect", onConnect);
+    }
+
+    return () => {
+      socketListener.dispose();
+    };
+  }, [isConnected, tableId]);
+
   const renderNextPowerBarItemText = (item: PowerBarItemPlainObject | undefined): ReactNode => {
     if (!item || !("powerType" in item)) return null;
 
@@ -225,76 +295,6 @@ export function TableGamePowerActions({
 
     return null;
   };
-
-  useEffect(() => {
-    seatNumberRef.current = seatNumber;
-  }, [seatNumber]);
-
-  useEffect(() => {
-    setUsedPowerItemTextOpacity(1);
-
-    let current: number = 1.0;
-    const step: number = 0.04; // Decrease by 4% at a time
-    const min: number = 0.6;
-
-    const interval: NodeJS.Timeout = setInterval(() => {
-      current = Math.max(min, current - step);
-      setUsedPowerItemTextOpacity(current);
-
-      if (current <= min) {
-        clearInterval(interval);
-      }
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [usedPowerItem]);
-
-  useEffect(() => {
-    const socket: Socket | null = socketRef.current;
-    if (!isConnected || !socket) return;
-
-    const socketListener: SocketListener = new SocketListener(socket);
-
-    const handlePowerFire = ({
-      powerItem,
-      source,
-      target,
-    }: {
-      powerItem: PowerBarItemPlainObject
-      source: TablePlayerPlainObject
-      target: TablePlayerPlainObject
-    }): void => {
-      const mySeatNumber: number | null = seatNumberRef.current;
-
-      if (mySeatNumber === target.seatNumber && target.playerId === session?.user.id) {
-        socket.emit(ClientToServerEvents.GAME_POWER_APPLY, { tableId, powerItem, source, target });
-      }
-
-      setUsedPowerItem({
-        powerItem,
-        sourceUsername: source.player.user.username,
-        targetUsername: target.player.user.username,
-      });
-    };
-
-    const attachListeners = (): void => {
-      socketListener.on(ServerToClientEvents.GAME_POWER_USE, handlePowerFire);
-    };
-
-    const onConnect = (): void => {
-      attachListeners();
-    };
-
-    if (socket.connected) {
-      onConnect();
-    } else {
-      socketListener.on("connect", onConnect);
-    }
-
-    return () => {
-      socketListener.dispose();
-    };
-  }, [isConnected, tableId]);
 
   return (
     <div

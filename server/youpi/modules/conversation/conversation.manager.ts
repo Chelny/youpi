@@ -5,6 +5,7 @@ import { ConversationFactory } from "@/server/youpi/modules/conversation/convers
 import { ConversationService } from "@/server/youpi/modules/conversation/conversation.service";
 import { ConversationParticipant } from "@/server/youpi/modules/conversation-participant/conversation-participant.entity";
 import { ConversationParticipantManager } from "@/server/youpi/modules/conversation-participant/conversation-participant.manager";
+import { ConversationParticipantService } from "@/server/youpi/modules/conversation-participant/conversation-participant.service";
 import { User } from "@/server/youpi/modules/user/user.entity";
 import { ConversationWithRelations } from "@/types/prisma";
 
@@ -68,95 +69,67 @@ export class ConversationManager {
   }
 
   public static async getUnreadConversationsCount(userId: string): Promise<number> {
-    const conversations: Conversation[] = await ConversationManager.findAllByUserId(userId);
+    return ConversationService.getUnreadCount(userId);
+  }
 
-    let unreadCount: number = 0;
+  private static async handleParticipantAction(
+    conversationId: string,
+    userId: string,
+    action: "markAsRead" | "mute" | "unmute" | "remove" | "restore",
+    redisEvent: string,
+  ): Promise<void> {
+    let dbConversation: ConversationWithRelations;
 
-    for (const conversation of conversations) {
-      const participant: ConversationParticipant | undefined = conversation.participants.find(
-        (cp: ConversationParticipant) => cp.userId === userId,
-      );
-
-      // Ignore muted and removed conversations
-      if (!participant || participant.mutedAt || participant.removedAt) continue;
-
-      for (const message of conversation.messages) {
-        // Ignore own messages
-        if (message.userId === userId) continue;
-
-        // Ignore hidden
-        if (message.visibleToUserId && message.visibleToUserId !== userId) continue;
-
-        // If participant hasn't read any messages yet, or readAt is before message creation → unread
-        if (!participant.readAt || participant.readAt < message.createdAt) {
-          unreadCount++;
-        }
-      }
+    switch (action) {
+      case "markAsRead":
+        dbConversation = await ConversationParticipantService.markAsRead(conversationId, userId);
+        break;
+      case "mute":
+        dbConversation = await ConversationParticipantService.mute(conversationId, userId);
+        break;
+      case "unmute":
+        dbConversation = await ConversationParticipantService.unmute(conversationId, userId);
+        break;
+      case "remove":
+        dbConversation = await ConversationParticipantService.remove(conversationId, userId);
+        break;
+      case "restore":
+        dbConversation = await ConversationParticipantService.restore(conversationId, userId);
+        break;
+      default:
+        throw new Error("Unknown action");
     }
 
-    return unreadCount;
-  }
+    const conversation: Conversation = ConversationFactory.createConversation(dbConversation);
+    this.cache.set(conversation.id, conversation);
 
-  public static async markAsRead(id: string, userId: string): Promise<void> {
-    await ConversationParticipantManager.markConversationAsRead(id, userId);
+    const unreadConversationsCount: number = await this.getUnreadConversationsCount(userId);
 
-    const conversation: Conversation = await this.findById(id);
-    const unreadConversationsCount: number = await ConversationManager.getUnreadConversationsCount(userId);
-
-    await publishRedisEvent(ServerInternalEvents.CONVERSATION_MARK_AS_READ, {
+    await publishRedisEvent(redisEvent, {
       userId,
       conversation: conversation.toPlainObject(),
       unreadConversationsCount,
     });
   }
 
-  public static async mute(id: string, userId: string): Promise<void> {
-    await ConversationParticipantManager.muteConversationForUser(id, userId);
-
-    const conversation: Conversation = await this.findById(id);
-    const unreadConversationsCount: number = await ConversationManager.getUnreadConversationsCount(userId);
-
-    await publishRedisEvent(ServerInternalEvents.CONVERSATION_MUTE, {
-      userId,
-      conversation: conversation.toPlainObject(),
-      unreadConversationsCount,
-    });
+  public static async markAsRead(conversationId: string, userId: string): Promise<void> {
+    this.handleParticipantAction(conversationId, userId, "markAsRead", ServerInternalEvents.CONVERSATION_MARK_AS_READ);
   }
 
-  public static async unmute(id: string, userId: string): Promise<void> {
-    await ConversationParticipantManager.unmuteConversationForUser(id, userId);
+  public static async mute(conversationId: string, userId: string): Promise<void> {
+    this.handleParticipantAction(conversationId, userId, "mute", ServerInternalEvents.CONVERSATION_MUTE);
+  }
 
-    const conversation: Conversation = await this.findById(id);
-    const unreadConversationsCount: number = await ConversationManager.getUnreadConversationsCount(userId);
-
-    await publishRedisEvent(ServerInternalEvents.CONVERSATION_UNMUTE, {
-      userId,
-      conversation: conversation.toPlainObject(),
-      unreadConversationsCount,
-    });
+  public static async unmute(conversationId: string, userId: string): Promise<void> {
+    this.handleParticipantAction(conversationId, userId, "unmute", ServerInternalEvents.CONVERSATION_UNMUTE);
   }
 
   public static async remove(conversationId: string, userId: string): Promise<void> {
-    await ConversationParticipantManager.removeConversationForUser(conversationId, userId);
-    const unreadConversationsCount: number = await ConversationManager.getUnreadConversationsCount(userId);
-
-    await publishRedisEvent(ServerInternalEvents.CONVERSATION_REMOVE, {
-      userId,
-      conversationId,
-      unreadConversationsCount,
-    });
+    this.handleParticipantAction(conversationId, userId, "remove", ServerInternalEvents.CONVERSATION_REMOVE);
   }
 
-  public static async restore(id: string, userId: string): Promise<void> {
-    const conversation: Conversation = await this.findById(id);
-    await ConversationParticipantManager.restoreConversationForUser(conversation, userId);
-    const unreadConversationsCount: number = await ConversationManager.getUnreadConversationsCount(userId);
-
-    await publishRedisEvent(ServerInternalEvents.CONVERSATION_RESTORE, {
-      userId,
-      conversation: conversation.toPlainObject(),
-      unreadConversationsCount,
-    });
+  public static async restore(conversationId: string, userId: string): Promise<void> {
+    this.handleParticipantAction(conversationId, userId, "restore", ServerInternalEvents.CONVERSATION_RESTORE);
   }
 
   public static async delete(id: string): Promise<void> {
