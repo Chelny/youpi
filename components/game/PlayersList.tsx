@@ -50,6 +50,13 @@ export default function PlayersList({
   const darkRepeatingLinear: string =
     "repeating-linear-gradient(0deg, #243342, #243342 50%, transparent 50%, transparent)";
 
+  const handleRowKeyDown = useKeyboardActions({
+    onEnter: () => handlePlayersRowClick(selectedPlayerId),
+    onSpace: () => handlePlayersRowClick(selectedPlayerId),
+    onKeyI: () => handleOpenPlayerInfoModal(),
+    onCtrlEnter: () => handleOpenPlayerInfoModal(),
+  });
+
   const bgImages = useMemo(() => {
     return [
       isRatingsVisible && !isTableNumberVisible && (isDarkMode ? darkLinearGradient : lightLinearGradient),
@@ -182,13 +189,6 @@ export default function PlayersList({
       isRatingsVisible,
     });
   };
-
-  const handleRowKeyDown = useKeyboardActions({
-    onEnter: () => handlePlayersRowClick(selectedPlayerId),
-    onSpace: () => handlePlayersRowClick(selectedPlayerId),
-    onKeyI: () => handleOpenPlayerInfoModal(),
-    onCtrlEnter: () => handleOpenPlayerInfoModal(),
-  });
 
   return (
     <div

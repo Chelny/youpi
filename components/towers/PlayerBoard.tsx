@@ -122,8 +122,6 @@ export default memo(function PlayerBoard({
     onKeyI: () => seat.occupiedByPlayer && handleOpenPlayerInfoModal(seat.occupiedByPlayer),
   });
 
-  const seatKeyLabel = useMemo(() => mapKeyCodeToChar(seat.seatNumber, controlKeys), [seat.seatNumber, controlKeys]);
-
   useEffect(() => {
     // Set focus on correct seat when game starts
     if (gameState === GameState.PLAYING) {
@@ -328,6 +326,8 @@ export default memo(function PlayerBoard({
     if (code.startsWith("Digit")) return code.slice(5);
     return code;
   };
+
+  const seatKeyLabel = useMemo(() => mapKeyCodeToChar(seat.seatNumber, controlKeys), [seat.seatNumber, controlKeys]);
 
   const handleMovePiece = (direction: "left" | "right"): void => {
     socketRef.current?.emit(ClientToServerEvents.GAME_PIECE_MOVE, { tableId, direction });
